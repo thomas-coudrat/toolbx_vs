@@ -32,11 +32,13 @@ print
 
 # Dictionary containing specs as keys, and [MIN,MAX,COUNT] as values
 specs = {}
+skipCount = 0
 # Looping over all stored lines
 for line in allLines:
 
     # If the word 'Skipping' is found,
     if "Skipping" in line:
+        skipCount += 1
         endLine = line.split(",")[1].strip()
         endll = endLine.split()
 
@@ -70,7 +72,8 @@ for line in allLines:
 
 # Print out the result
 keys = specs.keys()
-print "WHAT WAS SKIPPED:\n"
+print "THERE WERE", skipCount, "LIGANDS SKIPPED:"
+print
 for key in keys:
     print key, "\t\tMIN:", specs[key][0], "\t\tMAX:", specs[key][1], "\t\tCOUNT:", specs[key][2]
 print
