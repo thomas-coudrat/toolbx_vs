@@ -21,7 +21,7 @@ import sys
 from subprocess import check_output, STDOUT, CalledProcessError
 
 # Path to the blank .icm file
-indexFile = "/vlsci/VR0024/tcoudrat/Scripts/VS/index.icm"
+indexFile = "/vlsci/VR0024/tcoudrat/Scripts/VS_scripts/index.icm"
 icmExec = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
 
 # Argument parsing stuff
