@@ -36,13 +36,17 @@ print
 print "CREATING .INX FOR:", sdfFile
 print
 
+# Get working directory
+workDir = os.getcwd()
+sdfPath = workDir + "/" + sdfFile
+inxPath = sdfPath.replace(".sdf", ".inx")
+
 # Copy the temp .icm script, modify it, run it, delete it
 # Copy
 shutil.copy(indexFile, "./temp.icm")
-inxFile = sdfFile.replace(".sdf", ".inx")
 # Modify
-os.system("sed -e 's|SDF_LIB|" + sdfFile + "|g' ./temp.icm -i")
-os.system("sed -e 's|INX_FILE|" + inxFile + "|g' ./temp.icm -i")
+os.system("sed -e 's|SDF_LIB|" + sdfPath + "|g' ./temp.icm -i")
+os.system("sed -e 's|INX_FILE|" + inxPath + "|g' ./temp.icm -i")
 # Execute
 try:
     check_output(icmExec + " -s ./temp.icm", stderr=STDOUT, shell=True)
