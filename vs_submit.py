@@ -19,7 +19,7 @@ slurmPaths = []
 
 # Listing direct subdirectories to the dir where this was executed
 for subDir in os.listdir(workDir):
-    if subDir.isdigit()
+    if subDir.isdigit():
         path = os.path.join(workDir, subDir)
 
         # If this is a directory, then list the files/directories in it
