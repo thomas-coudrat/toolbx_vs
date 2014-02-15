@@ -29,11 +29,28 @@ def main():
     setupDir = args.setupDir
     projName = glob.glob(setupDir + "/*.dtb")[0].replace(".dtb", "").split("/")[1]
 
+    print
+    print "PARAMETERS"
+    print "\t libSize:", libSize
+    print "\t sliceSize:", sliceSize
+    print "\t repeatNum:", repeatNum
+    print "\t walltime:", walltime
+    print "\t thoroughness:", thor
+    print "\t setupDir:", setupDir
+    print "\t projName:", projName
+    print
+
+    print "***********************"
+
     # Creating the repeats directories, which are copies of the setupDir
     createRepeats(repeatNum, setupDir)
 
+    print "***********************"
+
     # Create the .slurm slices
     createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName)
+
+    print
 
 
 def parsing():
@@ -74,10 +91,14 @@ def createRepeats(repeatNum, setupDir):
         if not os.path.exists(repeatDir):
             os.makedirs(repeatDir)
 
+        print
+        print "REPEAT:", repeatDir
+
         # Copy each file into this new directory
         for filePath in filePaths:
             fileName = os.path.basename(filePath)
             shutil.copy(filePath, repeatDir + "/" + fileName)
+            print "\t COPYING:", fileName
 
 
 def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName):
@@ -91,6 +112,9 @@ def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName):
         upperLimit = 0
         sliceCount = 0
         exit = False
+
+        print
+        print "REPEAT:", repeatDir
 
         # Loop over the slices
         while True:
@@ -129,6 +153,8 @@ def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName):
             for line in lines:
                 slurmFile.write(line + "\n")
             slurmFile.close()
+
+            print "\t SLICE:", sliceName + ".slurm"
 
             # Exit statement when end of the library is reached
             if exit:
