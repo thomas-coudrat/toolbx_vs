@@ -13,8 +13,12 @@
 
 import glob
 import os
+import argparse
 
 def main():
+
+    # Get arguments
+    knownIDfirst, knownIDlast = parseArguments()
 
     # Get all .ou files in each repeat directory
     ouFiles = glob.glob("*/*.ou")
@@ -40,7 +44,30 @@ def main():
     print
 
     # Write the results in a .csv file
-    writeResultFile(ligDict)
+    vsResult = writeResultFile(ligDict)
+
+    # Write ROC curve data to .roc file
+    writeROCdata(vsResult, knownIDfirst, knownIDlast)
+
+    print
+
+
+def parseArguments():
+
+    # Parsing description of arguments
+    descr = "Extract VS results, write results and ROC data to file"
+    descr_knownIDrange = "Provide the ID range of known actives lig lib (format: 1-514)"
+
+    # Defining the arguments
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument("knownIDrange", help=descr_knownIDrange)
+
+    # Parsing arguments
+    args = parser.parse_args()
+    knownIDrange = args.knownIDrange
+    knownIDfirst, knownIDlast = knownIDrange.split("-")
+
+    return int(knownIDfirst), int(knownIDlast)
 
 
 def parseResults(ligDict, ouFiles):
@@ -138,7 +165,6 @@ def writeResultFile(ligDict):
 
     # Write result file
     print "\tranked_results.csv"
-    print
 
     fileResult = open("ranked_results.csv", "w")
     fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf,dEel,dEhp,Score,mfScore,Name,Run#\n")
@@ -149,6 +175,38 @@ def writeResultFile(ligDict):
         fileResult.write("\n")
     fileResult.close()
 
+    return vsResult
+
+
+def writeROCdata(vsResult, knownIDfirst, knownIDlast):
+    """
+    Given this VS result, and information about the ID of known actives in the library,
+    write in a file the information to plot a ROC curve
+    """
+
+    X = 0
+    Y = 0
+    #libSize = 0
+
+    rocFileName = "rocKnown_" + str(knownIDfirst) + "-" + str(knownIDlast) + ".csv"
+    print "\t", rocFileName
+    rocDataFile = open(rocFileName, "w")
+
+    for ligInfo in vsResult:
+        ligID = int(ligInfo[0])
+        # Update the libSize in order to get the full libSize
+        #if libSize < ligID:
+        #    libSize = ligID
+        # When the sorted ligID corresponds to a known, increase
+        # the value of Y by 1
+        if ligID in range(knownIDfirst, knownIDlast + 1):
+            Y += 1
+        # For each ligand in the full VS, increase X and write
+        # the X,Y pair to the data file
+        X += 1
+        rocDataFile.write(str(X) + "," + str(Y) + "\n")
+
+    rocDataFile.close()
 
 
 if __name__ == "__main__":
