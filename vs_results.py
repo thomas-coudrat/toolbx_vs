@@ -122,28 +122,33 @@ def sortRepeats(ligDict):
 
 def writeResultFile(ligDict):
 
-    # Write result file
-    print "\tranked_results.csv"
-    print
-    fileResult = open("ranked_results.csv", "w")
-    fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf,dEel,dEhp,Score,mfScore,Name,Run#\n")
-
-
-    # After all information has been gathered,
-    # sorting the list based on the score of each ligand
-    #ligList = sorted(ligList, key=lambda lig: lig[9])
 
     # Write the ligand info
     keys = ligDict.keys()
+    vsResult = []
     for key in keys:
         # Get only the first in the list of repeats information
         # for this ligand
         #for ligInfo in ligDict[key]:
         ligInfo = ligDict[key][0]
+        vsResult.append(ligInfo)
+
+    # Sort the vsResult based on score, for the sorted full VS result
+    vsResult = sorted(vsResult, key=lambda lig: lig[9])
+
+    # Write result file
+    print "\tranked_results.csv"
+    print
+
+    fileResult = open("ranked_results.csv", "w")
+    fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf,dEel,dEhp,Score,mfScore,Name,Run#\n")
+
+    for ligInfo in vsResult:
         for val in ligInfo:
             fileResult.write(str(val) + ",")
         fileResult.write("\n")
     fileResult.close()
+
 
 
 if __name__ == "__main__":
