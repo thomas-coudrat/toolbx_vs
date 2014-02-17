@@ -13,25 +13,31 @@
 import glob
 import os
 
-# Setting up variables
-workDir = os.getcwd()
-ouFiles = glob.glob(workDir + "/*.ou")
-scoreCount = 0
+def main():
 
-# Looping over .ou files in the current dir
-for file in ouFiles:
+    # Setting up variables
+    workDir = os.getcwd()
+    ouFiles = glob.glob(workDir + "/*.ou")
+    scoreCount = 0
 
-    # Read all lines of that .ou file
-    f = open(file, "r")
-    lines = f.readlines()
-    f.close()
+    # Looping over .ou files in the current dir
+    for file in ouFiles:
 
-    # Count the number of occurence of the word SCORE in it
-    for line in lines:
-        if "SCORE" in line:
-            scoreCount +=1
+        # Read all lines of that .ou file
+        f = open(file, "r")
+        lines = f.readlines()
+        f.close()
 
-print
-print "COMPLETED DOCKS:", scoreCount
-print "DIRECTORY:", workDir
-print
+        # Count the number of occurence of the word SCORE in it
+        for line in lines:
+            if "SCORE" in line:
+                scoreCount +=1
+
+    print
+    print "COMPLETED DOCKS:", scoreCount
+    print "DIRECTORY:", workDir
+    print
+
+
+if __name__ == "__main__":
+    main()
