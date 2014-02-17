@@ -9,9 +9,7 @@ descr_rocPaths = "Provide rocDataFiles: data1.csv,data2.csv,data4.csv"
 parser = argparse.ArgumentParser(description=descr)
 parser.add_argument("rocPaths", help=descr_rocPaths, nargs="+")
 args = parser.parse_args()
-rocPaths = args.rocPaths.split(",")
-
-rocList = []
+rocPaths = args.rocPaths
 
 for rocPath in rocPaths:
     rocFile = open(rocPath, "r")
