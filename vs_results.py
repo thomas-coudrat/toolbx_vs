@@ -1,4 +1,4 @@
-#!/vlsci/VR0024/tcoudrat/bin/python275/bin/python
+#!/usr/bin/env python
 
 #------------------------------------------------
 #
