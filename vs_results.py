@@ -17,39 +17,27 @@ import argparse
 
 def main():
 
-    # Get arguments
-    knownIDfirst, knownIDlast = parseArguments()
-
-    # Get all .ou files in each repeat directory
-    ouFiles = glob.glob("*/*.ou")
-
-    print
-    print "PARSING:"
-    print
-
+    # Get project name
+    workDir = os.getcwd()
+    projName = workDir.replace(os.path.dirname(workDir) + "/", "")
     # Create the dictionary storing ligand info
     # based on ligandID: for each ligandID key there
     # is a number of ligangInfo list equal to the
     # number of repeats
     ligDict = {}
 
+    # Get arguments
+    knownIDfirst, knownIDlast = parseArguments()
     # Get the results from those .ou files
-    parseResults(ligDict, ouFiles)
+    parseResults(ligDict)
 
     # Sort each ligand docking amongst repeats
     sortRepeats(ligDict)
 
-    print
-    print "WRITING:"
-    print
-
     # Write the results in a .csv file
-    vsResult = writeResultFile(ligDict)
-
+    vsResult = writeResultFile(ligDict, projName)
     # Write ROC curve data to .roc file
-    writeROCdata(vsResult, knownIDfirst, knownIDlast)
-
-    print
+    writeROCfile(vsResult, projName, knownIDfirst, knownIDlast)
 
 
 def parseArguments():
@@ -70,11 +58,18 @@ def parseArguments():
     return int(knownIDfirst), int(knownIDlast)
 
 
-def parseResults(ligDict, ouFiles):
+def parseResults(ligDict):
     """
     Populate the ligDict dictionary in the following manner:
     ligDict{ligandID, [[ligInfo_rep1], [ligInfo_rep2], ...]}
     """
+
+    print
+    print "PARSING:"
+    print
+
+    # Get all .ou files in each repeat directory
+    ouFiles = glob.glob("*/*.ou")
 
     # Loop over all .ou files, store ligand docking info
     for ouFilePath in ouFiles:
@@ -103,8 +98,15 @@ def parseResults(ligDict, ouFiles):
                 # The fist info is the ligID
                 ligInfo.append(ligID)
 
+                # Give a generic name for when the ligand does
+                # not have one
+                ligName = "none"
+
                 # The rest of the info relates to the scoring
                 for i, split in enumerate(ll):
+                    if "Name=" in split:
+                        ligName = ll[i + 1]
+                        break
                     if "completed" in split or "FINISHED" in split:
                         break
                     # Store the values following each tag
@@ -117,6 +119,9 @@ def parseResults(ligDict, ouFiles):
                             val = float(val)
                         ligInfo.append(val)
 
+                # Add the ligand name, which can be none when it is
+                # not provided in the original .sdf library
+                ligInfo.append(ligName)
                 # Lastly adding the repeat number info
                 ligInfo.append(repeatNum)
 
@@ -147,8 +152,7 @@ def sortRepeats(ligDict):
         ligDict[key] = repeatsLigInfo
 
 
-def writeResultFile(ligDict):
-
+def writeResultFile(ligDict, projName):
 
     # Write the ligand info
     keys = ligDict.keys()
@@ -163,10 +167,14 @@ def writeResultFile(ligDict):
     # Sort the vsResult based on score, for the sorted full VS result
     vsResult = sorted(vsResult, key=lambda lig: lig[9])
 
-    # Write result file
-    print "\tranked_results.csv"
+    print
+    print "WRITING:"
+    print
 
-    fileResult = open("ranked_results.csv", "w")
+    # Write result file
+    print "\tresults_" + projName  + ".csv"
+
+    fileResult = open("results_" + projName  + ".csv", "w")
     fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf,dEel,dEhp,Score,mfScore,Name,Run#\n")
 
     for ligInfo in vsResult:
@@ -178,7 +186,7 @@ def writeResultFile(ligDict):
     return vsResult
 
 
-def writeROCdata(vsResult, knownIDfirst, knownIDlast):
+def writeROCfile(vsResult, projName, first, last):
     """
     Given this VS result, and information about the ID of known actives in the library,
     write in a file the information to plot a ROC curve
@@ -187,8 +195,9 @@ def writeROCdata(vsResult, knownIDfirst, knownIDlast):
     X = 0
     Y = 0
     #libSize = 0
+    firstLast = str(first) + "-" + str(last)
 
-    rocFileName = "rocKnown_" + str(knownIDfirst) + "-" + str(knownIDlast) + ".csv"
+    rocFileName = "roc_" + firstLast + "_" + projName + ".csv"
     print "\t", rocFileName
     rocDataFile = open(rocFileName, "w")
 
@@ -199,7 +208,7 @@ def writeROCdata(vsResult, knownIDfirst, knownIDlast):
         #    libSize = ligID
         # When the sorted ligID corresponds to a known, increase
         # the value of Y by 1
-        if ligID in range(knownIDfirst, knownIDlast + 1):
+        if ligID in range(first, last + 1):
             Y += 1
         # For each ligand in the full VS, increase X and write
         # the X,Y pair to the data file
@@ -207,6 +216,8 @@ def writeROCdata(vsResult, knownIDfirst, knownIDlast):
         rocDataFile.write(str(X) + "," + str(Y) + "\n")
 
     rocDataFile.close()
+
+    print
 
 
 if __name__ == "__main__":
