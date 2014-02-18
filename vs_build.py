@@ -14,6 +14,7 @@ import argparse
 import glob
 import shutil
 import re
+import sys
 
 
 def main():
@@ -36,6 +37,8 @@ def main():
     reportLines = []
     # Get current working directory
     workDir = os.getcwd()
+
+    cleanVSdir(workDir)
 
     reportLines.append("\nPARAMETERS:\n")
     reportLines.append("\t libSize: " + str(libSize))
@@ -89,6 +92,52 @@ def parsing():
     args = parser.parse_args()
 
     return args
+
+
+def cleanVSdir(workDir):
+    """
+    Checks for file already present in this VS directory, and prompts
+    the user to confirm removal, before creating a new set of files
+    """
+
+    # Get files in workDir
+    filePaths = glob.glob(workDir + "/*")
+
+    # Store files and dirs to be deleted in this list
+    delList = []
+
+    # Loop over the files in this dir
+    for filePath in filePaths:
+        fileName = os.path.basename(filePath)
+        if fileName.isdigit() or fileName.endswith(".log"):
+            delList.append(filePath)
+
+    # If files were found in this directory, display what they are and prompt
+    # for deletion
+    if len(delList) > 0:
+
+        # Displaying existing files
+        print
+        print "####"
+        print "#### VS files were found in this directory ####"
+        print "####"
+        print
+        for filePath in delList:
+            print filePath
+        print
+
+        # Prompting for removal
+        answer = raw_input('Are you sure you want to delete them? (y/n)\n')
+        if answer == "y":
+            print "DELETING PREVIOUS FILES..."
+            for filePath in delList:
+                if filePath.endswith(".log"):
+                    os.remove(filePath)
+                else:
+                    shutil.rmtree(filePath)
+        else:
+            print "NOT DELETING, QUIT..."
+            sys.exit()
 
 
 def printParams(setupDir, reportLines):
