@@ -31,31 +31,39 @@ def main():
     setupDir = args.setupDir
     projName = glob.glob(setupDir + "/*.dtb")[0].replace(".dtb", "").split("/")[1]
 
-    print
-    print "PARAMETERS:"
-    print "\t libSize:", libSize
-    print "\t sliceSize:", sliceSize
-    print "\t repeatNum:", repeatNum
-    print "\t walltime:", walltime
-    print "\t thoroughness:", thor
-    print "\t setupDir:", setupDir
-    print "\t projName:", projName
-    print
+    # Store all the report lines in this file, will be used for printout
+    # and to write to file
+    reportLines = []
+    # Get current working directory
+    workDir = os.getcwd()
+
+    reportLines.append("\nPARAMETERS:\n")
+    reportLines.append("\t libSize: " + str(libSize))
+    reportLines.append("\t sliceSize: " + str(sliceSize))
+    reportLines.append("\t repeatNum: " + str(repeatNum))
+    reportLines.append("\t walltime: " + walltime)
+    reportLines.append("\t thoroughness: " + thor)
+    reportLines.append("\t setupDir: " + setupDir)
+    reportLines.append("\t projName: " + projName)
+    reportLines.append("\n")
 
     # grep the parameters to lookout for in the .dtb file, and print them out
-    printParams(setupDir)
+    reportLines = printParams(setupDir, reportLines)
 
-    print "***********************"
+    reportLines.append("\n***********************\n")
 
     # Creating the repeats directories, which are copies of the setupDir
-    createRepeats(repeatNum, setupDir)
+    reportLines = createRepeats(repeatNum, setupDir, reportLines)
 
-    print "***********************"
+    reportLines.append("\n***********************\n")
 
     # Create the .slurm slices
-    createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName)
+    reportLines = createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName, reportLines)
 
-    print
+    reportLines.append("\n")
+
+    # Print and write report
+    printWriteReport(reportLines, workDir, projName)
 
 
 def parsing():
@@ -83,13 +91,12 @@ def parsing():
     return args
 
 
-def printParams(setupDir):
+def printParams(setupDir, reportLines):
     """
     Use the grep command to print out common parameters to check
     when running a VS
     """
     dtbPath = glob.glob(setupDir + "/*.dtb")[0]
-
 
     dtbFile = open(dtbPath, "r")
     dtbLines = dtbFile.readlines()
@@ -103,12 +110,14 @@ def printParams(setupDir):
         if re.search(regEx, line):
             param = dtbLines[lineNumber].strip()
             val = dtbLines[lineNumber + 1].strip()
-            print "\t", param, ":", val
+            reportLines.append("\t" + param + " : " + val)
         lineNumber +=1
-    print
+    reportLines.append("\n")
+
+    return reportLines
 
 
-def createRepeats(repeatNum, setupDir):
+def createRepeats(repeatNum, setupDir, reportLines):
 
     # Get files in setupDir
     filePaths = glob.glob(setupDir + "/*")
@@ -121,17 +130,19 @@ def createRepeats(repeatNum, setupDir):
         if not os.path.exists(repeatDir):
             os.makedirs(repeatDir)
 
-        print
-        print "REPEAT:", repeatDir
+        reportLines.append("\n")
+        reportLines.append("REPEAT:" + repeatDir + "\n")
 
         # Copy each file into this new directory
         for filePath in filePaths:
             fileName = os.path.basename(filePath)
             shutil.copy(filePath, repeatDir + "/" + fileName)
-            print "\t COPYING:", fileName
+            reportLines.append("\t COPYING:" + fileName)
+
+    return reportLines
 
 
-def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName):
+def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName, reportLines):
     repeat = 1
     # Loop over repeat directories
     while repeat <= repeatNum:
@@ -143,8 +154,8 @@ def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName):
         sliceCount = 0
         exit = False
 
-        print
-        print "REPEAT:", repeatDir
+        reportLines.append("\n")
+        reportLines.append("REPEAT:" + repeatDir + "\n")
 
         # Loop over the slices
         while True:
@@ -184,7 +195,7 @@ def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName):
                 slurmFile.write(line + "\n")
             slurmFile.close()
 
-            print "\t SLICE:", sliceName + ".slurm"
+            reportLines.append("\t SLICE:" + sliceName + ".slurm")
 
             # Exit statement when end of the library is reached
             if exit:
@@ -192,6 +203,23 @@ def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName):
 
         # Update the repeat number
         repeat += 1
+
+    return reportLines
+
+
+def printWriteReport(reportLines, workDir, projName):
+    """
+    Go through the report lines and print them to standard output and write them to
+    a text file for future ref
+    """
+
+    reportFile = open(workDir + "/" + projName + ".log", "w")
+
+    for line in reportLines:
+        print line
+        reportFile.write(line + "\n")
+
+    reportFile.close()
 
 if  __name__ == "__main__":
     main()
