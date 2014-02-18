@@ -13,6 +13,8 @@ import os
 import argparse
 import glob
 import shutil
+import re
+
 
 def main():
     # Getting all the args
@@ -30,7 +32,7 @@ def main():
     projName = glob.glob(setupDir + "/*.dtb")[0].replace(".dtb", "").split("/")[1]
 
     print
-    print "PARAMETERS"
+    print "PARAMETERS:"
     print "\t libSize:", libSize
     print "\t sliceSize:", sliceSize
     print "\t repeatNum:", repeatNum
@@ -39,6 +41,9 @@ def main():
     print "\t setupDir:", setupDir
     print "\t projName:", projName
     print
+
+    # grep the parameters to lookout for in the .dtb file, and print them out
+    printParams(setupDir)
 
     print "***********************"
 
@@ -76,6 +81,31 @@ def parsing():
     args = parser.parse_args()
 
     return args
+
+
+def printParams(setupDir):
+    """
+    Use the grep command to print out common parameters to check
+    when running a VS
+    """
+    dtbPath = glob.glob(setupDir + "/*.dtb")[0]
+
+
+    dtbFile = open(dtbPath, "r")
+    dtbLines = dtbFile.readlines()
+    dtbFile.close()
+
+    regEx = "maxHdonors|maxLigSize|maxNO|maxTorsion|ringFlexLevel|sampleRacemic"\
+            "|scoreThreshold|maxPk|minPk|chargeGroups|dbIndex|dbType"
+
+    lineNumber=0
+    for line in dtbLines:
+        if re.search(regEx, line):
+            param = dtbLines[lineNumber].strip()
+            val = dtbLines[lineNumber + 1].strip()
+            print "\t", param, ":", val
+        lineNumber +=1
+    print
 
 
 def createRepeats(repeatNum, setupDir):
