@@ -19,11 +19,20 @@ def main():
 
     # Setting up variables
     workDir = os.getcwd()
+
     print
+    print "************************"
+    print
+
     specs, skipCount = loopOverRepeats(workDir)
 
     # Print the skipped ligands data
     printSkipped(specs, skipCount)
+
+    # Print out the content of the slurm files, which
+    # will have ERROR information, or will be blank
+    # if no Error
+    printSlurmOuts(workDir)
 
 
 def loopOverRepeats(workDir):
@@ -73,6 +82,7 @@ def printCompleted(subDir, scoreCount):
     """
     Print the score count for the current VS repeat
     """
+
     print "SCORE COUNT FOR", subDir, ":", str(scoreCount)
 
 
@@ -125,13 +135,47 @@ def printSkipped(specs, skipCount):
     """
     # Print out the result
     keys = specs.keys()
+ 
     print
+    print "************************"
     print "THERE WERE", skipCount, "LIGANDS SKIPPED:"
     print
+
     for key in keys:
         print key
         print "MIN:{:>10} \t MAX:{:>10} \t COUNT:{:>10}".format(specs[key][0], specs[key][1], specs[key][2])
         #print key, "| MIN:", [0], ", MAX:", specs[key][1], ", COUNT:", specs[key][2]
+    print
+
+
+def printSlurmOuts(workDir):
+    """
+    Go through the repeats directories and print out their content,
+    they contain errors that might have occured
+    """
+
+    print "************************"
+    print "ERRORS?"
+    print
+
+    # Loop through the directories in this VS
+    for subDir in os.listdir(workDir):
+        # Check only repeat directories
+        if subDir.isdigit():
+            dirPath = os.path.join(workDir, subDir)
+
+            # Get all the *.ou files in this dir
+            slurmOutPaths = glob.glob(dirPath + "/*.out")
+
+            for slurmOutPath in slurmOutPaths:
+                slurmOutFile = open(slurmOutPath, "r")
+                slurmLines = slurmOutFile.readlines()
+                slurmOutFile.close()
+
+                if len(slurmLines) > 0:
+                    print slurmOutPath
+                    for line in slurmLines:
+                        print line
     print
 
 
