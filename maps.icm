@@ -1,20 +1,19 @@
-#!/vlsci/VR0024/tcoudrat/bin/icm-3.6-1h/icm 
+#!/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64
 
 call "_startup"
 
-#!/vlsci/VR0024/tcoudrat/bin/icm-3.6-1h/icm
-read pdb "aaaaa"
-convertObject a_* yes yes yes no
-dockUpdateGlobals "reseptor" -1
-moveMol Mol( a_1.res ) ""
-as_graph = Sphere( a_2. , !( Obj(as_graph) ) 5. )
-delete a_2. 
+openFile "VS_PROJECT.ob"
+
+# Get pocket
+icmPocketFinder Mol(a_*.//DD) & a_*.!H,W 4.6 no no
+# Create sphere around fist (best) pocket
+as_graph = Sphere( g_pocket1 a_VS_PROJECT. 2.5)
+
+# Setup docking project
 currentDockProj.data[8] = "yes"
 tempsel = as_graph
-dock2SetupReceptor "reseptor" a_ tempsel no "none"
-dock5CalcMaps "reseptor" 0.5 4.0 no 
-currentDockProj.data[1] = "reseptor"
-currentDockProj.data[2:9]= {"dock3DbScanSetup"}//String( yes )//String( yes )//"auto"// "mol2" // "cck1_18K_spiked.mol2" // "yes" //String( yes )
-dock3DbScanSetup currentDockProj.data[1] no yes "default"
-quit
+dock2SetupReceptor "VS_PROJECT" a_ tempsel no "none"
+dock5CalcMaps "VS_PROJECT" 0.5 4.0 no
+currentDockProj.data[1] = "VS_PROJECT"
 
+quit
