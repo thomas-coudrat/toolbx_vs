@@ -27,7 +27,7 @@ def main():
     ligDict = {}
 
     # Get arguments
-    knownIDfirst, knownIDlast = parseArguments()
+    knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast = parseArguments()
     # Get the results from those .ou files
     parseResults(ligDict)
 
@@ -37,7 +37,7 @@ def main():
     # Write the results in a .csv file
     vsResult = writeResultFile(ligDict, projName)
     # Write ROC curve data to .roc file
-    writeROCfile(vsResult, projName, knownIDfirst, knownIDlast)
+    writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast)
 
 
 def parseArguments():
@@ -45,17 +45,21 @@ def parseArguments():
     # Parsing description of arguments
     descr = "Extract VS results, write results and ROC data to file"
     descr_knownIDrange = "Provide the ID range of known actives lig lib (format: 1-514)"
+    descr_ommitIDrange = "Provide the ID range of ligands to ommit from the ROC curve data"
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("knownIDrange", help=descr_knownIDrange)
+    parser.add_argument("ommitIDrange", help=descr_ommitIDrange)
 
     # Parsing arguments
     args = parser.parse_args()
     knownIDrange = args.knownIDrange
     knownIDfirst, knownIDlast = knownIDrange.split("-")
+    ommitIDrange = args.ommitIDrange
+    ommitIDfirst, ommitIDlast = ommitIDrange.split("-")
 
-    return int(knownIDfirst), int(knownIDlast)
+    return int(knownIDfirst), int(knownIDlast), int(ommitIDfirst), int(ommitIDlast)
 
 
 def parseResults(ligDict):
@@ -186,7 +190,7 @@ def writeResultFile(ligDict, projName):
     return vsResult
 
 
-def writeROCfile(vsResult, projName, first, last):
+def writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast):
     """
     Given this VS result, and information about the ID of known actives in the library,
     write in a file the information to plot a ROC curve
@@ -194,26 +198,30 @@ def writeROCfile(vsResult, projName, first, last):
 
     X = 0
     Y = 0
-    #libSize = 0
-    firstLast = str(first) + "-" + str(last)
+    knowns = "knowns_" + str(knownIDfirst) + "-" + str(knownIDlast)
+    ommits = "ommits_" + str(ommitIDfirst) + "-" + str(ommitIDlast)
 
-    rocFileName = "roc_" + firstLast + "_" + projName + ".csv"
+    rocFileName = "roc_" + knowns + "_" + projName + ".csv"
     print "\t", rocFileName
     rocDataFile = open(rocFileName, "w")
 
     for ligInfo in vsResult:
         ligID = int(ligInfo[0])
-        # Update the libSize in order to get the full libSize
-        #if libSize < ligID:
-        #    libSize = ligID
-        # When the sorted ligID corresponds to a known, increase
-        # the value of Y by 1
-        if ligID in range(first, last + 1):
-            Y += 1
-        # For each ligand in the full VS, increase X and write
-        # the X,Y pair to the data file
-        X += 1
-        rocDataFile.write(str(X) + "," + str(Y) + "\n")
+
+        # Skip if ligID is part of the range that needs to be ommited
+        if ligID in range(ommitIDfirst, ommitIDlast + 1):
+            continue
+        # Otherwise proceed normally
+        else:
+            # When the sorted ligID corresponds to a known, increase
+            # the value of Y by 1
+            if ligID in range(knownIDfirst, knownIDlast + 1):
+                Y += 1
+
+            # For each ligand in the full VS, increase X and write
+            # the X,Y pair to the data file
+            X += 1
+            rocDataFile.write(str(X) + "," + str(Y) + "\n")
 
     rocDataFile.close()
 
