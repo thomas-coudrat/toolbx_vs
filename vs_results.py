@@ -201,7 +201,7 @@ def writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst, om
     knowns = "knowns_" + str(knownIDfirst) + "-" + str(knownIDlast)
     ommits = "ommits_" + str(ommitIDfirst) + "-" + str(ommitIDlast)
 
-    rocFileName = "roc_" + knowns + "_" + projName + ".csv"
+    rocFileName = "roc_" + knowns + "_" + ommits + "_" + projName + ".csv"
     print "\t", rocFileName
     rocDataFile = open(rocFileName, "w")
 
