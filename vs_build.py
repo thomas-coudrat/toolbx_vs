@@ -167,6 +167,10 @@ def printParams(setupDir, reportLines):
 
 
 def createRepeats(repeatNum, setupDir, reportLines):
+    """
+    Copy the content of the setup directory to however many
+    repeat directories wanted by the user
+    """
 
     # Get files in setupDir
     filePaths = glob.glob(setupDir + "/*")
@@ -192,17 +196,21 @@ def createRepeats(repeatNum, setupDir, reportLines):
 
 
 def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName, reportLines):
+    """
+    Create the .slurm slices to split the VS job into portions for submission
+    to the cluster
+    """
     repeat = 1
     # Loop over repeat directories
     while repeat <= repeatNum:
 
         # Initialize variables for this repeat
-
         repeatDir = os.getcwd() + "/" + str(repeat) + "/"
         upperLimit = 0
         sliceCount = 0
         exit = False
 
+        # Update the report
         reportLines.append("\n")
         reportLines.append("REPEAT:" + repeatDir + "\n")
 
@@ -214,7 +222,8 @@ def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName, report
             upperLimit += sliceSize
             sliceCount += 1
 
-            # Exit statement of the loop, when
+            # Exit statement of the loop, when upperLimit has reached the
+            # size of the ligand library
             if upperLimit > libSize:
                 upperLimit = libSize
                 exit = True
@@ -249,6 +258,7 @@ def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName, report
             # Exit statement when end of the library is reached
             if exit:
                 break
+
 
         # Update the repeat number
         repeat += 1
