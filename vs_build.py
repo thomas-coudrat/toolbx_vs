@@ -61,7 +61,7 @@ def main():
     reportLines.append("\n***********************\n")
 
     # Create the .slurm slices
-    reportLines = createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName, reportLines)
+    slicesLines = createSlices(libSize, sliceSize, walltime, thor, projName, repeatNum, reportLines)
 
     reportLines.append("\n")
 
@@ -195,43 +195,45 @@ def createRepeats(repeatNum, setupDir, reportLines):
     return reportLines
 
 
-def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName, reportLines):
+def createSlices(libSize, sliceSize, walltime, thor, projName, repeatNum, reportLines):
     """
     Create the .slurm slices to split the VS job into portions for submission
     to the cluster
     """
+
     repeat = 1
+
     # Loop over repeat directories
     while repeat <= repeatNum:
 
         # Initialize variables for this repeat
         repeatDir = os.getcwd() + "/" + str(repeat) + "/"
-        upperLimit = 0
-        sliceCount = 0
-        exit = False
-
         # Update the report
         reportLines.append("\n")
         reportLines.append("REPEAT:" + repeatDir + "\n")
 
-        # Loop over the slices
-        while True:
 
-            # Update upperLimit and sliceCount
-            lowerLimit = upperLimit + 1
-            upperLimit += sliceSize
-            sliceCount += 1
+        # Initialize variables for the first slice
+        lowerLimit = 1
+        upperLimit = sliceSize
+        sliceCount = 1
+        keepLooping = True
+
+        # Loop over the slices
+        while keepLooping:
 
             # Exit statement of the loop, when upperLimit has reached the
             # size of the ligand library
-            if upperLimit > libSize:
+            if upperLimit >= libSize:
                 upperLimit = libSize
-                exit = True
+                # Once the end of the libSize has been reached, stop the next
+                # loop
+                keepLooping = False
 
             # Create sliceName for job name and slurm file name
             sliceName = projName + "_rep" + str(repeat) + "_sl" + str(upperLimit)
 
-            # Content of the slurm file to be created
+            # CREATE SLURM LINES
             lines = []
             lines.append("#!/bin/bash")
             lines.append("#SBATCH -p main")
@@ -247,18 +249,19 @@ def createSlices(libSize, sliceSize, repeatNum, walltime, thor, projName, report
                 " to=" + str(upperLimit) +
                 " >& " + projName + "_" + str(upperLimit) + ".ou")
 
-            # Create the slurm file in current repeat directory
+            # WRITE SLURM LINES TO FILE
             slurmFile = open(repeatDir + sliceName + ".slurm", "w")
             for line in lines:
                 slurmFile.write(line + "\n")
             slurmFile.close()
 
+            # Update report
             reportLines.append("\t SLICE:" + sliceName + ".slurm")
 
-            # Exit statement when end of the library is reached
-            if exit:
-                break
-
+            # Update upperLimit and sliceCount
+            lowerLimit += sliceSize
+            upperLimit += sliceSize
+            sliceCount += 1
 
         # Update the repeat number
         repeat += 1
@@ -279,6 +282,7 @@ def printWriteReport(reportLines, workDir, projName):
         reportFile.write(line + "\n")
 
     reportFile.close()
+
 
 if  __name__ == "__main__":
     main()
