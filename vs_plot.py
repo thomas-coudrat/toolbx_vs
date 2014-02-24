@@ -45,13 +45,6 @@ def plot(title, rocPaths, gui, mode):
 
     plt.figure()
 
-    # Pick the numbers corresponding to the mode selected
-    if mode == "number":
-        a = 0
-        b = 1
-    elif mode == "percent":
-        a = 2
-        b = 3
 
     for rocPath in rocPaths:
         rocFile = open(rocPath, "r")
@@ -63,8 +56,13 @@ def plot(title, rocPaths, gui, mode):
         rocName = os.path.basename(rocPath).replace(".csv", "")
         for line in rocLines:
             ll = line.split(",")
-            X.append(float(ll[a]))
-            Y.append(float(ll[b]))
+            # Pick the numbers corresponding to the mode selected
+            if mode == "number":
+                X.append(int(ll[0]))
+                Y.append(int(ll[1]))
+            elif mode == "percent":
+                X.append(float(ll[2]))
+                Y.append(float(ll[3]))
 
         plt.plot(X, Y, label=rocName)
 
