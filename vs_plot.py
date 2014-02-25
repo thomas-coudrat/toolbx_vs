@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from matplotlib import pyplot as plt
-from matplotlib.ticker import FormatStrFormatter
 import argparse
 import os
 
@@ -62,13 +61,13 @@ def plot(title, rocPaths, gui, log, mode):
         totalLib = int(rocLines[-1].split(",")[0])
         totalKnown = int(rocLines[-1].split(",")[1])
         # Define increment to plot an average curve
-        randomIncr = totalKnown / float(totalLib)
+        #perfectIncr = totalKnown / float(totalLib)
 
         # Write this curve based on the data contained in the ROC data file
         X = []
         Y = []
-        random = []
-        randomVal = 0
+        perfect = []
+        val = 0
         rocName = os.path.basename(rocPath).replace(".csv", "")
         for line in rocLines:
             ll = line.split(",")
@@ -81,26 +80,29 @@ def plot(title, rocPaths, gui, log, mode):
                 # Create the data curve
                 X.append(float(ll[2]))
                 Y.append(float(ll[3]))
-                # Create the random curve
-                #randomVal += 1
-                #random.append(randomVal)
-                #print randomVal
 
-            # Create the random curve
-            randomVal += randomIncr
-            random.append(randomVal)
+            # Create the perfect curve
+            if val < totalKnown:
+                val += 1
+            perfect.append((val * 100.0) / totalKnown)
 
+        # Plot this curve
         plt.plot(X, Y, label=rocName.replace("_", " "),
                  linewidth=2, color=colors[i])
-        plt.plot(X, X, "--", color="grey")
 
-    plt.xlabel("Total count (" + str(totalLib) + ")", fontsize=16)
-    plt.ylabel("True positive count (" + str(totalKnown) + ")", fontsize=16)
+    # Now plot random and perfect curves, common for all plotted curves
+    plt.plot(X, X, "--", color="grey")
+    plt.plot(X, perfect, color="grey")
+
+    plt.xlabel("% of ranked database (total=" + str(totalLib) + ")",
+               fontsize=16)
+    plt.ylabel("% of known ligands found (total=" + str(totalKnown) + ")",
+               fontsize=16)
     plt.minorticks_on()
     if log:
         plt.xscale("log")
-        ax.xaxis.set_major_formatter(FormatStrFormatter("%d"))
-    #plt.xticks([0.1, 1, 10, 100])
+        plt.xticks([0.1, 1, 10, 100])
+        ax.set_xticklabels([0.1, 1, 10, 100])
     plt.title(title, fontsize=18)
     plt.legend(loc="upper left", prop={'size': 12})
     plt.axis('tight')
