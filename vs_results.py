@@ -15,6 +15,7 @@ import glob
 import os
 import argparse
 
+
 def main():
 
     # Get project name
@@ -37,15 +38,18 @@ def main():
     # Write the results in a .csv file
     vsResult = writeResultFile(ligDict, projName)
     # Write ROC curve data to .roc file
-    writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast)
+    writeROCfile(vsResult, projName, knownIDfirst,
+                 knownIDlast, ommitIDfirst, ommitIDlast)
 
 
 def parseArguments():
 
     # Parsing description of arguments
     descr = "Extract VS results, write results and ROC data to file"
-    descr_knownIDrange = "Provide the ID range of known actives lig lib (format: 1-514)"
-    descr_ommitIDrange = "Provide the ID range of ligands to ommit from the ROC curve data"
+    descr_knownIDrange = "Provide the ID range of known actives lig" \
+                         "lib (format: 1-514)"
+    descr_ommitIDrange = "Provide the ID range of ligands to ommit " \
+                         "from the ROC curve data"
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
@@ -59,7 +63,8 @@ def parseArguments():
     ommitIDrange = args.ommitIDrange
     ommitIDfirst, ommitIDlast = ommitIDrange.split("-")
 
-    return int(knownIDfirst), int(knownIDlast), int(ommitIDfirst), int(ommitIDlast)
+    return int(knownIDfirst), int(knownIDlast), int(ommitIDfirst), \
+        int(ommitIDlast)
 
 
 def parseResults(ligDict):
@@ -176,10 +181,11 @@ def writeResultFile(ligDict, projName):
     print
 
     # Write result file
-    print "\tresults_" + projName  + ".csv"
+    print "\tresults_" + projName + ".csv"
 
-    fileResult = open("results_" + projName  + ".csv", "w")
-    fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf,dEel,dEhp,Score,mfScore,Name,Run#\n")
+    fileResult = open("results_" + projName + ".csv", "w")
+    fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf" +
+                     ",dEel,dEhp,Score,mfScore,Name,Run#\n")
 
     for ligInfo in vsResult:
         for val in ligInfo:
@@ -190,10 +196,11 @@ def writeResultFile(ligDict, projName):
     return vsResult
 
 
-def writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast):
+def writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst,
+                 ommitIDlast):
     """
-    Given this VS result, and information about the ID of known actives in the library,
-    write in a file the information to plot a ROC curve
+    Given this VS result, and information about the ID of known actives
+    in the library, write in a file the information to plot a ROC curve
     """
 
     X = 0
@@ -201,9 +208,17 @@ def writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst, om
     knowns = "knowns_" + str(knownIDfirst) + "-" + str(knownIDlast)
     ommits = "ommits_" + str(ommitIDfirst) + "-" + str(ommitIDlast)
 
+    # Create filename
     rocFileName = "roc_" + knowns + "_" + ommits + "_" + projName + ".csv"
     print "\t", rocFileName
     rocDataFile = open(rocFileName, "w")
+
+    # Get the total knowns and total library to calculate percentages
+    totalKnowns = knownIDlast - knownIDfirst + 1
+    totalLibrary = len(vsResult) - (ommitIDlast - ommitIDfirst + 1)
+
+    print totalKnowns
+    print totalLibrary - totalKnowns
 
     for ligInfo in vsResult:
         ligID = int(ligInfo[0])
@@ -221,7 +236,12 @@ def writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst, om
             # For each ligand in the full VS, increase X and write
             # the X,Y pair to the data file
             X += 1
-            rocDataFile.write(str(X) + "," + str(Y) + "\n")
+
+            # Calculate percentage X and Y
+            Xpercent = (X * 100.0) / totalLibrary
+            Ypercent = (Y * 100.0) / totalKnowns
+            rocDataFile.write(str(X) + "," + str(Y) + "," +
+                              str(Xpercent) + "," + str(Ypercent) + "\n")
 
     rocDataFile.close()
 
