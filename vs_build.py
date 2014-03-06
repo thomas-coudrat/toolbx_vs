@@ -262,7 +262,7 @@ def slurmSlice(walltime, sliceName, projName, thor,
     Create a slurm slice and write to a file with the info provided
     """
     lines = []
-    lines.append("#!/bin/bash"
+    lines.append("#!/bin/bash")
     lines.append("#SBATCH -p main")
     lines.append("#SBATCH --ntasks=1")
     lines.append("#SBATCH --mem-per-cpu=1024")
@@ -298,7 +298,6 @@ def pbsSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
     lines.append("#$ -S /bin/sh")
     lines.append("#$ -l h_rt=" + walltime)
     lines.append("#$ -l h_vmem=1G")
-    lines.append("#$ -pe long 1")
     lines.append("#$ -q hqu9")
     lines.append("#$ -l dpod=1")
     lines.append("#$ -cwd")
