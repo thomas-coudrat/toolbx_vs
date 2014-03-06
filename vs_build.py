@@ -30,7 +30,8 @@ def main():
     thor = args.thor
     # Project info
     setupDir = args.setupDir
-    projName = glob.glob(setupDir + "/*.dtb")[0].replace(".dtb", "").split("/")[1]
+    dtbFileName = glob.glob(setupDir + "/*.dtb")[0]
+    projName = dtbFileName.replace(".dtb", "").split("/")[1]
 
     # Store all the report lines in this file, will be used for printout
     # and to write to file
@@ -61,7 +62,8 @@ def main():
     reportLines.append("\n***********************\n")
 
     # Create the .slurm slices
-    slicesLines = createSlices(libSize, sliceSize, walltime, thor, projName, repeatNum, reportLines)
+    reportLines = createSlices(libSize, sliceSize, walltime, thor,
+                               projName, repeatNum, reportLines)
 
     reportLines.append("\n")
 
@@ -151,16 +153,17 @@ def printParams(setupDir, reportLines):
     dtbLines = dtbFile.readlines()
     dtbFile.close()
 
-    regEx = "maxHdonors|maxLigSize|maxNO|maxTorsion|ringFlexLevel|sampleRacemic"\
-            "|scoreThreshold|maxPk|minPk|chargeGroups|dbIndex|dbType"
+    regEx = "maxHdonors|maxLigSize|maxNO|maxTorsion|ringFlexLevel|" \
+            "sampleRacemic|scoreThreshold|maxPk|minPk|chargeGroups|" \
+            "dbIndex|dbType"
 
-    lineNumber=0
+    lineNumber = 0
     for line in dtbLines:
         if re.search(regEx, line):
             param = dtbLines[lineNumber].strip()
             val = dtbLines[lineNumber + 1].strip()
             reportLines.append("\t" + param + " : " + val)
-        lineNumber +=1
+        lineNumber += 1
     reportLines.append("\n")
 
     return reportLines
@@ -195,7 +198,8 @@ def createRepeats(repeatNum, setupDir, reportLines):
     return reportLines
 
 
-def createSlices(libSize, sliceSize, walltime, thor, projName, repeatNum, reportLines):
+def createSlices(libSize, sliceSize, walltime, thor, projName,
+                 repeatNum, reportLines):
     """
     Create the .slurm slices to split the VS job into portions for submission
     to the cluster
@@ -211,7 +215,6 @@ def createSlices(libSize, sliceSize, walltime, thor, projName, repeatNum, report
         # Update the report
         reportLines.append("\n")
         reportLines.append("REPEAT:" + repeatDir + "\n")
-
 
         # Initialize variables for the first slice
         lowerLimit = 1
@@ -231,32 +234,13 @@ def createSlices(libSize, sliceSize, walltime, thor, projName, repeatNum, report
                 keepLooping = False
 
             # Create sliceName for job name and slurm file name
-            sliceName = projName + "_rep" + str(repeat) + "_sl" + str(upperLimit)
+            sliceName = projName + "_rep" + str(repeat) + \
+                "_sl" + str(upperLimit)
 
-            # CREATE SLURM LINES
-            lines = []
-            lines.append("#!/bin/bash")
-            lines.append("#SBATCH -p main")
-            lines.append("#SBATCH --ntasks=1")
-            lines.append("#SBATCH --mem-per-cpu=1024")
-            lines.append("#SBATCH --time=" + walltime)
-            lines.append("#SBATCH --job-name=" + sliceName)
-            lines.append("")
-            lines.append("ICMHOME=/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b")
-            lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
-                " thorough=" + thor +
-                " from=" + str(lowerLimit) +
-                " to=" + str(upperLimit) +
-                " >& " + projName + "_" + str(upperLimit) + ".ou")
-
-            # WRITE SLURM LINES TO FILE
-            slurmFile = open(repeatDir + sliceName + ".slurm", "w")
-            for line in lines:
-                slurmFile.write(line + "\n")
-            slurmFile.close()
-
-            # Update report
-            reportLines.append("\t SLICE:" + sliceName + ".slurm")
+            # Create a slurm slice
+            reportLines = slurmSlice(walltime, sliceName, projName, thor,
+                                     lowerLimit, upperLimit, repeatDir,
+                                     reportLines)
 
             # Update upperLimit and sliceCount
             lowerLimit += sliceSize
@@ -269,10 +253,42 @@ def createSlices(libSize, sliceSize, walltime, thor, projName, repeatNum, report
     return reportLines
 
 
+def slurmSlice(walltime, sliceName, projName, thor,
+               lowerLimit, upperLimit, repeatDir, reportLines):
+    """
+    Create a slurm slice and write to a file with the info provided
+    """
+    lines = []
+    lines.append("#!/bin/bash")
+    lines.append("#SBATCH -p main")
+    lines.append("#SBATCH --ntasks=1")
+    lines.append("#SBATCH --mem-per-cpu=1024")
+    lines.append("#SBATCH --time=" + walltime)
+    lines.append("#SBATCH --job-name=" + sliceName)
+    lines.append("")
+    lines.append("ICMHOME=/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b")
+    lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
+                 " thorough=" + thor +
+                 " from=" + str(lowerLimit) +
+                 " to=" + str(upperLimit) +
+                 " >& " + projName + "_" + str(upperLimit) + ".ou")
+
+    # WRITE SLURM LINES TO FILE
+    slurmFile = open(repeatDir + sliceName + ".slurm", "w")
+    for line in lines:
+        slurmFile.write(line + "\n")
+    slurmFile.close()
+
+    # Update report
+    reportLines.append("\t SLICE:" + sliceName + ".slurm")
+
+    return reportLines
+
+
 def printWriteReport(reportLines, workDir, projName):
     """
-    Go through the report lines and print them to standard output and write them to
-    a text file for future ref
+    Go through the report lines and print them to standard output and
+    write them to a text file for future ref
     """
 
     reportFile = open(workDir + "/" + projName + ".log", "w")
@@ -284,5 +300,5 @@ def printWriteReport(reportLines, workDir, projName):
     reportFile.close()
 
 
-if  __name__ == "__main__":
+if __name__ == "__main__":
     main()
