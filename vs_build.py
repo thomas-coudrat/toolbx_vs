@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-#--------------------------------------------------------
+#-------------------------------------------------------------
 #
-# Create .slurm files to slice a VS into several equal
+# Create .slurm or .pbs files to slice a VS into several equal
 # portions, for parallelisation
 #
 # Thomas Coudrat, February 2014
 #
-#--------------------------------------------------------
+#-------------------------------------------------------------
 
 import os
 import argparse
@@ -15,23 +15,27 @@ import glob
 import shutil
 import re
 import sys
-
+import socket
 
 def main():
-    # Getting all the args
-    args = parsing()
+    """
+    Run the following script
+    """
 
-    # Library params
-    libSize = int(args.libSize)
-    sliceSize = int(args.sliceSize)
-    repeatNum = int(args.repeatNum)
-    # VS params
-    walltime = args.walltime
-    thor = args.thor
-    # Project info
-    setupDir = args.setupDir
-    dtbFileName = glob.glob(setupDir + "/*.dtb")[0]
-    projName = dtbFileName.replace(".dtb", "").split("/")[1]
+    # Getting all the args
+    libSize, sliceSize, repeatNum, walltime, thor, setupDir, projName, pbs, slurm = parsing()
+
+    # Check if a queuing system was chosen
+    if not pbs and not slurm:
+        print "A queuing system -pbs or -slurm must be chosen"
+        sys.exit()
+    elif pbs and slurm:
+        print "Only one of -pbs or -slurm option must be chosen"
+        sys.exit()
+    elif pbs:
+        queue = "pbs"
+    elif slurm:
+        queue = "slurm"
 
     # Store all the report lines in this file, will be used for printout
     # and to write to file
@@ -63,7 +67,7 @@ def main():
 
     # Create the .slurm slices
     reportLines = createSlices(libSize, sliceSize, walltime, thor,
-                               projName, repeatNum, reportLines)
+                               projName, repeatNum, queue, reportLines)
 
     reportLines.append("\n")
 
@@ -72,6 +76,10 @@ def main():
 
 
 def parsing():
+    """
+    Defining the arguments and parsing them
+    """
+
     # Parsing descriptions for arguments
     descr = "Slices a VS scripts into portions of library for slurm submission"
     descr_libSize = "Size of the full library"
@@ -80,6 +88,8 @@ def parsing():
     descr_walltime = "Walltime for a single slice (format: 1-24:00:00)"
     descr_thor = "Thoroughness of the docking (format: 5.)"
     descr_setupDir = "Name of the directory containing setup files"
+    descr_slurm = "Use this flag to create files for the SLURM queuing system (Barcoo)"
+    descr_pbs = "Use this flag to create files for the PBS queuing system (MCC)"
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
@@ -89,11 +99,29 @@ def parsing():
     parser.add_argument("walltime", help=descr_walltime)
     parser.add_argument("thor", help=descr_thor)
     parser.add_argument("setupDir", help=descr_setupDir)
+    parser.add_argument("-slurm", action="store_true", help=descr_slurm)
+    parser.add_argument("-pbs", action="store_true", help=descr_pbs)
 
     # Parsing and storing into variables
     args = parser.parse_args()
 
-    return args
+    # Library params
+    libSize = int(args.libSize)
+    sliceSize = int(args.sliceSize)
+    repeatNum = int(args.repeatNum)
+    # VS params
+    walltime = args.walltime
+    thor = args.thor
+    # Project info
+    setupDir = args.setupDir
+    dtbFileName = glob.glob(setupDir + "/*.dtb")[0]
+    projName = dtbFileName.replace(".dtb", "").split("/")[1]
+    # Queuing system
+    pbs = args.pbs
+    slurm = args.slurm
+
+    return libSize, sliceSize, repeatNum, walltime, thor, setupDir, \
+        projName, pbs, slurm
 
 
 def cleanVSdir(workDir):
@@ -199,7 +227,7 @@ def createRepeats(repeatNum, setupDir, reportLines):
 
 
 def createSlices(libSize, sliceSize, walltime, thor, projName,
-                 repeatNum, reportLines):
+                 repeatNum, queue, reportLines):
     """
     Create the .slurm slices to split the VS job into portions for submission
     to the cluster
@@ -237,13 +265,16 @@ def createSlices(libSize, sliceSize, walltime, thor, projName,
             sliceName = projName + "_rep" + str(repeat) + \
                 "_sl" + str(upperLimit)
 
-            # Create a slurm slice
-            #reportLines = slurmSlice(walltime, sliceName, projName, thor,
-            #                         lowerLimit, upperLimit, repeatDir,
-            #                         reportLines)
-            reportLines = pbsSlice(walltime, sliceName, projName, thor,
-                                   lowerLimit, upperLimit, repeatDir,
-                                   reportLines)
+            # Create a slice, check for submission system, run the appropriate
+            # command
+            if queue == "slurm":
+                reportLines = slurmSlice(walltime, sliceName, projName, thor,
+                                         lowerLimit, upperLimit, repeatDir,
+                                         reportLines)
+            elif queue == "pbs":
+                reportLines = pbsSlice(walltime, sliceName, projName, thor,
+                                       lowerLimit, upperLimit, repeatDir,
+                                       reportLines)
 
             # Update upperLimit and sliceCount
             lowerLimit += sliceSize
