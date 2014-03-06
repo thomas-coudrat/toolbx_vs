@@ -238,9 +238,12 @@ def createSlices(libSize, sliceSize, walltime, thor, projName,
                 "_sl" + str(upperLimit)
 
             # Create a slurm slice
-            reportLines = slurmSlice(walltime, sliceName, projName, thor,
-                                     lowerLimit, upperLimit, repeatDir,
-                                     reportLines)
+            #reportLines = slurmSlice(walltime, sliceName, projName, thor,
+            #                         lowerLimit, upperLimit, repeatDir,
+            #                         reportLines)
+            reportLines = pbsSlice(walltime, sliceName, projName, thor,
+                                   lowerLimit, upperLimit, repeatDir,
+                                   reportLines)
 
             # Update upperLimit and sliceCount
             lowerLimit += sliceSize
@@ -259,7 +262,7 @@ def slurmSlice(walltime, sliceName, projName, thor,
     Create a slurm slice and write to a file with the info provided
     """
     lines = []
-    lines.append("#!/bin/bash")
+    lines.append("#!/bin/bash"
     lines.append("#SBATCH -p main")
     lines.append("#SBATCH --ntasks=1")
     lines.append("#SBATCH --mem-per-cpu=1024")
@@ -281,6 +284,41 @@ def slurmSlice(walltime, sliceName, projName, thor,
 
     # Update report
     reportLines.append("\t SLICE:" + sliceName + ".slurm")
+
+    return reportLines
+
+
+def pbsSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
+             repeatDir, reportLines):
+    """
+    Create a pbs slice given the info provided
+    """
+    lines = []
+    lines.append("#!/bin/sh")
+    lines.append("#$ -S /bin/sh")
+    lines.append("#$ -l h_rt=" + walltime)
+    lines.append("#$ -l h_vmem=1G")
+    lines.append("#$ -pe long 1")
+    lines.append("#$ -q hqu9")
+    lines.append("#$ -l dpod=1")
+    lines.append("#$ -cwd")
+    lines.append("#$ -N " + sliceName)
+    lines.append("")
+    lines.append("ICMHOME=/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/")
+    lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
+                 " thorough=" + thor +
+                 " from=" + str(lowerLimit) +
+                 " to=" + str(upperLimit) +
+                 " >& " + projName + "_" + str(upperLimit) + ".ou")
+
+    # WRITE SLURM LINES TO FILE
+    slurmFile = open(repeatDir + sliceName + ".pbs", "w")
+    for line in lines:
+        slurmFile.write(line + "\n")
+    slurmFile.close()
+
+    # Update report
+    reportLines.append("\t SLICE:" + sliceName + ".pbs")
 
     return reportLines
 
