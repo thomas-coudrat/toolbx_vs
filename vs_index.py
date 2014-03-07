@@ -45,6 +45,8 @@ def setPaths():
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
     scriptDesktop = "/home/thomas/Copy/Tools/vs_scripts/index.icm"
     icmDesktop = "/usr/icm-3.7-3b/icm64"
+    scriptMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/index.icm"
+    icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
 
     # Select the proper scripts
     if os.path.exists(scriptVlsci):
@@ -53,6 +55,9 @@ def setPaths():
     elif os.path.exists(scriptDesktop):
         script = scriptDesktop
         icm = icmDesktop
+    elif os.path.exists(scriptMcc):
+        script = scriptMcc
+        icm = icmMcc
     else:
         print "Script or icm executable not found"
         sys.exit()

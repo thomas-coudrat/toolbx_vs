@@ -53,8 +53,10 @@ def setPaths():
     # Path to the .icm script
     scriptVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/maps.icm"
     scriptDesktop = "/home/thomas/Copy/Tools/vs_scripts/maps.icm"
+    scriptMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/maps.icm"
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
     icmDesktop = "/usr/icm-3.7-3b/icm64"
+    icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
 
     # Select the right path, depending on the platform where this is executed
     if os.path.exists(scriptVlsci):
@@ -63,6 +65,9 @@ def setPaths():
     elif os.path.exists(scriptDesktop):
         script = scriptDesktop
         icm = icmDesktop
+    elif os.path.exists(scriptMcc):
+        script = scriptMcc
+        icm = icmMcc
     else:
         print "maps.icm script or icm executable not found"
         sys.exit()
