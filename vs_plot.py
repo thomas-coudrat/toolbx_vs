@@ -57,7 +57,7 @@ def plot(title, rocPaths, rocLegends, gui, log, mode):
 
     fig = plt.figure(figsize=(13, 12), dpi=100)
     ax = fig.add_subplot(111)
-    colors = ["#E82F3B", "#3340FF", "#2E2E33"]
+    #colors = ["#E82F3B", "#3340FF", "#2E2E33"]
 
     for i, (rocPath, rocLegend) in enumerate(zip(rocPaths, rocLegends)):
         # Read the ROC data file
@@ -96,7 +96,7 @@ def plot(title, rocPaths, rocLegends, gui, log, mode):
 
         # Plot this curve
         plt.plot(X, Y, label=rocLegend,
-                 linewidth=2, color=colors[i])
+                 linewidth=2)   # , color=colors[i])
 
     # Now plot random and perfect curves, common for all plotted curves
     plt.plot(X, X, "--", color="grey")
