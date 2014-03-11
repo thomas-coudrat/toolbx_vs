@@ -25,10 +25,10 @@ def main():
     icm, script = setPaths()
 
     # Get the arguments
-    obPath, inxPath = parseArgs()
+    obPath, inxPath, pocket = parseArgs()
 
     # Running the .icm script
-    runScript(icm, script, obPath)
+    runScript(icm, script, obPath, pocket)
 
     # Set of calls to modify the .dtb file
     modifyDtb("i_maxHdonor", "  15", obPath)
@@ -81,15 +81,25 @@ def parseArgs():
                    "for the VS"
     descr_inxPath = "Provide the path to the .inx index to the ligand " \
                     "to be used for this VS"
+    descr_pocket = "Define the pocket number to use (determined by " \
+                   "ICMpocket finder). Default is pocket #1."
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("obPath", help=descr_obPath)
     parser.add_argument("inxPath", help=descr_inxPath)
+    parser.add_argument("--pocket", help=descr_pocket)
+
     args = parser.parse_args()
 
-    return args.obPath, args.inxPath
+    # Deal with presence of absence of the argument pocket
+    if args.pocket:
+        pocket = args.pocket
+    else:
+        pocket = "1"
+
+    return args.obPath, args.inxPath, pocket
 
 
-def runScript(icm, script, obPath):
+def runScript(icm, script, obPath, pocket):
     """
     Copy a temp copy of the .icm script, modify it, and run it
     """
@@ -99,6 +109,7 @@ def runScript(icm, script, obPath):
     shutil.copy(script, "./temp.icm")
     # Modify
     os.system("sed -e 's|VS_PROJECT|" + projName + "|g' ./temp.icm -i")
+    os.system("sed -e 's|POCKET_NUM|" + pocket + "|g' ./temp.icm -i")
     # Execute
     try:
         check_output(icm + " -s ./temp.icm", stderr=STDOUT, shell=True)
