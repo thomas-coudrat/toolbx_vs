@@ -4,10 +4,10 @@ call "_startup"
 
 openFile "VS_PROJECT.ob"
 
-# Get pocket
-icmPocketFinder Mol(a_*.//DD) & a_*.!H,W 4.6 no no
-# Create sphere around fist (best) pocket
-as_graph = Sphere( g_pocketPOCKET_NUM a_VS_PROJECT. 2.5)
+# Create sphere around the bound ligand
+as_graph = Sphere( a_VS_PROJECT.2 , ( ! a_VS_PROJECT.2 ) & Obj( a_VS_PROJECT.2) 4. )
+# Delete the ligand
+delete a_VS_PROJECT.2
 
 # Setup docking project
 currentDockProj.data[8] = "yes"

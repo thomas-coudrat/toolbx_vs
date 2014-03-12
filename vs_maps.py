@@ -164,7 +164,20 @@ def runLigScript(icm, ligScript, obPath):
     """
     This modifies and runs the script creating the maps around the bound ligand
     """
-    pass
+    projName = obPath.replace(".ob", "")
+
+    # Copy
+    shutil.copy(ligScript, "./temp.icm")
+    # Modify
+    os.system("sed -e 's|VS_PROJECT|" + projName + "|g' ./temp.icm -i")
+    # Execute
+    try:
+        check_output(icm + " -s ./temp.icm", stderr=STDOUT, shell=True)
+    except CalledProcessError, e:
+        print e.output
+        sys.exit()
+    # Delete temp script
+    os.remove("./temp.icm")
 
 
 def modifyDtb(keyword, value, obPath):
