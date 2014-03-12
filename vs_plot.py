@@ -6,22 +6,23 @@ import argparse
 
 def main():
 
-    gui, log, title, rocData = parseArgs()
+    title, roc, zoom, log, gui = parseArgs()
 
     # Extrac the ROC paths and legends from the rocData
     rocPaths = []
     rocLegends = []
     i = 0
-    while i < len(rocData):
-        rocLegends.append(rocData[i])
-        rocPaths.append(rocData[i + 1])
+    while i < len(roc):
+        rocLegends.append(roc[i])
+        rocPaths.append(roc[i + 1])
         i += 2
 
-    # Plot the values 0 and 1, which correspond to X and Y numbers
-    #plot(title, rocPaths, rocLegends, gui, log, "number")
-
+    # Extract the data from the ROC files
+    rocData, perfect, totalLib, totalKnown, xLim, yLim = getData(rocPaths,
+                                                                 rocLegends,
+                                                                 zoom)
     # Plot the values 2 and 3, which correspond to the percentage X and Y
-    plot(title, rocPaths, rocLegends, gui, log, "percent")
+    plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown, gui, log)
 
 
 def parseArgs():
@@ -30,36 +31,43 @@ def parseArgs():
     """
 
     descr = "Feed rocData (however many files), plots ROC curves"
-    descr_gui = "Use this flag to display plot: saves to .png by the default"
-    descr_log = "Draw this plot on a log scale for the X axis"
     descr_title = "Provide a title for the graph, also used as filename"
-    descr_rocData = "Provide rocDataFiles and legend titles for each curve:" \
+    descr_roc = "Provide rocDataFiles and legend titles for each curve:" \
         " 'legend1!' data1.csv 'legend2?' data2.csv 'legend4!!' data4.csv"
+    descr_zoom = "Give the % of ranked database to be displayed in the " \
+        "zoomed subplot"
+    descr_log = "Draw this plot on a log scale for the X axis"
+    descr_gui = "Use this flag to display plot: saves to .png by the default"
     parser = argparse.ArgumentParser(description=descr)
-    parser.add_argument("-gui", action="store_true", help=descr_gui)
-    parser.add_argument("-log", action="store_true", help=descr_log)
     parser.add_argument("title", help=descr_title)
-    parser.add_argument("rocData", help=descr_rocData, nargs="+")
+    parser.add_argument("roc", help=descr_roc, nargs="+")
+    parser.add_argument("zoom", help=descr_zoom)
+    parser.add_argument("-log", action="store_true", help=descr_log)
+    parser.add_argument("-gui", action="store_true", help=descr_gui)
 
     args = parser.parse_args()
-    gui = args.gui
-    log = args.log
+
     title = args.title
-    rocData = args.rocData
+    roc = args.roc
+    zoom = float(args.zoom)
+    log = args.log
+    gui = args.gui
 
-    return gui, log, title, rocData
+    return title, roc, zoom, log, gui
 
 
-def plot(title, rocPaths, rocLegends, gui, log, mode):
+def getData(rocPaths, rocLegends, zoom):
     """
-    Plot the data provided as argument, to draw ROC curves
+    Read the ROC data files, return the data for plotting
     """
 
-    fig = plt.figure(figsize=(13, 12), dpi=100)
-    ax = fig.add_subplot(111)
-    #colors = ["#E82F3B", "#3340FF", "#2E2E33"]
+    # Variables that define the x and y limites for the zoomed in subplot
+    xLim = 0.0
+    yLim = 0.0
 
-    for i, (rocPath, rocLegend) in enumerate(zip(rocPaths, rocLegends)):
+    rocData = []
+
+    for rocPath, rocLegend in zip(rocPaths, rocLegends):
         # Read the ROC data file
         rocFile = open(rocPath, "r")
         rocLines = rocFile.readlines()
@@ -69,56 +77,88 @@ def plot(title, rocPaths, rocLegends, gui, log, mode):
         # from the last line of the ROC data
         totalLib = int(rocLines[-1].split(",")[0])
         totalKnown = int(rocLines[-1].split(",")[1])
-        # Define increment to plot an average curve
-        #perfectIncr = totalKnown / float(totalLib)
 
-        # Write this curve based on the data contained in the ROC data file
         X = []
         Y = []
         perfect = []
         val = 0
         for line in rocLines:
+            # Get the data from the file
             ll = line.split(",")
-            # Pick the numbers corresponding to the mode selected
-            if mode == "number":
-                # Create the data curve
-                X.append(int(ll[0]))
-                Y.append(int(ll[1]))
-            elif mode == "percent":
-                # Create the data curve
-                X.append(float(ll[2]))
-                Y.append(float(ll[3]))
+            xPercent = float(ll[2])
+            yPercent = float(ll[3])
+
+            # Create the data curve
+            X.append(xPercent)
+            Y.append(yPercent)
 
             # Create the perfect curve
             if val < totalKnown:
                 val += 1
             perfect.append((val * 100.0) / totalKnown)
 
+            # Create the subplot limits
+            if xPercent <= zoom:
+                if yLim < yPercent:
+                    xLim = xPercent
+                    yLim = yPercent
+
+        rocData.append((X, Y, rocLegend))
+
+    return rocData, perfect, totalLib, totalKnown, xLim, yLim
+
+
+def plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown, gui, log):
+    """
+    Plot the data provided as argument, to draw ROC curves
+    """
+
+    # Setting up the figure
+    fig = plt.figure(figsize=(13, 12), dpi=100)
+    ax = fig.add_subplot(111)
+
+    # Drawing data on the figure
+    for rocDatum in rocData:
+        X = rocDatum[0]
+        Y = rocDatum[1]
+        rocLegend = rocDatum[2]
+
         # Plot this curve
-        plt.plot(X, Y, label=rocLegend,
-                 linewidth=2)   # , color=colors[i])
+        ax.plot(X, Y, label=rocLegend, linewidth=2)
+
+        # Plot a blow up of the first X%
+        ax2 = plt.axes([.17, .25, .2, .2])
+        ax2.semilogx(X, Y)
+        ax2.semilogx(X, perfect, color="grey")
+        ax2.semilogx(X, X, "--", color="grey")
+        xLimRound = int(xLim * 100) / 100.0
+        yLimRound = int(yLim * 100) / 100.0
+        plt.setp(ax2, xlim=(0, xLim), ylim=(0, yLim),
+                 xticks=[0, xLimRound], yticks=[0, yLimRound])
+        ax2.tick_params(axis="both", which="major", labelsize=8)
 
     # Now plot random and perfect curves, common for all plotted curves
-    plt.plot(X, X, "--", color="grey")
-    plt.plot(X, perfect, color="grey")
+    ax.plot(X, X, "--", color="grey")
+    ax.plot(X, perfect, color="grey")
 
-    plt.xlabel("% of ranked database (total=" + str(totalLib) + ")",
-               fontsize=16)
-    plt.ylabel("% of known ligands found (total=" + str(totalKnown) + ")",
-               fontsize=16)
-    plt.minorticks_on()
+    # Here axis and ticks are improved
+    ax.set_xlabel("% of ranked database (total=" + str(totalLib) + ")",
+                  fontsize=16)
+    ax.set_ylabel("% of known ligands found (total=" + str(totalKnown) + ")",
+                  fontsize=16)
+    ax.minorticks_on()
     if log:
-        plt.xscale("log")
-        plt.xticks([0.1, 1, 10, 100])
+        ax.set_xscale("log")
+        ax.set_xticks([0.1, 1, 10, 100])
         ax.set_xticklabels([0.1, 1, 10, 100])
-    plt.title(title, fontsize=18)
-    plt.legend(loc="upper left", prop={'size': 12})
-    plt.axis('tight')
+    ax.set_title(title, fontsize=18)
+    ax.legend(loc="upper left", prop={'size': 12})
+    ax.axis('tight')
 
     if gui:
         plt.show()
     else:
-        fileName = title.replace(" ", "_") + "_" + mode + ".png"
+        fileName = title.replace(" ", "_") + ".png"
         plt.savefig(fileName, bbox_inches="tight")
 
 
