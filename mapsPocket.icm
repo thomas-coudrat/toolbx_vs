@@ -1,0 +1,19 @@
+#!/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64
+
+call "_startup"
+
+openFile "VS_PROJECT.ob"
+
+# Get pocket
+icmPocketFinder Mol(a_*.//DD) & a_*.!H,W 4.6 no no
+# Create sphere around fist (best) pocket
+as_graph = Sphere( g_pocketPOCKET_NUM a_VS_PROJECT. 2.5)
+
+# Setup docking project
+currentDockProj.data[8] = "yes"
+tempsel = as_graph
+dock2SetupReceptor "VS_PROJECT" a_ tempsel no "none"
+dock5CalcMaps "VS_PROJECT" 0.5 4.0 no
+currentDockProj.data[1] = "VS_PROJECT"
+
+quit

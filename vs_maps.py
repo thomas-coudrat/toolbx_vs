@@ -16,19 +16,25 @@ import os
 import shutil
 import sys
 import argparse
+import socket
 from subprocess import check_output, STDOUT, CalledProcessError
 
 
 def main():
 
     # Get the paths to the scripts to be executed
-    icm, script = setPaths()
+    icm, pocketScript, ligScript = setPaths()
 
     # Get the arguments
-    obPath, inxPath, pocket = parseArgs()
+    obPath, inxPath, mapMode, pocket = parseArgs()
 
-    # Running the .icm script
-    runScript(icm, script, obPath, pocket)
+    # Running the .icm script creating the maps based on ICMpocket finder
+    if mapMode == "pocket":
+        runPocketScript(icm, pocketScript, obPath, pocket)
+
+    # Running the .icm script creating the maps based on the bound ligand
+    if mapMode == "ligand":
+        runLigScript(icm, ligScript, obPath)
 
     # Set of calls to modify the .dtb file
     modifyDtb("i_maxHdonor", "  15", obPath)
@@ -51,23 +57,30 @@ def setPaths():
     """
 
     # Path to the .icm script
-    scriptVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/maps.icm"
-    scriptDesktop = "/home/thomas/Copy/Tools/vs_scripts/maps.icm"
+    pocketVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/mapsPocket.icm"
+    ligandVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/mapsLigand.icm"
+    pocketDesktop = "/home/thomas/Copy/Tools/vs_scripts/mapsPocket.icm"
+    ligandDesktop = "/home/thomas/Copy/Tools/vs_scripts/mapsLigand.icm"
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
     icmDesktop = "/usr/icm-3.7-3b/icm64"
 
+    # Get the hostname
+    hostname = socket.gethostname()
+
     # Select the right path, depending on the platform where this is executed
-    if os.path.exists(scriptVlsci):
-        script = scriptVlsci
+    if hostname == "barcoo":
+        pocketScript = pocketVlsci
+        ligScript = ligandVlsci
         icm = icmVlsci
-    elif os.path.exists(scriptDesktop):
-        script = scriptDesktop
+    elif hostname == "linux-T1650":
+        pocketScript = pocketDesktop
+        ligScript = ligandDesktop
         icm = icmDesktop
     else:
         print "maps.icm script or icm executable not found"
         sys.exit()
 
-    return icm, script
+    return icm, pocketScript, ligScript
 
 
 def parseArgs():
@@ -75,38 +88,65 @@ def parseArgs():
     Get the arguments, define the script's help
     """
 
+    # Definition of the arguments
     descr = "Creates maps for VS with ICM, requires target in .ob and " \
             "library index in .inx format"
     descr_obPath = "Provide the path to the .ob file containing the target " \
                    "for the VS"
     descr_inxPath = "Provide the path to the .inx index to the ligand " \
                     "to be used for this VS"
+    descr_pocketMap = "Use this flag if the maps are to be created using" \
+                      " the ICMpocketFinder method"
+    descr_ligandMap = "Use this flag if the maps are to be created using" \
+                      " the residues around the bound ligand (also deletes " \
+                      "the ligand)"
     descr_pocket = "Define the pocket number to use (determined by " \
                    "ICMpocket finder). Default is pocket #1."
+
+    # Parse arguments
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("obPath", help=descr_obPath)
     parser.add_argument("inxPath", help=descr_inxPath)
+    parser.add_argument("-pocketMap", action="store_true",
+                        help=descr_pocketMap)
+    parser.add_argument("-ligandMap", action="store_true",
+                        help=descr_ligandMap)
     parser.add_argument("--pocket", help=descr_pocket)
-
     args = parser.parse_args()
 
-    # Deal with presence of absence of the argument pocket
-    if args.pocket:
-        pocket = args.pocket
-    else:
+    # Store arguments
+    obPath = args.obPath
+    inxPath = args.inxPath
+    pocketMap = args.pocketMap
+    ligandMap = args.ligandMap
+    pocket = args.pocket
+
+    # Deal with arguments
+    if not pocket:
         pocket = "1"
 
-    return args.obPath, args.inxPath, pocket
+    if not pocketMap and not ligandMap:
+        print "A map mode must be selected, either -pocketMap or -ligandMap"
+        sys.exit()
+    elif pocketMap and ligandMap:
+        print "Only one of -pocketMap or -ligandMap options must be selected"
+        sys.exit()
+    elif pocketMap:
+        mapMode = "pocket"
+    elif ligandMap:
+        mapMode = "ligand"
+
+    return obPath, inxPath, mapMode, pocket
 
 
-def runScript(icm, script, obPath, pocket):
+def runPocketScript(icm, pocketScript, obPath, pocket):
     """
     Copy a temp copy of the .icm script, modify it, and run it
     """
     projName = obPath.replace(".ob", "")
 
     # Copy
-    shutil.copy(script, "./temp.icm")
+    shutil.copy(pocketScript, "./temp.icm")
     # Modify
     os.system("sed -e 's|VS_PROJECT|" + projName + "|g' ./temp.icm -i")
     os.system("sed -e 's|POCKET_NUM|" + pocket + "|g' ./temp.icm -i")
@@ -118,6 +158,13 @@ def runScript(icm, script, obPath, pocket):
         sys.exit()
     # Delete temp script
     os.remove("./temp.icm")
+
+
+def runLigScript(icm, ligScript, obPath):
+    """
+    This modifies and runs the script creating the maps around the bound ligand
+    """
+    pass
 
 
 def modifyDtb(keyword, value, obPath):
