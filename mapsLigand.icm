@@ -1,0 +1,19 @@
+#!/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64
+
+call "_startup"
+
+openFile "VS_PROJECT.ob"
+
+# Create sphere around the bound ligand
+as_graph = Sphere( a_VS_PROJECT.2 , ( ! a_VS_PROJECT.2 ) & Obj( a_VS_PROJECT.2) 4. )
+# Delete the ligand
+delete a_VS_PROJECT.2
+
+# Setup docking project
+currentDockProj.data[8] = "yes"
+tempsel = as_graph
+dock2SetupReceptor "VS_PROJECT" a_ tempsel no "none"
+dock5CalcMaps "VS_PROJECT" 0.5 4.0 no
+currentDockProj.data[1] = "VS_PROJECT"
+
+quit
