@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from matplotlib import pyplot as plt
+import matplotlib
 import argparse
 
 
@@ -22,7 +23,8 @@ def main():
                                                                  rocLegends,
                                                                  zoom)
     # Plot the values 2 and 3, which correspond to the percentage X and Y
-    plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown, gui, log)
+    plot(title, rocData, perfect, xLim, yLim,
+         totalLib, totalKnown, gui, log, zoom)
 
 
 def parseArgs():
@@ -108,7 +110,8 @@ def getData(rocPaths, rocLegends, zoom):
     return rocData, perfect, totalLib, totalKnown, xLim, yLim
 
 
-def plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown, gui, log):
+def plot(title, rocData, perfect, xLim, yLim,
+         totalLib, totalKnown, gui, log, zoom):
     """
     Plot the data provided as argument, to draw ROC curves
     """
@@ -117,8 +120,14 @@ def plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown, gui, log):
     fig = plt.figure(figsize=(13, 12), dpi=100)
     ax = fig.add_subplot(111)
 
+    # Setting up color scheme
+    cm = plt.get_cmap("Set1")
+    cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(rocData) - 1)
+    scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
+    ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(rocData))])
+
     # Drawing data on the figure
-    for rocDatum in rocData:
+    for i, rocDatum in enumerate(rocData):
         X = rocDatum[0]
         Y = rocDatum[1]
         rocLegend = rocDatum[2]
@@ -127,15 +136,16 @@ def plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown, gui, log):
         ax.plot(X, Y, label=rocLegend, linewidth=2)
 
         # Plot a blow up of the first X%
-        ax2 = plt.axes([.17, .25, .2, .2])
-        ax2.semilogx(X, Y)
-        ax2.semilogx(X, perfect, color="grey")
-        ax2.semilogx(X, X, "--", color="grey")
-        xLimRound = int(xLim * 100) / 100.0
-        yLimRound = int(yLim * 100) / 100.0
-        plt.setp(ax2, xlim=(0, xLim), ylim=(0, yLim),
-                 xticks=[0, xLimRound], yticks=[0, yLimRound])
-        ax2.tick_params(axis="both", which="major", labelsize=8)
+        if zoom != 0.0:
+            ax2 = plt.axes([.17, .25, .2, .2])
+            ax2.semilogx(X, Y)
+            ax2.semilogx(X, perfect, color="grey")
+            ax2.semilogx(X, X, "--", color="grey")
+            xLimRound = int(xLim * 100) / 100.0
+            yLimRound = int(yLim * 100) / 100.0
+            plt.setp(ax2, xlim=(0, xLim), ylim=(0, yLim),
+                     xticks=[0, xLimRound], yticks=[0, yLimRound])
+            ax2.tick_params(axis="both", which="major", labelsize=8)
 
     # Now plot random and perfect curves, common for all plotted curves
     ax.plot(X, X, "--", color="grey")
