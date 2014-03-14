@@ -17,35 +17,46 @@ import argparse
 
 
 def main():
+    """
+    Execute VS results script
+    """
 
-    # Get project name
-    workDir = os.getcwd()
-    projName = workDir.replace(os.path.dirname(workDir) + "/", "")
+    # Get arguments
+    vsDir, knownIDfirst, knownIDlast, \
+        ommitIDfirst, ommitIDlast = parseArguments()
+
+    # Get the project name out of the vsDir
+    projName = os.path.basename(os.path.normpath(vsDir))
+
     # Create the dictionary storing ligand info
     # based on ligandID: for each ligandID key there
     # is a number of ligangInfo list equal to the
     # number of repeats
     ligDict = {}
 
-    # Get arguments
-    knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast = parseArguments()
-    # Get the results from those .ou files
-    parseResults(ligDict)
+    print "\nPARSING:\n"
+
+    # Get all .ou files in each repeat directory
+    ouFiles = glob.glob(vsDir + "/*/*.ou")
+    for ouFilePath in ouFiles:
+        # Get the results from each .ou files
+        parseResults(ligDict, ouFilePath)
 
     # Sort each ligand docking amongst repeats
     sortRepeats(ligDict)
 
     # Write the results in a .csv file
-    vsResult = writeResultFile(ligDict, projName)
+    vsResult = writeResultFile(ligDict, projName, vsDir)
     # Write ROC curve data to .roc file
-    writeROCfile(vsResult, projName, knownIDfirst,
-                 knownIDlast, ommitIDfirst, ommitIDlast)
+    writeROCfile(vsResult, projName, vsDir,
+                 knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast)
 
 
 def parseArguments():
 
     # Parsing description of arguments
     descr = "Extract VS results, write results and ROC data to file"
+    descr_vsDir = "Directory of the VS to be analysed"
     descr_knownIDrange = "Provide the ID range of known actives lig" \
                          "lib (format: 1-514)"
     descr_ommitIDrange = "Provide the ID range of ligands to ommit " \
@@ -53,96 +64,88 @@ def parseArguments():
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument("vsDir", help=descr_vsDir)
     parser.add_argument("knownIDrange", help=descr_knownIDrange)
     parser.add_argument("ommitIDrange", help=descr_ommitIDrange)
 
     # Parsing arguments
     args = parser.parse_args()
+    vsDir = args.vsDir
     knownIDrange = args.knownIDrange
     knownIDfirst, knownIDlast = knownIDrange.split("-")
     ommitIDrange = args.ommitIDrange
     ommitIDfirst, ommitIDlast = ommitIDrange.split("-")
 
-    return int(knownIDfirst), int(knownIDlast), int(ommitIDfirst), \
-        int(ommitIDlast)
+    return vsDir, int(knownIDfirst), int(knownIDlast), \
+        int(ommitIDfirst), int(ommitIDlast)
 
 
-def parseResults(ligDict):
+def parseResults(ligDict, ouFilePath):
     """
     Populate the ligDict dictionary in the following manner:
     ligDict{ligandID, [[ligInfo_rep1], [ligInfo_rep2], ...]}
     """
 
-    print
-    print "PARSING:"
-    print
+    # Open file containing text result of the VLS
+    file = open(ouFilePath, "r")
+    lines = file.readlines()
+    file.close()
 
-    # Get all .ou files in each repeat directory
-    ouFiles = glob.glob("*/*.ou")
+    print "\t", ouFilePath
+    repeatNum = os.path.dirname(ouFilePath)
 
-    # Loop over all .ou files, store ligand docking info
-    for ouFilePath in ouFiles:
+    #Loop through each line of the file
+    for line in lines:
 
-        # Open file containing text result of the VLS
-        file = open(ouFilePath, "r")
-        lines = file.readlines()
-        file.close()
+        # We take only the lines that contain "SCORE>"
+        if "SCORES>" in line:
 
-        print "\t", ouFilePath
-        repeatNum = os.path.dirname(ouFilePath)
+            ll = line.split()
+            # Store ligID unique identifyer
+            ligID = int(ll[2])
 
-        #Loop through each line of the file
-        for line in lines:
+            # Will contain all the info for 1 ligand
+            ligInfo = []
 
-            # We take only the lines that contain "SCORE>"
-            if "SCORES>" in line:
+            # The fist info is the ligID
+            ligInfo.append(ligID)
 
-                ll = line.split()
-                # Store ligID unique identifyer
-                ligID = int(ll[2])
+            # Give a generic name for when the ligand does
+            # not have one
+            ligName = "none"
 
-                # Will contain all the info for 1 ligand
-                ligInfo = []
+            # The rest of the info relates to the scoring
+            for i, split in enumerate(ll):
+                if "Name=" in split:
+                    ligName = ll[i + 1]
+                    break
+                if "completed" in split or "FINISHED" in split:
+                    break
+                # Store the values following each tag
+                # (determined by the presnce of a '=')
+                if "=" in split:
+                    val = ll[i + 1].rstrip("%FINISHED")
+                    # The score has to be stored as a float,
+                    # because it is used for sorting
+                    if split.strip() == "Score=":
+                        val = float(val)
+                    ligInfo.append(val)
 
-                # The fist info is the ligID
-                ligInfo.append(ligID)
+            # Add the ligand name, which can be none when it is
+            # not provided in the original .sdf library
+            ligInfo.append(ligName)
+            # Lastly adding the repeat number info
+            ligInfo.append(repeatNum)
 
-                # Give a generic name for when the ligand does
-                # not have one
-                ligName = "none"
-
-                # The rest of the info relates to the scoring
-                for i, split in enumerate(ll):
-                    if "Name=" in split:
-                        ligName = ll[i + 1]
-                        break
-                    if "completed" in split or "FINISHED" in split:
-                        break
-                    # Store the values following each tag
-                    # (determined by the presnce of a '=')
-                    if "=" in split:
-                        val = ll[i + 1].rstrip("%FINISHED")
-                        # The score has to be stored as a float,
-                        # because it is used for sorting
-                        if split.strip() == "Score=":
-                            val = float(val)
-                        ligInfo.append(val)
-
-                # Add the ligand name, which can be none when it is
-                # not provided in the original .sdf library
-                ligInfo.append(ligName)
-                # Lastly adding the repeat number info
-                ligInfo.append(repeatNum)
-
-                # Add that ligInfo to the ligDict, if it already exists
-                # just append to the list, otherwise create a new list
-                keys = ligDict.keys()
-                if ligID not in keys:
-                    ligDict[ligID] = [ligInfo]
-                else:
-                    ligDict[ligID].append(ligInfo)
-                ## Adding the information of 1 single ligand to the list
-                #ligList.append(ligInfo)
+            # Add that ligInfo to the ligDict, if it already exists
+            # just append to the list, otherwise create a new list
+            keys = ligDict.keys()
+            if ligID not in keys:
+                ligDict[ligID] = [ligInfo]
+            else:
+                ligDict[ligID].append(ligInfo)
+            ## Adding the information of 1 single ligand to the list
+            #ligList.append(ligInfo)
 
 
 def sortRepeats(ligDict):
@@ -161,8 +164,10 @@ def sortRepeats(ligDict):
         ligDict[key] = repeatsLigInfo
 
 
-def writeResultFile(ligDict, projName):
-
+def writeResultFile(ligDict, projName, vsDir):
+    """
+    Write out the results of this VS
+    """
     # Write the ligand info
     keys = ligDict.keys()
     vsResult = []
@@ -176,14 +181,12 @@ def writeResultFile(ligDict, projName):
     # Sort the vsResult based on score, for the sorted full VS result
     vsResult = sorted(vsResult, key=lambda lig: lig[9])
 
-    print
-    print "WRITING:"
-    print
+    print "\nWRITING:\n"
 
     # Write result file
     print "\tresults_" + projName + ".csv"
 
-    fileResult = open("results_" + projName + ".csv", "w")
+    fileResult = open(vsDir + "/results_" + projName + ".csv", "w")
     fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf" +
                      ",dEel,dEhp,Score,mfScore,Name,Run#\n")
 
@@ -196,8 +199,8 @@ def writeResultFile(ligDict, projName):
     return vsResult
 
 
-def writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst,
-                 ommitIDlast):
+def writeROCfile(vsResult, projName, vsDir,
+                 knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast):
     """
     Given this VS result, and information about the ID of known actives
     in the library, write in a file the information to plot a ROC curve
@@ -211,7 +214,7 @@ def writeROCfile(vsResult, projName, knownIDfirst, knownIDlast, ommitIDfirst,
     # Create filename
     rocFileName = "roc_" + knowns + "_" + ommits + "_" + projName + ".csv"
     print "\t", rocFileName
-    rocDataFile = open(rocFileName, "w")
+    rocDataFile = open(vsDir + "/" + rocFileName, "w")
 
     # Get the total knowns and total library to calculate percentages
     totalKnowns = knownIDlast - knownIDfirst + 1
