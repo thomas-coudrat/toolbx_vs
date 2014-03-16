@@ -56,17 +56,17 @@ def setPaths():
     paths
     """
 
-    # Path to the .icm script
-<<<<<<< HEAD
-    scriptVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/maps.icm"
-    scriptDesktop = "/home/thomas/Copy/Tools/vs_scripts/maps.icm"
-    scriptMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/maps.icm"
-=======
+    # Paths to the .icm scripts
     pocketVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/mapsPocket.icm"
     ligandVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/mapsLigand.icm"
+
     pocketDesktop = "/home/thomas/Copy/Tools/vs_scripts/mapsPocket.icm"
     ligandDesktop = "/home/thomas/Copy/Tools/vs_scripts/mapsLigand.icm"
->>>>>>> 1fc08e1f79eeceb7752bf447349a0ee2b7621627
+
+    pocketMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/mapsPocket.icm"
+    ligandMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/mapsLigand.icm"
+
+    # Paths to the icm executables
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
     icmDesktop = "/usr/icm-3.7-3b/icm64"
     icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
@@ -83,11 +83,12 @@ def setPaths():
         pocketScript = pocketDesktop
         ligScript = ligandDesktop
         icm = icmDesktop
-    elif os.path.exists(scriptMcc):
-        script = scriptMcc
+    elif hostname == "msgln6.its.monash.edu.au":
+        pocketScript = pocketMcc
+        ligScript = ligandMcc
         icm = icmMcc
     else:
-        print "maps.icm script or icm executable not found"
+        print "ICM scripts or ICM executable not found"
         sys.exit()
 
     return icm, pocketScript, ligScript
