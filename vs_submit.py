@@ -25,13 +25,16 @@ def main():
     # Return the queuing system chosen
     vsDir, queue = parsing()
 
+    # Get the current working directory
+    cwd = os.getcwd()
+
     # Store all queueing scripts to be submitted in this directory
     queuePaths = getQueueScripts(vsDir, queue)
 
     print "\n SUBMITTING", str(len(queuePaths)), "JOBS: \n"
 
     # Submit all those scripts (using the proper queueing system)
-    submitQueueScripts(queuePaths, queue)
+    submitQueueScripts(queuePaths, cwd, queue)
 
     print
 
@@ -56,7 +59,7 @@ def getQueueScripts(vsDir, queue):
     return queuePaths
 
 
-def submitQueueScripts(queuePaths, queue):
+def submitQueueScripts(queuePaths, cwd, queue):
     """
     Submit all the queueing scripts
     """
@@ -64,11 +67,16 @@ def submitQueueScripts(queuePaths, queue):
     # Loop over the saved .slurm or .pbs paths
     for queuePath in queuePaths:
 
-        queueDir = os.path.dirname(queuePath)
+        # Get the full path relative to the root
+        queueFullPath = os.path.join(cwd, queuePath)
+
+        # Get the directory name and the file name separately
+        queueDir = os.path.dirname(queueFullPath)
         queueFile = os.path.basename(queuePath)
         #print queuePath, queueDir
 
         # Change to that repeat directory
+        #queuePath = os.path.joindir(cwd, queueDir)
         os.chdir(queueDir)
         # And submit using either SLURM or PBS queueing
         # system depending on what was chosen
