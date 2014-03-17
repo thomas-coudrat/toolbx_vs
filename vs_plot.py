@@ -7,16 +7,7 @@ import argparse
 
 def main():
 
-    title, roc, zoom, log, gui = parseArgs()
-
-    # Extrac the ROC paths and legends from the rocData
-    rocPaths = []
-    rocLegends = []
-    i = 0
-    while i < len(roc):
-        rocLegends.append(roc[i])
-        rocPaths.append(roc[i + 1])
-        i += 2
+    title, rocLegends, rocPaths, zoom, log, gui = parseArgs()
 
     # Extract the data from the ROC files
     rocData, perfect, totalLib, totalKnown, xLim, yLim = getData(rocPaths,
@@ -32,30 +23,42 @@ def parseArgs():
     Parsing and returning arguments
     """
 
+    # Definition of arguments
     descr = "Feed rocData (however many files), plots ROC curves"
     descr_title = "Provide a title for the graph, also used as filename"
     descr_roc = "Provide rocDataFiles and legend titles for each curve:" \
         " 'legend1!' data1.csv 'legend2?' data2.csv 'legend4!!' data4.csv"
-    descr_zoom = "Give the % of ranked database to be displayed in the " \
-        "zoomed subplot"
+    descr_zoom = "Give the percent of ranked database to be displayed in the" \
+        " zoomed subplot"
     descr_log = "Draw this plot on a log scale for the X axis"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
+
+    # adding arguments to the parser
     parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument("-log", action="store_true", help=descr_log)
+    parser.add_argument("-gui", action="store_true", help=descr_gui)
     parser.add_argument("title", help=descr_title)
     parser.add_argument("roc", help=descr_roc, nargs="+")
     parser.add_argument("zoom", help=descr_zoom)
-    parser.add_argument("-log", action="store_true", help=descr_log)
-    parser.add_argument("-gui", action="store_true", help=descr_gui)
 
+    # parsing args
     args = parser.parse_args()
-
     title = args.title
     roc = args.roc
     zoom = float(args.zoom)
     log = args.log
     gui = args.gui
 
-    return title, roc, zoom, log, gui
+    # Extrac the ROC paths and legends from the roc variable
+    rocPaths = []
+    rocLegends = []
+    i = 0
+    while i < len(roc):
+        rocLegends.append(roc[i])
+        rocPaths.append(roc[i + 1])
+        i += 2
+
+    return title, rocLegends, rocPaths, zoom, log, gui
 
 
 def getData(rocPaths, rocLegends, zoom):
@@ -124,21 +127,22 @@ def plot(title, rocData, perfect, xLim, yLim,
     cm = plt.get_cmap("Set1")
     cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(rocData) - 1)
     scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
-    ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(rocData))])
+    #ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(rocData))])
 
     # Drawing data on the figure
     for i, rocDatum in enumerate(rocData):
+        color = scalarMap.to_rgba(i)
         X = rocDatum[0]
         Y = rocDatum[1]
         rocLegend = rocDatum[2]
 
         # Plot this curve
-        ax.plot(X, Y, label=rocLegend, linewidth=2)
+        ax.plot(X, Y, label=rocLegend, linewidth=2, color=color)
 
         # Plot a blow up of the first X%
         if zoom != 0.0:
             ax2 = plt.axes([.17, .25, .2, .2])
-            ax2.semilogx(X, Y)
+            ax2.semilogx(X, Y, color=color)
             ax2.semilogx(X, perfect, color="grey")
             ax2.semilogx(X, X, "--", color="grey")
             xLimRound = int(xLim * 100) / 100.0
