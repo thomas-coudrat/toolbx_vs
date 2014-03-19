@@ -168,19 +168,20 @@ def plot(title, rocData, perfect, xLim, yLim,
 
     if log:
         ax.set_xscale("log")
-        ax.set_xticks([0.1, 1, 10, 100])
+        #ax.set_xticks([0.1, 1, 10, 100])
         #ax.set_xticklabels([0.1, 1, 10, 100])
         # Setting ZOOMED ax2 graph
-        ax2.set_xscale("log")
-        ax2.set_xlim([0, zoom])
-        ax2.set_ylim([0, yLim])
-        #xLimRound = int(xLim * 100) / 100.0
-        yLimRound = int(yLim * 100) / 100.0
-        ax2.set_yticks([0, yLimRound])
-        #ax2.set_xticklabels([])
-        #print xLimRound
-        #plt.setp(ax2, xlim=(0, zoom), ylim=(0, yLim),
-        #         xticks=[0, zoom], yticks=[0, yLimRound])
+        if zoom != 0.0:
+            ax2.set_xscale("log")
+            ax2.set_xlim([0, zoom])
+            ax2.set_ylim([0, yLim])
+            #xLimRound = int(xLim * 100) / 100.0
+            yLimRound = int(yLim * 100) / 100.0
+            ax2.set_yticks([0, yLimRound])
+            #ax2.set_xticklabels([])
+            #print xLimRound
+            #plt.setp(ax2, xlim=(0, zoom), ylim=(0, yLim),
+            #         xticks=[0, zoom], yticks=[0, yLimRound])
 
     if gui:
         plt.show()
