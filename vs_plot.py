@@ -83,9 +83,9 @@ def getData(rocPaths, rocLegends, zoom):
         totalLib = int(rocLines[-1].split(",")[0])
         totalKnown = int(rocLines[-1].split(",")[1])
 
+        perfect = []
         X = []
         Y = []
-        perfect = []
         val = 0
         for line in rocLines:
             # Get the data from the file
@@ -122,9 +122,12 @@ def plot(title, rocData, perfect, xLim, yLim,
     # Setting up the figure
     fig = plt.figure(figsize=(13, 12), dpi=100)
     ax = fig.add_subplot(111)
+    # Create the ZOOMED graph, if requested
+    if zoom != 0.0:
+        ax2 = plt.axes([.17, .35, .2, .2])
 
     # Setting up color scheme
-    cm = plt.get_cmap("Set1")
+    cm = plt.get_cmap("spectral")
     cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(rocData) - 1)
     scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
     #ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(rocData))])
@@ -141,16 +144,14 @@ def plot(title, rocData, perfect, xLim, yLim,
 
         # Plot a blow up of the first X%
         if zoom != 0.0:
-            ax2 = plt.axes([.17, .25, .2, .2])
-            ax2.semilogx(X, Y, color=color)
-            ax2.semilogx(X, perfect, color="grey")
-            ax2.semilogx(X, X, "--", color="grey")
-            xLimRound = int(xLim * 100) / 100.0
-            yLimRound = int(yLim * 100) / 100.0
-            plt.setp(ax2, xlim=(0, xLim), ylim=(0, yLim),
-                     xticks=[0, xLimRound], yticks=[0, yLimRound])
-            ax2.tick_params(axis="both", which="major", labelsize=8)
+            ax2.plot(X, Y, color=color)
 
+    # Plot the RANDOM and PERFECT curves on the zoomed and main graph
+    if zoom != 0.0:
+        ax2.plot(X, perfect, color="grey")
+        ax2.plot(X, X, "--", color="grey")
+        ax2.tick_params(axis="both", which="major", labelsize=8)
+        ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=10)
     # Now plot random and perfect curves, common for all plotted curves
     ax.plot(X, X, "--", color="grey")
     ax.plot(X, perfect, color="grey")
@@ -161,13 +162,25 @@ def plot(title, rocData, perfect, xLim, yLim,
     ax.set_ylabel("% of known ligands found (total=" + str(totalKnown) + ")",
                   fontsize=16)
     ax.minorticks_on()
-    if log:
-        ax.set_xscale("log")
-        ax.set_xticks([0.1, 1, 10, 100])
-        ax.set_xticklabels([0.1, 1, 10, 100])
     ax.set_title(title, fontsize=18)
     ax.legend(loc="upper left", prop={'size': 12})
     ax.axis('tight')
+
+    if log:
+        ax.set_xscale("log")
+        ax.set_xticks([0.1, 1, 10, 100])
+        #ax.set_xticklabels([0.1, 1, 10, 100])
+        # Setting ZOOMED ax2 graph
+        ax2.set_xscale("log")
+        ax2.set_xlim([0, zoom])
+        ax2.set_ylim([0, yLim])
+        #xLimRound = int(xLim * 100) / 100.0
+        yLimRound = int(yLim * 100) / 100.0
+        ax2.set_yticks([0, yLimRound])
+        #ax2.set_xticklabels([])
+        #print xLimRound
+        #plt.setp(ax2, xlim=(0, zoom), ylim=(0, yLim),
+        #         xticks=[0, zoom], yticks=[0, yLimRound])
 
     if gui:
         plt.show()
