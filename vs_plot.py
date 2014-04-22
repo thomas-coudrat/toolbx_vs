@@ -3,6 +3,7 @@
 from matplotlib import pyplot as plt
 import matplotlib
 import argparse
+import scipy.integrate
 
 
 def main():
@@ -13,6 +14,9 @@ def main():
     rocData, perfect, totalLib, totalKnown, xLim, yLim = getData(rocPaths,
                                                                  rocLegends,
                                                                  zoom)
+
+    getAUC_NSQ(rocData, perfect)
+
     # Plot the values 2 and 3, which correspond to the percentage X and Y
     plot(title, rocData, perfect, xLim, yLim,
          totalLib, totalKnown, gui, log, zoom)
@@ -111,6 +115,38 @@ def getData(rocPaths, rocLegends, zoom):
         rocData.append((X, Y, rocLegend))
 
     return rocData, perfect, totalLib, totalKnown, xLim, yLim
+
+
+def getAUC_NSQ(rocData, perfect):
+    """
+    Calculate AUC and NSQ_AUC for each curve, and return a list with those
+    values (corresponds to the order of rocData)
+    """
+
+    #aucData = []
+
+    print "perfect=", len(perfect)
+
+    for rocDatum in rocData:
+        X = rocDatum[0]
+        Y = rocDatum[1]
+
+        print "X=", len(X)
+        print "Y=", len(Y)
+
+        auc = scipy.integrate.trapz(Y, X)
+        auc2 = scipy.integrate.simps(Y, X)
+
+        #perf = scipy.integrate.simps(perfect, X)
+        rand = scipy.integrate.simps(X, X)
+        rand2 = scipy.integrate.trapz(X, X)
+
+        print rocDatum[2]
+        print "trapz", auc
+        print "simps", auc2
+        #print "perfect", perf
+        print "rand", rand, rand2
+        print
 
 
 def plot(title, rocData, perfect, xLim, yLim,
