@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#------------------------------------------------
+# ------------------------------------------------
 #
 #   Extracts the results from all .ou files contained
 #   in the repeats of the current VS directory
@@ -9,7 +9,7 @@
 #
 #   Thomas Coudrat, February 2014
 #
-#-------------------------------------------------
+# -------------------------------------------------
 
 import glob
 import os
@@ -30,26 +30,47 @@ def main():
 
     # Create the dictionary storing ligand info
     # based on ligandID: for each ligandID key there
-    # is a number of ligangInfo list equal to the
+    # is a number of ligangInfo lists equal to the
     # number of repeats
+    #
     ligDict = {}
 
     print "\nPARSING:\n"
 
     # Get all .ou files in each repeat directory
+    #
     ouFiles = glob.glob(vsDir + "/*/*.ou")
+    # Loop through them and look for the 'SCORES' line
     for ouFilePath in ouFiles:
-        # Get the results from each .ou files
-        parseResults(ligDict, ouFilePath)
+        # Open file containing text result of the VLS
+        file = open(ouFilePath, "r")
+        lines = file.readlines()
+        file.close()
+
+        print "\t", ouFilePath
+        vs_dir = os.path.dirname(os.path.dirname(ouFilePath))
+        repeatNum = os.path.dirname(ouFilePath).replace(vs_dir + "/", "")
+        # print ouFilePath
+        # print repeatNum
+
+        # Loop through each line of the file
+        for line in lines:
+            # We take only the lines that contain "SCORE>"
+            if "SCORES>" in line:
+                parseScoreLine(ligDict, line, repeatNum)
 
     # Sort each ligand docking amongst repeats
+    #
     sortRepeats(ligDict)
 
     # Write the results in a .csv file
+    #
     vsResult = writeResultFile(ligDict, projName, vsDir)
     # Write ROC curve data to .roc file
+    #
     writeROCfile(vsResult, projName, vsDir,
-                 knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast)
+                 knownIDfirst, knownIDlast,
+                 ommitIDfirst, ommitIDlast)
 
 
 def parseArguments():
@@ -80,72 +101,56 @@ def parseArguments():
         int(ommitIDfirst), int(ommitIDlast)
 
 
-def parseResults(ligDict, ouFilePath):
+def parseScoreLine(ligDict, line, repeatNum):
     """
     Populate the ligDict dictionary in the following manner:
     ligDict{ligandID, [[ligInfo_rep1], [ligInfo_rep2], ...]}
     """
 
-    # Open file containing text result of the VLS
-    file = open(ouFilePath, "r")
-    lines = file.readlines()
-    file.close()
+    ll = line.split()
+    # Store ligID unique identifyer
+    ligID = int(ll[2])
 
-    print "\t", ouFilePath
-    repeatNum = os.path.dirname(ouFilePath)
+    # Will contain all the info for 1 ligand
+    ligInfo = []
 
-    #Loop through each line of the file
-    for line in lines:
+    # The fist info is the ligID
+    ligInfo.append(ligID)
 
-        # We take only the lines that contain "SCORE>"
-        if "SCORES>" in line:
+    # Give a generic name for when the ligand does
+    # not have one
+    ligName = "none"
 
-            ll = line.split()
-            # Store ligID unique identifyer
-            ligID = int(ll[2])
+    # The rest of the info relates to the scoring
+    for i, split in enumerate(ll):
+        if "Name=" in split:
+            ligName = ll[i + 1]
+            break
+        if "completed" in split or "FINISHED" in split:
+            break
+        # Store the values following each tag
+        # (determined by the presnce of a '=')
+        if "=" in split:
+            val = ll[i + 1].rstrip("%FINISHED")
+            # The score has to be stored as a float,
+            # because it is used for sorting
+            if split.strip() == "Score=":
+                val = float(val)
+            ligInfo.append(val)
 
-            # Will contain all the info for 1 ligand
-            ligInfo = []
+    # Add the ligand name, which can be none when it is
+    # not provided in the original .sdf library
+    ligInfo.append(ligName)
+    # Lastly adding the repeat number info
+    ligInfo.append(repeatNum)
 
-            # The fist info is the ligID
-            ligInfo.append(ligID)
-
-            # Give a generic name for when the ligand does
-            # not have one
-            ligName = "none"
-
-            # The rest of the info relates to the scoring
-            for i, split in enumerate(ll):
-                if "Name=" in split:
-                    ligName = ll[i + 1]
-                    break
-                if "completed" in split or "FINISHED" in split:
-                    break
-                # Store the values following each tag
-                # (determined by the presnce of a '=')
-                if "=" in split:
-                    val = ll[i + 1].rstrip("%FINISHED")
-                    # The score has to be stored as a float,
-                    # because it is used for sorting
-                    if split.strip() == "Score=":
-                        val = float(val)
-                    ligInfo.append(val)
-
-            # Add the ligand name, which can be none when it is
-            # not provided in the original .sdf library
-            ligInfo.append(ligName)
-            # Lastly adding the repeat number info
-            ligInfo.append(repeatNum)
-
-            # Add that ligInfo to the ligDict, if it already exists
-            # just append to the list, otherwise create a new list
-            keys = ligDict.keys()
-            if ligID not in keys:
-                ligDict[ligID] = [ligInfo]
-            else:
-                ligDict[ligID].append(ligInfo)
-            ## Adding the information of 1 single ligand to the list
-            #ligList.append(ligInfo)
+    # Add that ligInfo to the ligDict, if it already exists
+    # just append to the list, otherwise create a new list
+    keys = ligDict.keys()
+    if ligID not in keys:
+        ligDict[ligID] = [ligInfo]
+    else:
+        ligDict[ligID].append(ligInfo)
 
 
 def sortRepeats(ligDict):
@@ -174,7 +179,7 @@ def writeResultFile(ligDict, projName, vsDir):
     for key in keys:
         # Get only the first in the list of repeats information
         # for this ligand
-        #for ligInfo in ligDict[key]:
+        # for ligInfo in ligDict[key]:
         ligInfo = ligDict[key][0]
         vsResult.append(ligInfo)
 
@@ -200,7 +205,8 @@ def writeResultFile(ligDict, projName, vsDir):
 
 
 def writeROCfile(vsResult, projName, vsDir,
-                 knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast):
+                 knownIDfirst, knownIDlast,
+                 ommitIDfirst, ommitIDlast):
     """
     Given this VS result, and information about the ID of known actives
     in the library, write in a file the information to plot a ROC curve
