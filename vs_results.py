@@ -22,8 +22,7 @@ def main():
     """
 
     # Get arguments
-    vsDir, knownIDfirst, knownIDlast, \
-        ommitIDfirst, ommitIDlast = parseArguments()
+    vsDir = parseArguments()
 
     # Get the project name out of the vsDir
     projName = os.path.basename(os.path.normpath(vsDir))
@@ -32,13 +31,13 @@ def main():
     # based on ligandID: for each ligandID key there
     # is a number of ligangInfo lists equal to the
     # number of repeats
-    #
     ligDict = {}
 
     print "\nPARSING:\n"
 
+    maxRepeatNum = -1
+
     # Get all .ou files in each repeat directory
-    #
     ouFiles = glob.glob(vsDir + "/*/*.ou")
     # Loop through them and look for the 'SCORES' line
     for ouFilePath in ouFiles:
@@ -59,18 +58,23 @@ def main():
             if "SCORES>" in line:
                 parseScoreLine(ligDict, line, repeatNum)
 
+        # Update the repeat number in order to grab the max repeat number
+        if maxRepeatNum < int(repeatNum):
+            maxRepeatNum = int(repeatNum)
+
+    # Getting rid of the ligands that were not docking in all repeats attempted
+    removeFailed(ligDict, maxRepeatNum)
+
     # Sort each ligand docking amongst repeats
-    #
     sortRepeats(ligDict)
 
     # Write the results in a .csv file
-    #
-    vsResult = writeResultFile(ligDict, projName, vsDir)
+    writeResultFile(ligDict, projName, vsDir)
+
     # Write ROC curve data to .roc file
-    #
-    writeROCfile(vsResult, projName, vsDir,
-                 knownIDfirst, knownIDlast,
-                 ommitIDfirst, ommitIDlast)
+    # writeROCfile(vsResult, projName, vsDir,
+    #             knownIDfirst, knownIDlast,
+    #             ommitIDfirst, ommitIDlast)
 
 
 def parseArguments():
@@ -78,27 +82,26 @@ def parseArguments():
     # Parsing description of arguments
     descr = "Extract VS results, write results and ROC data to file"
     descr_vsDir = "Directory of the VS to be analysed"
-    descr_knownIDrange = "Provide the ID range of known actives lig" \
-                         "lib (format: 1-514)"
-    descr_ommitIDrange = "Provide the ID range of ligands to ommit " \
-                         "from the ROC curve data"
+    # descr_knownIDrange = "Provide the ID range of known actives lig" \
+    #                     "lib (format: 1-514)"
+    # descr_ommitIDrange = "Provide the ID range of ligands to ommit " \
+    #                     "from the ROC curve data"
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("vsDir", help=descr_vsDir)
-    parser.add_argument("knownIDrange", help=descr_knownIDrange)
-    parser.add_argument("ommitIDrange", help=descr_ommitIDrange)
+    # parser.add_argument("knownIDrange", help=descr_knownIDrange)
+    # parser.add_argument("ommitIDrange", help=descr_ommitIDrange)
 
     # Parsing arguments
     args = parser.parse_args()
     vsDir = args.vsDir
-    knownIDrange = args.knownIDrange
-    knownIDfirst, knownIDlast = knownIDrange.split("-")
-    ommitIDrange = args.ommitIDrange
-    ommitIDfirst, ommitIDlast = ommitIDrange.split("-")
+    # knownIDrange = args.knownIDrange
+    # knownIDfirst, knownIDlast = knownIDrange.split("-")
+    # ommitIDrange = args.ommitIDrange
+    # ommitIDfirst, ommitIDlast = ommitIDrange.split("-")
 
-    return vsDir, int(knownIDfirst), int(knownIDlast), \
-        int(ommitIDfirst), int(ommitIDlast)
+    return vsDir
 
 
 def parseScoreLine(ligDict, line, repeatNum):
@@ -153,6 +156,21 @@ def parseScoreLine(ligDict, line, repeatNum):
         ligDict[ligID].append(ligInfo)
 
 
+def removeFailed(ligDict, maxRepeatNum):
+    """
+    Loop over all results and remove those not successful for all repeats
+    attempted. Print the information about the failed dockings.
+    """
+
+    print "\nINCOMPLETE DOCKINGS:\n"
+
+    keys = ligDict.keys()
+    for key in keys:
+        if len(ligDict[key]) != maxRepeatNum:
+            print "\tid:", key, "# of sucessful repeats:", len(ligDict[key])
+            del ligDict[key]
+
+
 def sortRepeats(ligDict):
     """
     For each ligandID, get the repeat that got the best score, this will
@@ -201,9 +219,8 @@ def writeResultFile(ligDict, projName, vsDir):
         fileResult.write("\n")
     fileResult.close()
 
-    return vsResult
 
-
+'''
 def writeROCfile(vsResult, projName, vsDir,
                  knownIDfirst, knownIDlast,
                  ommitIDfirst, ommitIDlast):
@@ -226,8 +243,8 @@ def writeROCfile(vsResult, projName, vsDir,
     totalKnowns = knownIDlast - knownIDfirst + 1
     totalLibrary = len(vsResult) - (ommitIDlast - ommitIDfirst + 1)
 
-    print totalKnowns
-    print totalLibrary - totalKnowns
+    print "\nTotal knowns:", totalKnowns
+    print "Total library - knowns:", totalLibrary - totalKnowns
 
     for ligInfo in vsResult:
         ligID = int(ligInfo[0])
@@ -255,7 +272,7 @@ def writeROCfile(vsResult, projName, vsDir,
     rocDataFile.close()
 
     print
-
+'''
 
 if __name__ == "__main__":
     main()
