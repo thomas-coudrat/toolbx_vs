@@ -46,17 +46,20 @@ def main():
         lines = file.readlines()
         file.close()
 
-        print "\t", ouFilePath
         vs_dir = os.path.dirname(os.path.dirname(ouFilePath))
         repeatNum = os.path.dirname(ouFilePath).replace(vs_dir + "/", "")
         # print ouFilePath
         # print repeatNum
 
         # Loop through each line of the file
+        ligDockedNum = 0
         for line in lines:
             # We take only the lines that contain "SCORE>"
             if "SCORES>" in line:
+                ligDockedNum += 1
                 parseScoreLine(ligDict, line, repeatNum)
+
+        print "\t", ouFilePath, "\t", ligDockedNum, "ligands"
 
         # Update the repeat number in order to grab the max repeat number
         if maxRepeatNum < int(repeatNum):
