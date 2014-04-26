@@ -192,6 +192,8 @@ def writeResultFile(ligDict, projName, vsDir):
     print "\nWRITING:\n"
 
     # Write result file
+    if projName == ".":
+        projName = os.path.basename(os.getcwd())
     print "\tresults_" + projName + ".csv"
 
     fileResult = open(vsDir + "/results_" + projName + ".csv", "w")
