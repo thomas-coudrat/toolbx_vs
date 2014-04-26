@@ -71,35 +71,20 @@ def main():
     # Write the results in a .csv file
     writeResultFile(ligDict, projName, vsDir)
 
-    # Write ROC curve data to .roc file
-    # writeROCfile(vsResult, projName, vsDir,
-    #             knownIDfirst, knownIDlast,
-    #             ommitIDfirst, ommitIDlast)
-
 
 def parseArguments():
 
     # Parsing description of arguments
     descr = "Extract VS results, write results and ROC data to file"
     descr_vsDir = "Directory of the VS to be analysed"
-    # descr_knownIDrange = "Provide the ID range of known actives lig" \
-    #                     "lib (format: 1-514)"
-    # descr_ommitIDrange = "Provide the ID range of ligands to ommit " \
-    #                     "from the ROC curve data"
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("vsDir", help=descr_vsDir)
-    # parser.add_argument("knownIDrange", help=descr_knownIDrange)
-    # parser.add_argument("ommitIDrange", help=descr_ommitIDrange)
 
     # Parsing arguments
     args = parser.parse_args()
     vsDir = args.vsDir
-    # knownIDrange = args.knownIDrange
-    # knownIDfirst, knownIDlast = knownIDrange.split("-")
-    # ommitIDrange = args.ommitIDrange
-    # ommitIDfirst, ommitIDlast = ommitIDrange.split("-")
 
     return vsDir
 
@@ -214,65 +199,14 @@ def writeResultFile(ligDict, projName, vsDir):
                      ",dEel,dEhp,Score,mfScore,Name,Run#\n")
 
     for ligInfo in vsResult:
+        ligInfoStr = []
         for val in ligInfo:
-            fileResult.write(str(val) + ",")
+            ligInfoStr.append(str(val))
+
+        fileResult.write(",".join(ligInfoStr))
         fileResult.write("\n")
     fileResult.close()
 
-
-'''
-def writeROCfile(vsResult, projName, vsDir,
-                 knownIDfirst, knownIDlast,
-                 ommitIDfirst, ommitIDlast):
-    """
-    Given this VS result, and information about the ID of known actives
-    in the library, write in a file the information to plot a ROC curve
-    """
-
-    X = 0
-    Y = 0
-    knowns = "knowns_" + str(knownIDfirst) + "-" + str(knownIDlast)
-    ommits = "ommits_" + str(ommitIDfirst) + "-" + str(ommitIDlast)
-
-    # Create filename
-    rocFileName = "roc_" + knowns + "_" + ommits + "_" + projName + ".csv"
-    print "\t", rocFileName
-    rocDataFile = open(vsDir + "/" + rocFileName, "w")
-
-    # Get the total knowns and total library to calculate percentages
-    totalKnowns = knownIDlast - knownIDfirst + 1
-    totalLibrary = len(vsResult) - (ommitIDlast - ommitIDfirst + 1)
-
-    print "\nTotal knowns:", totalKnowns
-    print "Total library - knowns:", totalLibrary - totalKnowns
-
-    for ligInfo in vsResult:
-        ligID = int(ligInfo[0])
-
-        # Skip if ligID is part of the range that needs to be ommited
-        if ligID in range(ommitIDfirst, ommitIDlast + 1):
-            continue
-        # Otherwise proceed normally
-        else:
-            # When the sorted ligID corresponds to a known, increase
-            # the value of Y by 1
-            if ligID in range(knownIDfirst, knownIDlast + 1):
-                Y += 1
-
-            # For each ligand in the full VS, increase X and write
-            # the X,Y pair to the data file
-            X += 1
-
-            # Calculate percentage X and Y
-            Xpercent = (X * 100.0) / totalLibrary
-            Ypercent = (Y * 100.0) / totalKnowns
-            rocDataFile.write(str(X) + "," + str(Y) + "," +
-                              str(Xpercent) + "," + str(Ypercent) + "\n")
-
-    rocDataFile.close()
-
-    print
-'''
 
 if __name__ == "__main__":
     main()
