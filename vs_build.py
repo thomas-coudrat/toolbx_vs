@@ -254,7 +254,7 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
 
         # Initialize variables for the first slice
         lowerLimit = libStart
-        upperLimit = sliceSize
+        upperLimit = libStart + sliceSize
         sliceCount = 1
         keepLooping = True
 
