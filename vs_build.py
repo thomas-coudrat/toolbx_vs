@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Create .slurm or .pbs files to slice a VS into several equal
 # portions, for parallelisation
 #
 # Thomas Coudrat, February 2014
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 import os
 import argparse
@@ -15,7 +15,8 @@ import glob
 import shutil
 import re
 import sys
-import socket
+# import socket
+
 
 def main():
     """
@@ -23,7 +24,8 @@ def main():
     """
 
     # Getting all the args
-    libSize, sliceSize, repeatNum, walltime, thor, setupDir, projName, pbs, slurm = parsing()
+    libStart, libEnd, sliceSize, repeatNum, \
+        walltime, thor, setupDir, projName, pbs, slurm = parsing()
 
     # Check if a queuing system was chosen
     if not pbs and not slurm:
@@ -46,7 +48,8 @@ def main():
     cleanVSdir(workDir)
 
     reportLines.append("\nPARAMETERS:\n")
-    reportLines.append("\t libSize: " + str(libSize))
+    reportLines.append("\t libStart: " + str(libStart))
+    reportLines.append("\t libEnd: " + str(libEnd))
     reportLines.append("\t sliceSize: " + str(sliceSize))
     reportLines.append("\t repeatNum: " + str(repeatNum))
     reportLines.append("\t walltime: " + walltime)
@@ -66,7 +69,7 @@ def main():
     reportLines.append("\n***********************\n")
 
     # Create the .slurm slices
-    reportLines = createSlices(libSize, sliceSize, walltime, thor,
+    reportLines = createSlices(libStart, libEnd, sliceSize, walltime, thor,
                                projName, repeatNum, queue, reportLines)
 
     reportLines.append("\n")
@@ -82,18 +85,22 @@ def parsing():
 
     # Parsing descriptions for arguments
     descr = "Slices a VS scripts into portions of library for slurm submission"
-    descr_libSize = "Size of the full library"
+    descr_libStart = "Ligand library ID where to START the VS"
+    descr_libEnd = "Ligand library ID where to END the VS"
     descr_sliceSize = "Size of the slices"
     descr_repeatNum = "Number of repeats"
     descr_walltime = "Walltime for a single slice (format: 1-24:00:00)"
     descr_thor = "Thoroughness of the docking (format: 5.)"
     descr_setupDir = "Name of the directory containing setup files"
-    descr_slurm = "Use this flag to create files for the SLURM queuing system (Barcoo)"
-    descr_pbs = "Use this flag to create files for the PBS queuing system (MCC)"
+    descr_slurm = "Use this flag to create files for the SLURM queuing " \
+        "system (Barcoo)"
+    descr_pbs = "Use this flag to create files for the PBS queuing " \
+        "system (MCC)"
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
-    parser.add_argument("libSize", help=descr_libSize)
+    parser.add_argument("libStart", help=descr_libStart)
+    parser.add_argument("libEnd", help=descr_libEnd)
     parser.add_argument("sliceSize", help=descr_sliceSize)
     parser.add_argument("repeatNum", help=descr_repeatNum)
     parser.add_argument("walltime", help=descr_walltime)
@@ -106,7 +113,8 @@ def parsing():
     args = parser.parse_args()
 
     # Library params
-    libSize = int(args.libSize)
+    libStart = int(args.libStart)
+    libEnd = int(args.libEnd)
     sliceSize = int(args.sliceSize)
     repeatNum = int(args.repeatNum)
     # VS params
@@ -120,7 +128,7 @@ def parsing():
     pbs = args.pbs
     slurm = args.slurm
 
-    return libSize, sliceSize, repeatNum, walltime, thor, setupDir, \
+    return libStart, libEnd, sliceSize, repeatNum, walltime, thor, setupDir, \
         projName, pbs, slurm
 
 
@@ -226,7 +234,7 @@ def createRepeats(repeatNum, setupDir, reportLines):
     return reportLines
 
 
-def createSlices(libSize, sliceSize, walltime, thor, projName,
+def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
                  repeatNum, queue, reportLines):
     """
     Create the .slurm slices to split the VS job into portions for submission
@@ -245,7 +253,7 @@ def createSlices(libSize, sliceSize, walltime, thor, projName,
         reportLines.append("REPEAT:" + repeatDir + "\n")
 
         # Initialize variables for the first slice
-        lowerLimit = 1
+        lowerLimit = libStart
         upperLimit = sliceSize
         sliceCount = 1
         keepLooping = True
@@ -255,8 +263,8 @@ def createSlices(libSize, sliceSize, walltime, thor, projName,
 
             # Exit statement of the loop, when upperLimit has reached the
             # size of the ligand library
-            if upperLimit >= libSize:
-                upperLimit = libSize
+            if upperLimit >= libEnd:
+                upperLimit = libEnd
                 # Once the end of the libSize has been reached, stop the next
                 # loop
                 keepLooping = False
