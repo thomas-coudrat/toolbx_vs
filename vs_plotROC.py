@@ -354,13 +354,20 @@ def plot(title, rocData, perfect, xLim, yLim,
 
     # Setting up color scheme
     cm = plt.get_cmap("spectral")
-    cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(rocData) - 1)
+    cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(rocData))
     scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
     # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(rocData))])
 
     # Drawing data on the figure
     for i, rocDatum in enumerate(rocData):
-        color = scalarMap.to_rgba(i)
+        # Set color for crystal structures, and the LDM results have their
+        # colors defined by the colormap
+        if i == 0:
+            color = 'black'
+        elif i == 1:
+            color = 'grey'
+        else:
+            color = scalarMap.to_rgba(i)
         X = rocDatum[0]
         Y = rocDatum[1]
         rocLegend = rocDatum[2]
@@ -378,6 +385,7 @@ def plot(title, rocData, perfect, xLim, yLim,
         ax2.plot(X, X, "--", color="grey")
         ax2.tick_params(axis="both", which="major", labelsize=8)
         ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=10)
+
     # Now plot random and perfect curves, common for all plotted curves
     ax.plot(X, X, "--", color="grey")
     ax.plot(X, perfect, color="grey")
