@@ -59,6 +59,18 @@ def main():
     plot(title, rocData, perfect, xLim, yLim,
          totalLib, totalKnown, gui, log, zoom)
 
+    # Write down the command that was used to exectute this script in a log
+    # file, at the location where the script is executed. Also write the
+    # current working directory at the time of execution
+
+    cwd = os.getcwd()
+    args = " ".join(sys.argv)
+
+    logFile = open("plot.log", "w")
+    logFile.write(cwd + "\n")
+    logFile.write(args)
+    logFile.close()
+
 
 def parseArgs():
     """
