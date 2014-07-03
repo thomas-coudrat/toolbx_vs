@@ -12,9 +12,16 @@ import math
 def main():
 
     title, rocLegends, resultPaths, zoom, \
-        knownIDfirst, knownIDlast, \
-        ommitIDfirst, ommitIDlast, \
-        log, gui = parseArgs()
+        knownIDstr, ommitIDstr, log, gui = parseArgs()
+
+    # Get the knownID range in list format
+    knownIDlist = makeIDlist(knownIDstr)
+    ommitIDlist = makeIDlist(ommitIDstr)
+
+    print "\n", "Known ID string", knownIDstr
+    print "Known ID list", knownIDlist
+    print "Ommit ID string", ommitIDstr
+    print "Ommit ID list", ommitIDlist, "\n"
 
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
@@ -30,8 +37,8 @@ def main():
         vsDir = os.path.dirname(resultPath)
         # print knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast
         rocPath, totalLib, totalKnown = writeRocFile(vsResult, vsDir,
-                                                     knownIDfirst, knownIDlast,
-                                                     ommitIDfirst, ommitIDlast)
+                                                     knownIDstr, knownIDlist,
+                                                     ommitIDstr, ommitIDlist)
         print rocPath, totalLib, totalKnown
         rocPaths.append(rocPath)
         allTotalLibs.append(totalLib)
@@ -85,10 +92,10 @@ def parseArgs():
         " 'legend4!!' data4.csv"
     descr_zoom = "Give the percent of ranked database to be displayed in the" \
         " zoomed subplot"
-    descr_knownIDrange = "Provide the ID range of known actives lig" \
-                         "lib (format: 1-514)"
-    descr_ommitIDrange = "Provide the ID range of ligands to ommit " \
-                         "from the ROC curve data"
+    descr_knownIDstr = "Provide the IDs of known actives ligands" \
+        "lib (format: 1-514,6001,6700-6702)"
+    descr_ommitIDstr = "Provide the IDs of ligands to ommit " \
+        "from the ROC curve data, same format at knownIDs"
     descr_log = "Draw this plot on a log scale for the X axis"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
 
@@ -97,8 +104,8 @@ def parseArgs():
     parser.add_argument("title", help=descr_title)
     parser.add_argument("results", help=descr_results, nargs="+")
     parser.add_argument("zoom", help=descr_zoom)
-    parser.add_argument("knownIDrange", help=descr_knownIDrange)
-    parser.add_argument("ommitIDrange", help=descr_ommitIDrange)
+    parser.add_argument("knownIDstr", help=descr_knownIDstr)
+    parser.add_argument("ommitIDstr", help=descr_ommitIDstr)
     parser.add_argument("-log", action="store_true", help=descr_log)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
 
@@ -107,12 +114,8 @@ def parseArgs():
     title = args.title
     results = args.results
     zoom = float(args.zoom)
-    knownIDrange = args.knownIDrange
-    knownIDfirst, knownIDlast = knownIDrange.split("-")
-    print "kownIDrange", knownIDrange
-    ommitIDrange = args.ommitIDrange
-    ommitIDfirst, ommitIDlast = ommitIDrange.split("-")
-    print "ommitIDrange", ommitIDrange
+    knownIDstr = args.knownIDstr
+    ommitIDstr = args.ommitIDstr
     log = args.log
     gui = args.gui
 
@@ -126,9 +129,40 @@ def parseArgs():
         i += 2
 
     return title, rocLegends, resultPaths, zoom, \
-        int(knownIDfirst), int(knownIDlast), \
-        int(ommitIDfirst), int(ommitIDlast), \
-        log, gui
+        knownIDstr, ommitIDstr, log, gui
+
+
+def makeIDlist(stringID):
+    """
+    Get a string defining which IDs to be generated into a list
+    """
+
+    # This stores the range of IDs into a list
+    rangeID = []
+
+    IDportions = stringID.split(",")
+
+    for portion in IDportions:
+        # Treat ranges of IDs
+        if "-" in portion:
+            start, end = portion.split("-")
+            start = int(start)
+            end = int(end)
+            # Do not add the value 0 to the list
+            if start == 0 or end == 0:
+                pass
+            else:
+                rangeID = rangeID + range(start, end + 1)
+        # Treat single IDs
+        else:
+            portion = int(portion)
+            # Do not add the value 0 to the list
+            if portion == 0:
+                pass
+            else:
+                rangeID.append(int(portion))
+
+    return rangeID
 
 
 def intersectResults(resultPaths):
@@ -176,18 +210,18 @@ def intersectResults(resultPaths):
 
 
 def writeRocFile(vsResult, vsDir,
-                 knownIDfirst, knownIDlast,
-                 ommitIDfirst, ommitIDlast):
+                 knownIDstr, knownIDlist,
+                 ommitIDstr, ommitIDlist):
     """
     Given this VS result, and information about the ID of known actives
     in the library, write in a file the information to plot a ROC curve
     """
 
-    knowns = "knowns_" + str(knownIDfirst) + "-" + str(knownIDlast)
-    ommits = "ommits_" + str(ommitIDfirst) + "-" + str(ommitIDlast)
+    known = "knowns_" + knownIDstr
+    ommit = "ommits_" + ommitIDstr
 
     # Create filename
-    rocPath = vsDir + "/roc_" + knowns + "_" + ommits + "_" + vsDir + ".csv"
+    rocPath = vsDir + "/roc_" + known + "_" + ommit + "_" + vsDir + ".csv"
     print "\t", rocPath
     rocDataFile = open(rocPath, "w")
 
@@ -196,14 +230,14 @@ def writeRocFile(vsResult, vsDir,
     totalKnowns = 0
     for ligInfo in vsResult:
         ligID = int(ligInfo[0])
-        if ligID in range(knownIDfirst, knownIDlast + 1):
+        if ligID in knownIDlist:
             totalKnowns += 1
 
     # Get the total library size
-    if ommitIDfirst == 0 or ommitIDlast == 0:
+    if len(ommitIDlist):
         totalLibrary = len(vsResult)
     else:
-        totalLibrary = len(vsResult) - (ommitIDlast - ommitIDfirst + 1)
+        totalLibrary = len(vsResult) - len(ommitIDlist)
 
     print "\nTotal knowns:", totalKnowns
     print "Total library - knowns:", totalLibrary, totalKnowns
@@ -218,16 +252,14 @@ def writeRocFile(vsResult, vsDir,
 
         # Skip if ligID is part of the range that needs to be ommited
         # If the ommit values are '0', then there is no ligand to ommit
-        if ommitIDfirst != 0 and \
-                ommitIDlast != 0 and \
-                ligID in range(ommitIDfirst, ommitIDlast + 1):
+        if ligID in ommitIDlist:
             # print "ligand skipped", ligInfo
             continue
         # Otherwise proceed normally
         else:
             # When the sorted ligID corresponds to a known, increase
             # the value of Y by 1
-            if ligID in range(knownIDfirst, knownIDlast + 1):
+            if ligID in knownIDlist:
                 # print "known ligand", ligInfo
                 Y += 1
 
