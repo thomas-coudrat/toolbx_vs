@@ -12,23 +12,35 @@ import math
 def main():
 
     title, rocLegends, resultPaths, zoom, \
-        knownIDstr, ommitIDstr, log, gui = parseArgs()
+        knownIDstr, ommitIDstr, ref, log, gui = parseArgs()
 
+    #
     # Get the knownID range in list format
+    #
     knownIDlist = makeIDlist(knownIDstr)
     ommitIDlist = makeIDlist(ommitIDstr)
-
     print "\n", "Known ID string", knownIDstr
     print "Known ID list", knownIDlist
     print "Ommit ID string", ommitIDstr
     print "Ommit ID list", ommitIDlist, "\n"
 
+    #
+    # Generate a dictionary containing the refinement ligands, if any
+    # refinement ligand was submitted
+    #
+    if ref:
+        # print ref
+        refDict = makeRefDict(ref)
+        # print refDict
+    else:
+        refDict = {}
+
+    #
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
-
+    #
     allVsResultsIntersect = intersectResults(resultPaths)
     # print resultPaths
-
     rocPaths = []
     allTotalLibs = []
     allTotalKnowns = []
@@ -37,42 +49,51 @@ def main():
         vsDir = os.path.dirname(resultPath)
         # print knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast
         rocPath, totalLib, totalKnown = writeRocFile(vsResult, vsDir,
-                                                     knownIDstr, knownIDlist,
-                                                     ommitIDstr, ommitIDlist)
+                                                     knownIDstr,
+                                                     knownIDlist,
+                                                     ommitIDstr,
+                                                     ommitIDlist,
+                                                     refDict)
         print rocPath, totalLib, totalKnown
         rocPaths.append(rocPath)
         allTotalLibs.append(totalLib)
         allTotalKnowns.append(totalKnown)
 
+    #
     # Make sure the total library size and the total number of knowns is the
     # same between all vsResults. Exit and print statement if it isn't
+    #
     for totalL in allTotalLibs:
         if totalLib != totalL:
-            print "Total library size not mathing between VS experiments"
+            print "Total library size not matching between VS experiments"
             sys.exit()
-
     for totalK in allTotalKnowns:
         if totalKnown != totalK:
             print "Total number of knowns not matching between VS experiments"
             sys.exit()
 
+    #
     # Extract the data from the ROC files
-    rocData, perfect, xLim, yLim = extractRocData(rocPaths, rocLegends,
-                                                  totalKnown, zoom)
-
+    #
+    rocData, perfect, xLim, yLim = extractRocData(rocPaths,
+                                                  rocLegends,
+                                                  totalKnown,
+                                                  zoom)
     getAUC_NSQ(rocData, perfect)
 
+    #
     # Plot the values 2 and 3, which correspond to the percentage X and Y
-    plot(title, rocData, perfect, xLim, yLim,
-         totalLib, totalKnown, gui, log, zoom)
+    #
+    plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown,
+         gui, log, zoom)
 
+    #
     # Write down the command that was used to exectute this script in a log
     # file, at the location where the script is executed. Also write the
     # current working directory at the time of execution
-
+    #
     cwd = os.getcwd()
     args = " ".join(sys.argv)
-
     logFile = open("plot.log", "w")
     logFile.write(cwd + "\n")
     logFile.write(args)
@@ -93,9 +114,12 @@ def parseArgs():
     descr_zoom = "Give the percent of ranked database to be displayed in the" \
         " zoomed subplot"
     descr_knownIDstr = "Provide the IDs of known actives ligands" \
-        "lib (format: 1-514,6001,6700-6702)"
-    descr_ommitIDstr = "Provide the IDs of ligands to ommit " \
-        "from the ROC curve data, same format at knownIDs"
+        " lib (format: 1-514,6001,6700-6702)"
+    descr_ommitIDstr = "Provide the IDs of ligands to ommit" \
+        " from the ROC curve data, same format at knownIDs"
+    descr_ref = "Refinement ligand(s) used on this GPCR binding pocket" \
+        " refinement. Provide ligand name and ID in the following format:" \
+        " lig1:328,lig2:535"
     descr_log = "Draw this plot on a log scale for the X axis"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
 
@@ -106,6 +130,7 @@ def parseArgs():
     parser.add_argument("zoom", help=descr_zoom)
     parser.add_argument("knownIDstr", help=descr_knownIDstr)
     parser.add_argument("ommitIDstr", help=descr_ommitIDstr)
+    parser.add_argument("--ref", help=descr_ref)
     parser.add_argument("-log", action="store_true", help=descr_log)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
 
@@ -116,6 +141,7 @@ def parseArgs():
     zoom = float(args.zoom)
     knownIDstr = args.knownIDstr
     ommitIDstr = args.ommitIDstr
+    ref = args.ref
     log = args.log
     gui = args.gui
 
@@ -129,7 +155,7 @@ def parseArgs():
         i += 2
 
     return title, rocLegends, resultPaths, zoom, \
-        knownIDstr, ommitIDstr, log, gui
+        knownIDstr, ommitIDstr, ref, log, gui
 
 
 def makeIDlist(stringID):
@@ -165,9 +191,29 @@ def makeIDlist(stringID):
     return rangeID
 
 
+def makeRefDict(refStr):
+    """
+    Get a string describing refinement ligands and their ID, and generate a
+    dictionary to store that information, which is used when plotting the ROC
+    curve
+    """
+    # This dictionary will be used for plotting
+    refDict = {}
+
+    refList = refStr.split(",")
+
+    print refList
+
+    for ref in refList:
+        refName, refID = ref.split(":")
+        refDict[int(refID)] = refName
+
+    return refDict
+
+
 def intersectResults(resultPaths):
     """
-    Read in the results provided in .csv format, and figure out the interesect
+    Read in the results provided in .csv format, and figure out the intersect
     between each of those results set based on the ligID. Then return the
     results set containing only the intersect results for each set.
     """
@@ -211,10 +257,12 @@ def intersectResults(resultPaths):
 
 def writeRocFile(vsResult, vsDir,
                  knownIDstr, knownIDlist,
-                 ommitIDstr, ommitIDlist):
+                 ommitIDstr, ommitIDlist,
+                 refDict):
     """
     Given this VS result, and information about the ID of known actives
     in the library, write in a file the information to plot a ROC curve
+    Also collect for each
     """
 
     known = "knowns_" + knownIDstr
@@ -270,8 +318,20 @@ def writeRocFile(vsResult, vsDir,
             # Calculate percentage X and Y
             Xpercent = (X * 100.0) / totalLibrary
             Ypercent = (Y * 100.0) / totalKnowns
-            rocDataFile.write(str(X) + "," + str(Y) + "," +
-                              str(Xpercent) + "," + str(Ypercent) + "\n")
+
+            #
+            # Find if the current ligand is one of the refinement ligands, if
+            # so save its Xpercent value, in order to add a marker at the
+            # position where it was recovered in the VS screen
+            #
+            if ligID in refDict.keys():
+                ligName = refDict[ligID]
+                rocDataFile.write(str(X) + "," + str(Y) + "," +
+                                  str(Xpercent) + "," + str(Ypercent) + "," +
+                                  ligName + "\n")
+            else:
+                rocDataFile.write(str(X) + "," + str(Y) + "," +
+                                  str(Xpercent) + "," + str(Ypercent) + "\n")
 
     rocDataFile.close()
 
@@ -294,6 +354,8 @@ def extractRocData(rocPaths, rocLegends, totalKnown, zoom):
         rocFile = open(rocPath, "r")
         rocLines = rocFile.readlines()
         rocFile.close()
+
+        refPlot = {}
 
         print "ROC PATH:", rocPath
 
@@ -322,7 +384,13 @@ def extractRocData(rocPaths, rocLegends, totalKnown, zoom):
                     xLim = xPercent
                     yLim = yPercent
 
-        rocData.append((X, Y, rocLegend))
+            # Collect the X position of the refinement ligand(s)
+            if len(ll) == 5:
+                ligName = ll[4]
+                ligXY = [xPercent, yPercent]
+                refPlot[ligName] = ligXY
+
+        rocData.append((X, Y, rocLegend, refPlot))
 
     return rocData, perfect, xLim, yLim
 
@@ -408,27 +476,38 @@ def plot(title, rocData, perfect, xLim, yLim,
         # colors defined by the colormap
         if i == 0:
             color = 'black'
+            lw = 4
         elif i == 1:
             color = 'grey'
+            lw = 4
         else:
             color = scalarMap.to_rgba(i)
+            lw = 2
         X = rocDatum[0]
         Y = rocDatum[1]
         rocLegend = rocDatum[2]
+        refPlot = rocDatum[3]
 
         # Plot this curve
-        ax.plot(X, Y, label=rocLegend, linewidth=2, color=color)
+        ax.plot(X, Y, label=rocLegend, linewidth=lw, color=color)
 
         # Plot a blow up of the first X%
         if zoom != 0.0:
             ax2.plot(X, Y, color=color)
 
+        # Plot a vertical line for each refinement ligand
+        for ligName in refPlot.keys():
+            xPos, yPos = refPlot[ligName]
+            ax.axvline(x=xPos, ymax=yPos/100., color=color, linewidth=3)
+            print ligName, xPos, yPos
+            # ax.text(xPos-0.01, -2, ligName, rotation=-90, color=color)
+
     # Plot the RANDOM and PERFECT curves on the zoomed and main graph
     if zoom != 0.0:
         ax2.plot(X, perfect, color="grey")
         ax2.plot(X, X, "--", color="grey")
-        ax2.tick_params(axis="both", which="major", labelsize=8)
-        ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=10)
+        ax2.tick_params(axis="both", which="major", labelsize=15)
+        ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
 
     # Now plot random and perfect curves, common for all plotted curves
     ax.plot(X, X, "--", color="grey")
@@ -436,18 +515,21 @@ def plot(title, rocData, perfect, xLim, yLim,
 
     # Here axis and ticks are improved
     ax.set_xlabel("% of ranked database (total=" + str(totalLib) + ")",
-                  fontsize=16)
+                  fontsize=30)
     ax.set_ylabel("% of known ligands found (total=" + str(totalKnown) + ")",
-                  fontsize=16)
+                  fontsize=30)
     ax.minorticks_on()
-    ax.set_title(title, fontsize=18)
-    ax.legend(loc="upper left", prop={'size': 12})
+    ax.tick_params(axis="both", which="major", labelsize=30)
+    ax.set_title(title, fontsize=30)
+    ax.legend(loc="upper left", prop={'size': 30})
     ax.axis('tight')
 
     if log:
         ax.set_xscale("log")
-        # ax.set_xticks([0.1, 1, 10, 100])
-        # ax.set_xticklabels([0.1, 1, 10, 100])
+        # Quick and dirty fix for the axis
+        ax.set_xticks([0.1, 1, 10, 100])
+        ax.set_xticklabels([0.1, 1, 10, 100])
+
         # Setting ZOOMED ax2 graph
         if zoom != 0.0:
             ax2.set_xscale("log")
