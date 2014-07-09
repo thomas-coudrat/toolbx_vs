@@ -93,10 +93,22 @@ def main():
     # current working directory at the time of execution
     #
     cwd = os.getcwd()
-    args = " ".join(sys.argv)
+
+    # print type(sys.argv[0])
+    # print type(sys.argv[1])
+    # print type(sys.argv[3])
+
     logFile = open("plot.log", "w")
     logFile.write(cwd + "\n")
-    logFile.write(args)
+    logFile.write(sys.argv[0].split("/")[-1] + " ")
+    for arg in sys.argv[1:]:
+        if len(arg) > 0:
+            if arg[0] == "-":
+                logFile.write(arg + " ")
+            elif arg[0] == "'" and arg[-1] == "'":
+                logFile.write(arg + " ")
+            else:
+                logFile.write("'" + arg + "' ")
     logFile.close()
 
 
