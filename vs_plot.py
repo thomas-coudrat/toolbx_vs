@@ -93,20 +93,20 @@ def main():
     # current working directory at the time of execution
     #
     cwd = os.getcwd()
-
-    # print type(sys.argv[0])
-    # print type(sys.argv[1])
-    # print type(sys.argv[3])
-
     logFile = open("plot.log", "w")
+    # Write the directory location: this is not executed upong sh call of the
+    # plot.log, but serves as information
     logFile.write(cwd + "\n")
     logFile.write(sys.argv[0].split("/")[-1] + " ")
     for arg in sys.argv[1:]:
         if len(arg) > 0:
+            # Deal with argument options (starting with '-')
             if arg[0] == "-":
                 logFile.write(arg + " ")
+            # Do not add "'" on argument if it already has them
             elif arg[0] == "'" and arg[-1] == "'":
                 logFile.write(arg + " ")
+            # Add the "'" around each other argument
             else:
                 logFile.write("'" + arg + "' ")
     logFile.close()
@@ -512,7 +512,8 @@ def plot(title, rocData, perfect, xLim, yLim,
             xPos, yPos = refPlot[ligName]
             ax.axvline(x=xPos, ymax=yPos/100., color=color, linewidth=3)
             print ligName, xPos, yPos
-            # ax.text(xPos-0.01, -2, ligName, rotation=-90, color=color)
+            ax.text(xPos, -2, ligName, rotation=-90,
+                    color=color, transform=ax.transData)
 
     # Plot the RANDOM and PERFECT curves on the zoomed and main graph
     if zoom != 0.0:
