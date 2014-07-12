@@ -45,7 +45,7 @@ def setPaths():
     scriptVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/index.icm"
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
 
-    scriptLocal = "/home/thomas/Copy/Tools/vs_scripts/index.icm"
+    scriptLocal = "/home/thomas/Copy/toolbx_vs/index.icm"
     icmDesktop = "/usr/icm-3.7-3b/icm64"
     icmLaptop = "/home/thomas/bin/icm-3.8-0/icm64"
 
