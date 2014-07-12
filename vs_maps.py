@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#------------------------------------------------------------
+# ------------------------------------------------------------
 #
 #   This creates maps for a VS from a .ob object containing
 #   the target protein only. The .inx index file pointing
@@ -10,7 +10,7 @@
 #
 #   Thomas Coudrat, February 2014
 #
-#------------------------------------------------------------
+# ------------------------------------------------------------
 
 import os
 import shutil
@@ -60,8 +60,8 @@ def setPaths():
     pocketVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/mapsPocket.icm"
     ligandVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/mapsLigand.icm"
 
-    pocketDesktop = "/home/thomas/Copy/Tools/vs_scripts/mapsPocket.icm"
-    ligandDesktop = "/home/thomas/Copy/Tools/vs_scripts/mapsLigand.icm"
+    pocketLocal = "/home/thomas/Copy/scr_vs/mapsPocket.icm"
+    ligandLocal = "/home/thomas/Copy/scr_vs/mapsLigand.icm"
 
     pocketMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/mapsPocket.icm"
     ligandMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/mapsLigand.icm"
@@ -69,6 +69,7 @@ def setPaths():
     # Paths to the icm executables
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
     icmDesktop = "/usr/icm-3.7-3b/icm64"
+    icmLaptop = "/home/thomas/bin/icm-3.8-0"
     icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
 
     # Get the hostname
@@ -80,9 +81,13 @@ def setPaths():
         ligScript = ligandVlsci
         icm = icmVlsci
     elif hostname == "linux-T1650":
-        pocketScript = pocketDesktop
-        ligScript = ligandDesktop
+        pocketScript = pocketLocal
+        ligScript = ligandLocal
         icm = icmDesktop
+    elif hostname == "Ideapad":
+        pocketScript = pocketLocal
+        ligScript = ligandLocal
+        icm = icmLaptop
     elif hostname == "msgln6.its.monash.edu.au":
         pocketScript = pocketMcc
         ligScript = ligandMcc
@@ -205,7 +210,7 @@ def modifyDtb(keyword, value, obPath):
     newDtbLines = []
     i = 0
 
-    #print dtbLines[i]
+    # print dtbLines[i]
 
     while i < totalLines:
         if keyword in dtbLines[i]:
