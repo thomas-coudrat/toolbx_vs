@@ -41,15 +41,18 @@ def setPaths():
     """
     Determine which platform this is ran on based on the access to the scripts
     """
-    # Path to the blank .icm file
+    # Path to the .icm script and icm executable
     scriptVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/index.icm"
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
+
     scriptLocal = "/home/thomas/Copy/Tools/vs_scripts/index.icm"
     icmDesktop = "/usr/icm-3.7-3b/icm64"
     icmLaptop = "/home/thomas/bin/icm-3.8-0/icm64"
+
     scriptMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/index.icm"
     icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
 
+    # Get the hostname to know which computer this is executed on
     hostname = socket.gethostname()
 
     # Select the proper scripts
