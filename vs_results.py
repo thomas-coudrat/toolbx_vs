@@ -22,7 +22,7 @@ def main():
     """
 
     # Get arguments
-    vsDir = parseArguments()
+    vsDir, minRep, allRep = parseArguments()
 
     # Get the project name out of the vsDir
     projName = os.path.basename(os.path.normpath(vsDir))
@@ -32,6 +32,49 @@ def main():
     # is a number of ligangInfo lists equal to the
     # number of repeats
     ligDict = {}
+
+    # Goes through repeat directories to gather the score data
+    totalRepeatNum = collectScoreData(vsDir, ligDict)
+
+    # Getting rid of the ligands that were not docking in all repeats attempted
+    removeFailed(ligDict, totalRepeatNum, minRep)
+
+    # Sort each ligand docking amongst repeats
+    sortRepeats(ligDict)
+
+    # Write the results in a .csv file
+    writeResultFile(ligDict, projName, vsDir, allRep)
+
+
+def parseArguments():
+
+    # Parsing description of arguments
+    descr = "Extract VS results, write results and ROC data to file"
+    descr_vsDir = "Directory of the VS to be analysed"
+    descr_minRep = "Minimum number of repeats required to be included in" \
+        " the results. Default is max number of repeats"
+    descr_allRep = "Print out all results from each repeat in a different text" \
+        " file"
+
+    # Defining the arguments
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument("vsDir", help=descr_vsDir)
+    parser.add_argument("--minRep", help=descr_minRep)
+    parser.add_argument("-allRep", action="store_true", help=descr_allRep)
+
+    # Parsing arguments
+    args = parser.parse_args()
+    vsDir = args.vsDir
+    minRep = int(args.minRep)
+    allRep = args.allRep
+
+    return vsDir, minRep, allRep
+
+
+def collectScoreData(vsDir, ligDict):
+    """
+    Go through the repeat directories and collect the score data
+    """
 
     print "\nPARSING:\n"
 
@@ -65,31 +108,7 @@ def main():
         if maxRepeatNum < int(repeatNum):
             maxRepeatNum = int(repeatNum)
 
-    # Getting rid of the ligands that were not docking in all repeats attempted
-    removeFailed(ligDict, maxRepeatNum)
-
-    # Sort each ligand docking amongst repeats
-    sortRepeats(ligDict)
-
-    # Write the results in a .csv file
-    writeResultFile(ligDict, projName, vsDir)
-
-
-def parseArguments():
-
-    # Parsing description of arguments
-    descr = "Extract VS results, write results and ROC data to file"
-    descr_vsDir = "Directory of the VS to be analysed"
-
-    # Defining the arguments
-    parser = argparse.ArgumentParser(description=descr)
-    parser.add_argument("vsDir", help=descr_vsDir)
-
-    # Parsing arguments
-    args = parser.parse_args()
-    vsDir = args.vsDir
-
-    return vsDir
+    return maxRepeatNum
 
 
 def parseScoreLine(ligDict, line, repeatNum):
@@ -144,19 +163,51 @@ def parseScoreLine(ligDict, line, repeatNum):
         ligDict[ligID].append(ligInfo)
 
 
-def removeFailed(ligDict, maxRepeatNum):
+def removeFailed(ligDict, totalRepeatNum, minRepeatNum):
     """
     Loop over all results and remove those not successful for all repeats
     attempted. Print the information about the failed dockings.
     """
 
+    # Get the max ligID of the docked ligands
+    ligIDs = ligDict.keys()
+    ligIDs.sort()
+    minLigID = ligIDs[0]
+    maxLigID = ligIDs[-1]
+    # Create a range list of IDs, stopping at the max
+    rangeIDs = range(minLigID, maxLigID + 1)
+    rangeFlag = dict([(ligID, False) for ligID in rangeIDs])
+    # print rangeFlag
+
     print "\nINCOMPLETE DOCKINGS:\n"
 
     keys = ligDict.keys()
     for key in keys:
-        if len(ligDict[key]) != maxRepeatNum:
-            print "\tid:", key, "# of sucessful repeats:", len(ligDict[key])
-            del ligDict[key]
+        currRepeatNum = len(ligDict[key])
+
+        # When the number of repeats found is not equal to the max number of
+        # repeats expected
+        if currRepeatNum != totalRepeatNum:
+            print "\tid:", key, "# of sucessful repeats:", currRepeatNum,
+            if currRepeatNum > totalRepeatNum:
+                print "(included)"
+            elif currRepeatNum >= minRepeatNum:
+                print "(included)"
+            else:
+                print "(deleted)"
+                del ligDict[key]
+
+        # Flag the current ligID when it is found
+        if key in rangeFlag.keys():
+            rangeFlag[key] = True
+
+    for key in rangeFlag.keys():
+        if rangeFlag[key] is False:
+            print "\tid:", key, "# of successful repeats: 0 (not included)"
+
+    print "\nSUMMARY:\n"
+
+    print "\tTotal ligands docked:", len(ligDict.keys())
 
 
 def sortRepeats(ligDict):
@@ -175,10 +226,15 @@ def sortRepeats(ligDict):
         ligDict[key] = repeatsLigInfo
 
 
-def writeResultFile(ligDict, projName, vsDir):
+def writeResultFile(ligDict, projName, vsDir, allRep):
     """
     Write out the results of this VS
     """
+
+    # Get project name
+    if projName == ".":
+        projName = os.path.basename(os.getcwd())
+
     # Write the ligand info
     keys = ligDict.keys()
     vsResult = []
@@ -194,23 +250,48 @@ def writeResultFile(ligDict, projName, vsDir):
 
     print "\nWRITING:\n"
 
-    # Write result file
-    if projName == ".":
-        projName = os.path.basename(os.getcwd())
+    # Create results file
     print "\tresults_" + projName + ".csv"
-
     fileResult = open(vsDir + "/results_" + projName + ".csv", "w")
     fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf" +
                      ",dEel,dEhp,Score,mfScore,Name,Run#\n")
 
-    for ligInfo in vsResult:
-        ligInfoStr = []
-        for val in ligInfo:
-            ligInfoStr.append(str(val))
+    # Create all results file, if flag was used
+    if allRep:
+        print "\tall_results_" + projName + ".csv"
+        fileResultAll = open(vsDir + "/all_results_" + projName + ".csv", "w")
+        fileResultAll.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf" +
+                            ",dEel,dEhp,Score,mfScore,Name,Run#\n")
 
-        fileResult.write(",".join(ligInfoStr))
-        fileResult.write("\n")
+    # Loop over the sorted results, and write to the result(s) file(s)
+    for ligInfo in vsResult:
+        # Write single repeat result (the best repeat)
+        writeResultLine(ligInfo, fileResult)
+
+        if allRep:
+            # Write top repeat result
+            writeResultLine(ligInfo, fileResultAll)
+            # And all other results
+            key = ligInfo[0]
+            ligRepeats = ligDict[key]
+            for ligInfoRep in ligRepeats[1:]:
+                writeResultLine(ligInfoRep, fileResultAll)
+
     fileResult.close()
+    if allRep:
+        fileResultAll.close()
+
+
+def writeResultLine(ligInfo, fileResult):
+    """
+    Write single results line to file
+    """
+    ligInfoStr = []
+    for val in ligInfo:
+        ligInfoStr.append(str(val))
+
+    fileResult.write(",".join(ligInfoStr))
+    fileResult.write("\n")
 
 
 if __name__ == "__main__":
