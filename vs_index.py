@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 #   Create an index file (.inx) of a given .sdf ligand library
 #   file, by submitting that .sdf as argument. The .inx file
@@ -12,13 +12,14 @@
 #
 #   Thomas Coudrat, February 2014
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 import argparse
 import os
 import shutil
 import sys
 from subprocess import check_output, STDOUT, CalledProcessError
+import socket
 
 
 def main():
@@ -43,19 +44,25 @@ def setPaths():
     # Path to the blank .icm file
     scriptVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/index.icm"
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
-    scriptDesktop = "/home/thomas/Copy/Tools/vs_scripts/index.icm"
+    scriptLocal = "/home/thomas/Copy/Tools/vs_scripts/index.icm"
     icmDesktop = "/usr/icm-3.7-3b/icm64"
+    icmLaptop = "/home/thomas/bin/icm-3.8-0/icm64"
     scriptMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/index.icm"
     icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
 
+    hostname = socket.gethostname()
+
     # Select the proper scripts
-    if os.path.exists(scriptVlsci):
+    if hostname == "barcoo":
         script = scriptVlsci
         icm = icmVlsci
-    elif os.path.exists(scriptDesktop):
-        script = scriptDesktop
+    elif hostname == "linux-T1650":
+        script = scriptLocal
         icm = icmDesktop
-    elif os.path.exists(scriptMcc):
+    elif hostname == "Ideapad":
+        script = scriptLocal
+        icm = icmLaptop
+    elif hostname == "msgln6.its.monash.edu.au":
         script = scriptMcc
         icm = icmMcc
     else:
