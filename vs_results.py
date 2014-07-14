@@ -65,8 +65,17 @@ def parseArguments():
     # Parsing arguments
     args = parser.parse_args()
     vsDir = args.vsDir
-    minRep = int(args.minRep)
+    minRep = args.minRep
     allRep = args.allRep
+
+    # Deal with minRep in case the option was not used in which case use a very
+    # large int number. Otherwise make the minRep an int.
+    if minRep:
+        minRep = int(minRep)
+    else:
+        # This could be improved, but it does work well this way (never will the
+        # repeat number be that high)
+        minRep = 999999999999999999999
 
     return vsDir, minRep, allRep
 
@@ -189,10 +198,15 @@ def removeFailed(ligDict, totalRepeatNum, minRepeatNum):
         # repeats expected
         if currRepeatNum != totalRepeatNum:
             print "\tid:", key, "# of sucessful repeats:", currRepeatNum,
+            # For cases where a ligand was docked more than the defined repeat
+            # number (when there was mistake in the VS setup)
             if currRepeatNum > totalRepeatNum:
                 print "(included)"
+            # For cases where the repeat number of a given ligand is above or
+            # equal to the user defined minimum repeat number
             elif currRepeatNum >= minRepeatNum:
                 print "(included)"
+            # Otherwise delete the ligand's information from the list
             else:
                 print "(deleted)"
                 del ligDict[key]
