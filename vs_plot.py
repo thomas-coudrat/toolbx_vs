@@ -512,8 +512,8 @@ def plot(title, rocData, perfect, xLim, yLim,
             xPos, yPos = refPlot[ligName]
             ax.axvline(x=xPos, ymax=yPos/100., color=color, linewidth=3)
             print ligName, xPos, yPos
-            ax.text(xPos, -2, ligName, rotation=-90,
-                    color=color, transform=ax.transData)
+            # ax.text(xPos, -2, ligName, rotation=-90,
+            #        color=color, transform=ax.transData)
 
     # Plot the RANDOM and PERFECT curves on the zoomed and main graph
     if zoom != 0.0:
