@@ -15,7 +15,7 @@ import glob
 import shutil
 import re
 import sys
-# import socket
+import socket
 
 
 def main():
@@ -24,27 +24,20 @@ def main():
     """
 
     # Getting all the args
-    libStart, libEnd, sliceSize, repeatNum, \
-        walltime, thor, setupDir, projName, pbs, slurm = parsing()
+    libStart, libEnd, sliceSize, repeatNum, thor, \
+        walltime, setupDir, projName = parsing()
 
-    # Check if a queuing system was chosen
-    if not pbs and not slurm:
-        print "A queuing system -pbs or -slurm must be chosen"
-        sys.exit()
-    elif pbs and slurm:
-        print "Only one of -pbs or -slurm option must be chosen"
-        sys.exit()
-    elif pbs:
-        queue = "pbs"
-    elif slurm:
-        queue = "slurm"
+    # Figure out the queuing system
+    queue = getQueuingSys()
 
     # Store all the report lines in this file, will be used for printout
     # and to write to file
     reportLines = []
+
     # Get current working directory
     workDir = os.getcwd()
 
+    # Clean files present in the current repeat directories, if any
     cleanVSdir(workDir)
 
     reportLines.append("\nPARAMETERS:\n")
@@ -89,13 +82,9 @@ def parsing():
     descr_libEnd = "Ligand library ID where to END the VS"
     descr_sliceSize = "Size of the slices"
     descr_repeatNum = "Number of repeats"
-    descr_walltime = "Walltime for a single slice (format: 1-24:00:00)"
     descr_thor = "Thoroughness of the docking (format: 5.)"
+    descr_walltime = "Walltime for a single slice (format: 1-24:00:00)"
     descr_setupDir = "Name of the directory containing setup files"
-    descr_slurm = "Use this flag to create files for the SLURM queuing " \
-        "system (Barcoo)"
-    descr_pbs = "Use this flag to create files for the PBS queuing " \
-        "system (MCC)"
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
@@ -103,11 +92,9 @@ def parsing():
     parser.add_argument("libEnd", help=descr_libEnd)
     parser.add_argument("sliceSize", help=descr_sliceSize)
     parser.add_argument("repeatNum", help=descr_repeatNum)
-    parser.add_argument("walltime", help=descr_walltime)
     parser.add_argument("thor", help=descr_thor)
+    parser.add_argument("walltime", help=descr_walltime)
     parser.add_argument("setupDir", help=descr_setupDir)
-    parser.add_argument("-slurm", action="store_true", help=descr_slurm)
-    parser.add_argument("-pbs", action="store_true", help=descr_pbs)
 
     # Parsing and storing into variables
     args = parser.parse_args()
@@ -117,19 +104,36 @@ def parsing():
     libEnd = int(args.libEnd)
     sliceSize = int(args.sliceSize)
     repeatNum = int(args.repeatNum)
+    thor = args.thor
     # VS params
     walltime = args.walltime
-    thor = args.thor
     # Project info
     setupDir = args.setupDir
     dtbFileName = glob.glob(setupDir + "/*.dtb")[0]
     projName = dtbFileName.replace(".dtb", "").split("/")[1]
-    # Queuing system
-    pbs = args.pbs
-    slurm = args.slurm
 
-    return libStart, libEnd, sliceSize, repeatNum, walltime, thor, setupDir, \
-        projName, pbs, slurm
+    return libStart, libEnd, sliceSize, repeatNum, thor, walltime, setupDir, \
+        projName
+
+
+def getQueuingSys():
+    """
+    Figure out which queuing system to use depending on the platform this script
+    is executed on
+    """
+    # Get the hostname
+    hostname = socket.gethostname()
+
+    # Check if a queuing system was chosen
+    if hostname == "msgln6.its.monash.edu.au":
+        queue = "pbs"
+    elif hostname == "barcoo":
+        queue = "slurm"
+    else:
+        "The queuing system could not be assigned", hostname
+        sys.exit()
+
+    return queue
 
 
 def cleanVSdir(workDir):
