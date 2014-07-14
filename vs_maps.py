@@ -57,14 +57,14 @@ def setPaths():
     """
 
     # Paths to the .icm scripts
-    pocketVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/mapsPocket.icm"
-    ligandVlsci = "/vlsci/VR0024/tcoudrat/Scripts/vs_scripts/mapsLigand.icm"
+    pocketVlsci = "/vlsci/VR0024/tcoudrat/Scripts/toolbx_vs/mapsPocket.icm"
+    ligandVlsci = "/vlsci/VR0024/tcoudrat/Scripts/toolbx_vs/mapsLigand.icm"
 
     pocketLocal = "/home/thomas/Copy/toolbx_vs/mapsPocket.icm"
     ligandLocal = "/home/thomas/Copy/toolbx_vs/mapsLigand.icm"
 
-    pocketMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/mapsPocket.icm"
-    ligandMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/vs_scripts/mapsLigand.icm"
+    pocketMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/toolbx_vs/mapsPocket.icm"
+    ligandMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/toolbx_vs/mapsLigand.icm"
 
     # Paths to the icm executables
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
