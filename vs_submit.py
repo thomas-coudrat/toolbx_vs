@@ -15,6 +15,7 @@ import os
 import time
 import argparse
 import sys
+import socket
 
 
 def main():
@@ -39,10 +40,37 @@ def main():
     print
 
 
+def parsing():
+    """
+    Define arguments, parse and return them
+    """
+
+    # Define and collect arguments
+    descr = "Submits a VS using either -slurm or -pbs queuing system"
+    descr_vsDir = "VS directory to be submitted to the queue"
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument("vsDir", help=descr_vsDir)
+    args = parser.parse_args()
+    vsDir = args.vsDir
+
+    # Get queuing system from hostname
+    hostname = socket.gethostname()
+    if hostname == "msgln6.its.monash.edu.au":
+        queue = ".pbs"
+    elif hostname == "barcoo":
+        queue = ".slurm"
+    else:
+        print "Queuing system could not be indentified on your system", hostname
+        sys.exit()
+
+    return vsDir, queue
+
+
 def getQueueScripts(vsDir, queue):
     """
     Make a list of the scripts to be submited
     """
+
     queuePaths = []
     # Listing direct subdirectories to the dir where this was executed
     for subDir in os.listdir(vsDir):
@@ -87,39 +115,6 @@ def submitQueueScripts(queuePaths, cwd, queue):
             #print "qsub " + queueFile
             os.system("qsub " + queueFile)
         time.sleep(1)
-
-
-def parsing():
-    """
-    Define arguments, parse and return them
-    """
-    descr = "Submits a VS using either -slurm or -pbs queuing system"
-    descr_vsDir = "VS directory to be submitted to the queue"
-    descr_pbs = "Optional argument, use the PBS queuing system"
-    descr_slurm = "Optional argument, use the SLURM queuing system"
-    parser = argparse.ArgumentParser(description=descr)
-    parser.add_argument("vsDir", help=descr_vsDir)
-    parser.add_argument("-pbs", action="store_true", help=descr_pbs)
-    parser.add_argument("-slurm", action="store_true", help=descr_slurm)
-    args = parser.parse_args()
-
-    vsDir = args.vsDir
-    pbs = args.pbs
-    slurm = args.slurm
-
-    # Check if a queuing system was chosen
-    if not pbs and not slurm:
-        print "A queuing system -pbs or -slurm must be chosen"
-        sys.exit()
-    elif pbs and slurm:
-        print "Only one of -pbs or -slurm option must be chosen"
-        sys.exit()
-    elif pbs:
-        queue = ".pbs"
-    elif slurm:
-        queue = ".slurm"
-
-    return vsDir, queue
 
 
 if __name__ == "__main__":
