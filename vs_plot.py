@@ -87,29 +87,8 @@ def main():
     plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown,
          gui, log, zoom)
 
-    #
-    # Write down the command that was used to exectute this script in a log
-    # file, at the location where the script is executed. Also write the
-    # current working directory at the time of execution
-    #
-    cwd = os.getcwd()
-    logFile = open("plot.log", "w")
-    # Write the directory location: this is not executed upong sh call of the
-    # plot.log, but serves as information
-    logFile.write(cwd + "\n")
-    logFile.write(sys.argv[0].split("/")[-1] + " ")
-    for arg in sys.argv[1:]:
-        if len(arg) > 0:
-            # Deal with argument options (starting with '-')
-            if arg[0] == "-":
-                logFile.write(arg + " ")
-            # Do not add "'" on argument if it already has them
-            elif arg[0] == "'" and arg[-1] == "'":
-                logFile.write(arg + " ")
-            # Add the "'" around each other argument
-            else:
-                logFile.write("'" + arg + "' ")
-    logFile.close()
+    # Write the command used to execute this script into a log file
+    writeCommand()
 
 
 def parseArgs():
@@ -482,6 +461,9 @@ def plot(title, rocData, perfect, xLim, yLim,
     scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
     # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(rocData))])
 
+    # Add a value 0 to the perfect curve
+    perfect = [0.0] + perfect
+
     # Drawing data on the figure
     for i, rocDatum in enumerate(rocData):
         # Set color for crystal structures, and the LDM results have their
@@ -497,6 +479,8 @@ def plot(title, rocData, perfect, xLim, yLim,
             lw = 2
         X = rocDatum[0]
         Y = rocDatum[1]
+        X = [0.1] + X
+        Y = [0.1] + Y
         rocLegend = rocDatum[2]
         refPlot = rocDatum[3]
 
@@ -525,6 +509,8 @@ def plot(title, rocData, perfect, xLim, yLim,
     # Now plot random and perfect curves, common for all plotted curves
     ax.plot(X, X, "--", color="grey")
     ax.plot(X, perfect, color="grey")
+    # print X
+    # print perfect
 
     # Here axis and ticks are improved
     ax.set_xlabel("% of ranked database (total=" + str(totalLib) + ")",
@@ -538,7 +524,7 @@ def plot(title, rocData, perfect, xLim, yLim,
     ax.axis('tight')
 
     if log:
-        ax.set_xscale("log")
+        ax.set_xscale("symlog", linthreshx=0.0001)
         # Quick and dirty fix for the axis
         ax.set_xticks([0.1, 1, 10, 100])
         ax.set_xticklabels([0.1, 1, 10, 100])
@@ -561,6 +547,33 @@ def plot(title, rocData, perfect, xLim, yLim,
     else:
         fileName = title.replace(" ", "_") + ".png"
         plt.savefig(fileName, bbox_inches="tight")
+
+
+def writeCommand():
+    """
+    Write down the command that was used to exectute this script in a log
+    file, at the location where the script is executed. Also write the
+    current working directory at the time of execution
+    """
+
+    cwd = os.getcwd()
+    logFile = open("plot.log", "w")
+    # Write the directory location: this is not executed upong sh call of the
+    # plot.log, but serves as information
+    logFile.write(cwd + "\n")
+    logFile.write(sys.argv[0].split("/")[-1] + " ")
+    for arg in sys.argv[1:]:
+        if len(arg) > 0:
+            # Deal with argument options (starting with '-')
+            if arg[0] == "-":
+                logFile.write(arg + " ")
+            # Do not add "'" on argument if it already has them
+            elif arg[0] == "'" and arg[-1] == "'":
+                logFile.write(arg + " ")
+            # Add the "'" around each other argument
+            else:
+                logFile.write("'" + arg + "' ")
+    logFile.close()
 
 
 if __name__ == "__main__":
