@@ -479,8 +479,9 @@ def plot(title, rocData, perfect, xLim, yLim,
             lw = 2
         X = rocDatum[0]
         Y = rocDatum[1]
-        X = [0.1] + X
-        Y = [0.1] + Y
+        # Add the value 0 in order to have curves that start at the origin
+        X = [0.0] + X
+        Y = [0.0] + Y
         rocLegend = rocDatum[2]
         refPlot = rocDatum[3]
 
@@ -524,7 +525,7 @@ def plot(title, rocData, perfect, xLim, yLim,
     ax.axis('tight')
 
     if log:
-        ax.set_xscale("symlog", linthreshx=0.0001)
+        ax.set_xscale("symlog", linthreshx=0.01)
         # Quick and dirty fix for the axis
         ax.set_xticks([0.1, 1, 10, 100])
         ax.set_xticklabels([0.1, 1, 10, 100])
@@ -535,8 +536,8 @@ def plot(title, rocData, perfect, xLim, yLim,
             ax2.set_xlim([0, zoom])
             ax2.set_ylim([0, yLim])
             # xLimRound = int(xLim * 100) / 100.0
-            yLimRound = int(yLim * 100) / 100.0
-            ax2.set_yticks([0, yLimRound])
+            # yLimRound = int(yLim * 100) / 100.0
+            # ax2.set_yticks([0, yLimRound])
             # ax2.set_xticklabels([])
             # print xLimRound
             # plt.setp(ax2, xlim=(0, zoom), ylim=(0, yLim),
