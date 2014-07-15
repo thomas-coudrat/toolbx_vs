@@ -495,7 +495,8 @@ def plot(title, rocData, perfect, xLim, yLim,
         # Plot a vertical line for each refinement ligand
         for ligName in refPlot.keys():
             xPos, yPos = refPlot[ligName]
-            ax.axvline(x=xPos, ymax=yPos/100., color=color, linewidth=3)
+            ax.axvline(x=xPos, ymax=yPos/100., color=color,
+                       linewidth=3, linestyle='--')
             print ligName, xPos, yPos
             # ax.text(xPos, -2, ligName, rotation=-90,
             #        color=color, transform=ax.transData)
