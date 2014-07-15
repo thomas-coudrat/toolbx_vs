@@ -129,6 +129,8 @@ def getQueuingSys():
         queue = "pbs"
     elif hostname == "barcoo":
         queue = "slurm"
+    elif hostname == "linux-T1650":
+        queue = "slurm"
     else:
         "The queuing system could not be assigned", hostname
         sys.exit()
@@ -258,7 +260,7 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
 
         # Initialize variables for the first slice
         lowerLimit = libStart
-        upperLimit = libStart + sliceSize
+        upperLimit = libStart + sliceSize - 1
         sliceCount = 1
         keepLooping = True
 
