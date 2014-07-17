@@ -114,7 +114,7 @@ def executeScript(icm, script, sdfFile):
     try:
         check_output(icm + " -s ./temp.icm", stderr=STDOUT, shell=True)
     except CalledProcessError, e:
-        print "\n Error executin the ICM script"
+        print "\n Error executing the ICM script"
         print e.output
         sys.exit()
     # Delete
