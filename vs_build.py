@@ -1,13 +1,26 @@
 #!/usr/bin/env python
+#
+# Thomas Coudrat <thomas.coudrat@gmail.com>
+#
 
-# -------------------------------------------------------------
-#
-# Create .slurm or .pbs files to slice a VS into several equal
-# portions, for parallelisation
-#
-# Thomas Coudrat, February 2014
-#
-# -------------------------------------------------------------
+"""
+Usage:
+  vs_build.py libStart libEnd sliceSize repeatNum thor walltime setupDir
+  vs_build.py [-h]
+
+
+Arguments:
+  libStart      Ligand library ID where to START the VS
+  libEnd        Ligand library ID where to END the VS
+  sliceSize     Size of the slices
+  repeatNum     Number of repeats
+  thor          Thoroughness of the docking (format: 5.)
+  walltime      Walltime for a single slice (format: 1-24:00:00)
+  setupDir      Name of the directory containing setup files
+
+Options:
+  -h, --help    show this help message and exit
+"""
 
 import os
 import argparse
@@ -16,12 +29,16 @@ import shutil
 import re
 import sys
 import socket
+# from docopt import docopt
 
 
 def main():
     """
     Run the following script
     """
+
+    # args = docopt(__doc__, version="0.1")
+    # arg_list = args.keys()
 
     # Getting all the args
     libStart, libEnd, sliceSize, repeatNum, thor, \
