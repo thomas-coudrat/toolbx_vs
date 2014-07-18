@@ -27,19 +27,30 @@ def main():
     """
 
     X = 10
-    resPath = sys.argv[1]
-    cwd = os.getcwd()
-    icmScript = "/home/thomas/Copy/toolbx_vs/poses.icm"
     icmBin = "/usr/icm-3.7-3b/icm64"
 
-    vsPath = cwd.replace(resPath, "")
-    projName = vsPath.split("/")[-1]
+    # Get paths
+    resultsPath = sys.argv[1]
+    cwd = os.getcwd()
+    vsPath = os.path.dirname(cwd + "/" + resultsPath)
+    projName = os.path.basename(os.path.dirname(cwd + "/" + resultsPath))
 
-    resData = parseResultsCsv(resPath, X)
+    # Parse the VS results
+    resData = parseResultsCsv(resultsPath, X)
 
+    # Get the list of poses to pick per repeat directory
     repeatsRes = posesPerRepeat(resData)
 
-    loadPoses(repeatsRes, vsPath, projName, icmScript, icmBin)
+    # Load those poses and save them in the /poses directory
+    loadPoses(repeatsRes, vsPath, projName, icmBin)
+
+    # Now load and write the receptor (binding pocket)
+    recObName = projName + "_rec"
+    recObPath = vsPath + "/vs_setup/" + recObName + ".ob"
+    recPdbPath = vsPath + "/poses/" + recObName + ".pdb"
+    print "Extracting", recObName
+    print
+    readAndWrite([recObPath], [["a_" + recObName + ".", recPdbPath]], icmBin)
 
 
 def parseResultsCsv(resPath, X):
@@ -49,7 +60,7 @@ def parseResultsCsv(resPath, X):
     """
 
     # Read data with the csv reader
-    resFile = open(resPath, "rb")
+    resFile = open(resPath, "r")
     resData = csv.reader(resFile)
     resData = [row for row in resData]
     resFile.close()
@@ -58,8 +69,6 @@ def parseResultsCsv(resPath, X):
     # ligandID [0], the ICM score [9], and the repeat directory [-1]
     resData = [[ID, eval(row[0]), eval(row[9]), row[-1]] for row, ID in
                zip(resData[1:X+1], range(1, X+1))]
-
-    print resData
 
     return resData
 
@@ -87,7 +96,7 @@ def posesPerRepeat(resData):
     return repeatsRes
 
 
-def loadPoses(repeatsRes, vsPath, projName, icmScript, icmBin):
+def loadPoses(repeatsRes, vsPath, projName, icmBin):
     """
     Walk through repeat directories, and load each
     """
@@ -97,13 +106,15 @@ def loadPoses(repeatsRes, vsPath, projName, icmScript, icmBin):
         shutil.rmtree(resultsPath)
     os.makedirs(resultsPath)
 
+    print
+
     for key in repeatsRes.keys():
+        # Update progress
+        print "Extracting", len(repeatsRes[key]), "poses from repeat #", key
+
         # Get the ob file list
         repPath = vsPath + "/" + key + "/"
         obFileList = glob.glob(repPath + "*_answers*.ob")
-        # print repPath
-        # for a in obFileList:
-        #    print a
 
         # Get the pdb file list
         pdbFileList = []
@@ -118,10 +129,10 @@ def loadPoses(repeatsRes, vsPath, projName, icmScript, icmBin):
 
             pdbFileList.append([icmName, pdbFilePath])
 
-        readAndWrite(obFileList, pdbFileList, icmScript, icmBin)
+        readAndWrite(obFileList, pdbFileList, icmBin)
 
 
-def readAndWrite(obFileList, pdbFileList, icmScript, icmBin):
+def readAndWrite(obFileList, pdbFileList, icmBin):
     """
     Get the information of which *.ob files to read, and which *.pdb files from
     the loaded molecules to write.
@@ -152,12 +163,8 @@ def readAndWrite(obFileList, pdbFileList, icmScript, icmBin):
         print e.output
         sys.exit()
 
-    print "Before deletion"
-
     # Delete temp script
     os.remove("./temp.icm")
-
-    print "ONE REPEAT DONE!"
 
 
 if __name__ == "__main__":
