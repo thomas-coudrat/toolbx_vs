@@ -18,6 +18,8 @@ import sys
 import os
 import glob
 import shutil
+import argparse
+import socket
 from subprocess import check_output, STDOUT, CalledProcessError
 
 
@@ -26,11 +28,11 @@ def main():
     Run the scripts
     """
 
-    X = 10
-    icmBin = "/usr/icm-3.7-3b/icm64"
+    # Get the arguments and paths
+    resultsPath, X = parseArgs()
+    icmBin = setPath()
 
-    # Get paths
-    resultsPath = sys.argv[1]
+    # Fix paths
     cwd = os.getcwd()
     vsPath = os.path.dirname(cwd + "/" + resultsPath)
     projName = os.path.basename(os.path.dirname(cwd + "/" + resultsPath))
@@ -51,6 +53,56 @@ def main():
     print "Extracting", recObName
     print
     readAndWrite([recObPath], [["a_" + recObName + ".", recPdbPath]], icmBin)
+
+
+def parseArgs():
+    """
+    Create arguments and parse them
+    """
+    # Parsing description
+    descr = "Extract docking poses from a VS in .pdb format"
+    descr_resultsPath = "Results file of the VS in .csv format"
+    descr_X = "Extract the top X poses"
+
+    # Define arguments
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument("resultsPath", help=descr_resultsPath)
+    parser.add_argument("X", help=descr_X)
+
+    # Parse arguments
+    args = parser.parse_args()
+    resultsPath = args.resultsPath
+    X = int(args.X)
+
+    return resultsPath, X
+
+
+def setPath():
+    """
+    Figure out which machine this script is executed on, and use the
+    corresponding executable path
+    """
+
+    hostname = socket.gethostname()
+
+    icmDesk = "/usr/icm-3.7-3b/icm64"
+    icmLap = "/home/thomas/bin/icm-3.8-0/icm64"
+    icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
+    icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
+
+    if hostname == "linux-T1650":
+        icmBin = icmDesk
+    elif hostname == "Ideapad":
+        icmBin = icmLap
+    elif hostname == "barcoo":
+        icmBin = icmVlsci
+    elif hostname == "msgln6.its.monash.edu.au":
+        icmBin = icmMcc
+    else:
+        print "System not recognised, update script to include executable path"
+        sys.exit()
+
+    return icmBin
 
 
 def parseResultsCsv(resPath, X):
