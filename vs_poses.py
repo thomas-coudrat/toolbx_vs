@@ -82,9 +82,44 @@ def parseArgs():
 
     # Make ligIDs a list of IDs integers
     if ligIDs:
-        ligIDs = [int(lig) for lig in ligIDs.split(",")]
+        ligIDs = makeIDlist(ligIDs)
+        # print ligIDs
+        # sys.exit()
 
     return resultsPath, X, ligIDs
+
+
+def makeIDlist(stringID):
+    """
+    Get a string defining which IDs to be generated into a list
+    """
+
+    # This stores the range of IDs into a list
+    rangeID = []
+
+    IDportions = stringID.split(",")
+
+    for portion in IDportions:
+        # Treat ranges of IDs
+        if "-" in portion:
+            start, end = portion.split("-")
+            start = int(start)
+            end = int(end)
+            # Do not add the value 0 to the list
+            if start == 0 or end == 0:
+                pass
+            else:
+                rangeID = rangeID + range(start, end + 1)
+        # Treat single IDs
+        else:
+            portion = int(portion)
+            # Do not add the value 0 to the list
+            if portion == 0:
+                pass
+            else:
+                rangeID.append(int(portion))
+
+    return rangeID
 
 
 def setPath():
