@@ -29,7 +29,7 @@ def main():
     """
 
     # Get the arguments and paths
-    resultsPath, X = parseArgs()
+    resultsPath, X, ligIDs = parseArgs()
     icmBin = setPath()
 
     # Fix paths
@@ -38,10 +38,13 @@ def main():
     projName = os.path.basename(os.path.dirname(cwd + "/" + resultsPath))
 
     # Parse the VS results
-    resData = parseResultsCsv(resultsPath, X)
+    resDataAll = parseResultsCsv(resultsPath)
+
+    # Select results, the top X and optionally specific ligIDs
+    resDataSel = selectResults(resDataAll, X, ligIDs)
 
     # Get the list of poses to pick per repeat directory
-    repeatsRes = posesPerRepeat(resData)
+    repeatsRes = posesPerRepeat(resDataSel)
 
     # Load those poses and save them in the /poses directory
     loadPoses(repeatsRes, vsPath, projName, icmBin)
@@ -63,18 +66,25 @@ def parseArgs():
     descr = "Extract docking poses from a VS in .pdb format"
     descr_resultsPath = "Results file of the VS in .csv format"
     descr_X = "Extract the top X poses"
+    descr_ligIDs = "Optional ligIDs docking poses to be extracted"
 
     # Define arguments
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("resultsPath", help=descr_resultsPath)
     parser.add_argument("X", help=descr_X)
+    parser.add_argument("--ligIDs", help=descr_ligIDs)
 
     # Parse arguments
     args = parser.parse_args()
     resultsPath = args.resultsPath
     X = int(args.X)
+    ligIDs = args.ligIDs
 
-    return resultsPath, X
+    # Make ligIDs a list of IDs integers
+    if ligIDs:
+        ligIDs = [int(lig) for lig in ligIDs.split(",")]
+
+    return resultsPath, X, ligIDs
 
 
 def setPath():
@@ -105,7 +115,7 @@ def setPath():
     return icmBin
 
 
-def parseResultsCsv(resPath, X):
+def parseResultsCsv(resPath):
     """
     Read the resultsPath, and extract the location (which repeat) of each ligand
     for which the docking pose should be extracted
@@ -117,12 +127,34 @@ def parseResultsCsv(resPath, X):
     resData = [row for row in resData]
     resFile.close()
 
+    resLen = len(resData)
+
     # Generate a selection of the top X docked ligands, selecting only the
     # ligandID [0], the ICM score [9], and the repeat directory [-1]
-    resData = [[ID, eval(row[0]), eval(row[9]), row[-1]] for row, ID in
-               zip(resData[1:X+1], range(1, X+1))]
+    resDataAll = [[ID, eval(row[0]), eval(row[9]), row[-1]] for row, ID in
+                  zip(resData[1:], range(1, resLen))]
 
-    return resData
+    return resDataAll
+
+
+def selectResults(resDataAll, X, ligIDs):
+    """
+    Make a selection of the top X VS results, also as optional ligIDs
+    """
+
+    # First select the top X ligands
+    resDataTop = [row for row in resDataAll[0:X]]
+
+    # If the ligID flag was used, select by ligIDs, the ligID is in row[1]
+    # and return a combined list: if a selected ligID is within the top X, there
+    # will be a duplicate. However when processed the .pdb docking pose will be
+    # written then overwritten, resulting in the result expected
+    if ligIDs:
+        resDataID = [row for row in resDataAll if row[1] in ligIDs]
+        return resDataTop + resDataID
+    # Otherwise just return the 'top' list
+    else:
+        return resDataTop
 
 
 def posesPerRepeat(resData):
