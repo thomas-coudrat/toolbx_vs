@@ -69,7 +69,7 @@ def setPaths():
     # Paths to the icm executables
     icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
     icmDesktop = "/usr/icm-3.7-3b/icm64"
-    icmLaptop = "/home/thomas/bin/icm-3.8-0"
+    icmLaptop = "/home/thomas/bin/icm-3.8-0/icm64"
     icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
 
     # Get the hostname
