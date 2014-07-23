@@ -43,19 +43,22 @@ def main():
     # Select results, the top X and optionally specific ligIDs
     resDataSel = selectResults(resDataAll, X, ligIDs)
 
+    # Print the selected results
+    printResults(resDataSel)
+
     # Get the list of poses to pick per repeat directory
     repeatsRes = posesPerRepeat(resDataSel)
 
     # Load those poses and save them in the /poses directory
-    loadPoses(repeatsRes, vsPath, projName, icmBin)
+    loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin)
 
     # Now load and write the receptor (binding pocket)
     recObName = projName + "_rec"
     recObPath = vsPath + "/vs_setup/" + recObName + ".ob"
     recPdbPath = vsPath + "/poses/" + recObName + ".pdb"
     print "Extracting", recObName
-    print
     readAndWrite([recObPath], [["a_" + recObName + ".", recPdbPath]], icmBin)
+    print
 
 
 def parseArgs():
@@ -192,6 +195,17 @@ def selectResults(resDataAll, X, ligIDs):
         return resDataTop
 
 
+def printResults(resData):
+    """
+    Takes in results and prints them out
+    """
+
+    print
+    print "Rank\tID\tScore\tRepeat"
+    for res in resData:
+        print res[0], "\t", res[1], "\t", res[2], "\t", res[3]
+
+
 def posesPerRepeat(resData):
     """
     Create a list for each repeat directory with the ordered list of ligIDs that
@@ -215,12 +229,12 @@ def posesPerRepeat(resData):
     return repeatsRes
 
 
-def loadPoses(repeatsRes, vsPath, projName, icmBin):
+def loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin):
     """
     Walk through repeat directories, and load each
     """
-    resultsPath = vsPath + "/poses/"
     # Create the results directory, delete it if already exists
+    resultsPath = vsPath + "/poses/"
     if os.path.exists(resultsPath):
         shutil.rmtree(resultsPath)
     os.makedirs(resultsPath)
@@ -233,7 +247,11 @@ def loadPoses(repeatsRes, vsPath, projName, icmBin):
 
         # Get the ob file list
         repPath = vsPath + "/" + key + "/"
-        obFileList = glob.glob(repPath + "*_answers*.ob")
+        # Ligands found in that repeat
+        ligsInfo = [[row[0], ""] for row in repeatsRes[key]]
+        obFileList = getAnswersList(repPath, ligsInfo)
+
+        # print obFileList
 
         # Get the pdb file list
         pdbFileList = []
@@ -244,11 +262,54 @@ def loadPoses(repeatsRes, vsPath, projName, icmBin):
             ligID = row[1]
             pdbFilePath = resultsPath + str(ligPos) + "_" + str(ligScore) + \
                 "_" + str(ligID) + ".pdb"
-            icmName = "a_" + projName + str(ligID) + "."
+            icmName = "a_" + projName.replace("-", "_") + str(ligID) + "."
 
             pdbFileList.append([icmName, pdbFilePath])
 
         readAndWrite(obFileList, pdbFileList, icmBin)
+
+
+def getAnswersList(repPath, ligsInfo):
+    """
+    Given a repeat directory path and a list of ligand IDs, return the list
+    of VS answers (.ob files) that contain all the ligand IDs provided.
+    """
+
+    # Get a list of all the files, and make is an sorted list
+    allObFiles = glob.glob(repPath + "*_answers*.ob")
+    allObFiles = [[obFile, int(obFile.split("_answers")[1].replace(".ob", ""))]
+                  for obFile in allObFiles]
+    sortedObFiles = sorted(allObFiles, key=lambda obFile: obFile[1],
+                           reverse=True)
+    for obFile in sortedObFiles:
+        obFilePath = obFile[0]
+        obFileStart = obFile[1]
+
+    # Loop over the ligsInfo list, which contains
+    # ligInfo[0] = the liand ID number
+    # ligInfo[1] = an empty string that is used to store the path to the
+    # corresponding .ob file to be loaded
+    for lig in ligsInfo:
+        ligID = lig[0]
+        # answerPath = ligInfo[1]
+
+        previousObStart = 999999999999999999999999999999999999999999999999
+
+        # Loop over all answers file, and for each
+        for obFile in sortedObFiles:
+            obFileStart = obFile[1]
+            obFilePath = obFile[0]
+
+            # If the ligand ID number is between between the start of this file
+            # and the start of the previous file (part of the current file)
+            # print obFileStart, previousObStart
+            if ligID >= obFileStart and ligID < previousObStart:
+                lig[1] = obFilePath
+                # print obFilePath
+
+            previousObStart = obFileStart
+
+    return list(set([lig[1] for lig in ligsInfo]))
 
 
 def readAndWrite(obFileList, pdbFileList, icmBin):
@@ -267,6 +328,7 @@ def readAndWrite(obFileList, pdbFileList, icmBin):
     # Add the ob file loading part
     icmScript.write("\n# OPENING FILES\n")
     for obFile in obFileList:
+        print "\tloading:", os.path.basename(obFile)
         icmScript.write('openFile "' + obFile + '"\n')
     # Add the pdb file saving part
     icmScript.write("\n# WRITING FILES\n")
