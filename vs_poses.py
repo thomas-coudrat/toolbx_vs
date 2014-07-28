@@ -144,6 +144,8 @@ def setPath():
         icmBin = icmLap
     elif hostname == "barcoo":
         icmBin = icmVlsci
+    elif hostname == "msgln4.its.monash.edu.au":
+        icmBin = icmMcc
     elif hostname == "msgln6.its.monash.edu.au":
         icmBin = icmMcc
     else:
@@ -239,17 +241,19 @@ def loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin):
         shutil.rmtree(resultsPath)
     os.makedirs(resultsPath)
 
-    print
+    # print
 
     for key in repeatsRes.keys():
         # Update progress
-        print "Extracting", len(repeatsRes[key]), "poses from repeat #", key
+        # print "Extracting", len(repeatsRes[key]), "poses from repeat #", key
 
         # Get the ob file list
         repPath = vsPath + "/" + key + "/"
         # Ligands found in that repeat
-        ligsInfo = [[row[0], ""] for row in repeatsRes[key]]
+        # print repeatsRes[key], "LIGANDS FOUND IN THAT REPEAT"
+        ligsInfo = [[row[1], ""] for row in repeatsRes[key]]
         obFileList = getAnswersList(repPath, ligsInfo)
+        # print repeatsRes[key], "After"
 
         # print obFileList
 
@@ -286,10 +290,12 @@ def getAnswersList(repPath, ligsInfo):
         obFileStart = obFile[1]
 
     # Loop over the ligsInfo list, which contains
-    # ligInfo[0] = the liand ID number
+    # ligInfo[0] = the ligand ID number
     # ligInfo[1] = an empty string that is used to store the path to the
     # corresponding .ob file to be loaded
+    # print
     for lig in ligsInfo:
+        # print lig
         ligID = lig[0]
         # answerPath = ligInfo[1]
 
@@ -300,12 +306,12 @@ def getAnswersList(repPath, ligsInfo):
             obFileStart = obFile[1]
             obFilePath = obFile[0]
 
-            print
-            print obFileStart, 'current'
-            print previousObStart, 'prev'
-            print obFilePath, 'path'
-            print ligID, 'ligID'
-            print
+            # print
+            # print obFileStart, 'current'
+            # print previousObStart, 'prev'
+            # print obFilePath, 'path'
+            # print ligID, 'ligID'
+            # print
 
             # If the ligand ID number is between between the start of this file
             # and the start of the previous file (part of the current file)
@@ -315,6 +321,9 @@ def getAnswersList(repPath, ligsInfo):
                 # print obFilePath
 
             previousObStart = obFileStart
+
+        # print "ObPath", lig
+        # print
 
     return list(set([lig[1] for lig in ligsInfo]))
 
