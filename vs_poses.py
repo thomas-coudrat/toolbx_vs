@@ -300,6 +300,13 @@ def getAnswersList(repPath, ligsInfo):
             obFileStart = obFile[1]
             obFilePath = obFile[0]
 
+            print
+            print obFileStart, 'current'
+            print previousObStart, 'prev'
+            print obFilePath, 'path'
+            print ligID, 'ligID'
+            print
+
             # If the ligand ID number is between between the start of this file
             # and the start of the previous file (part of the current file)
             # print obFileStart, previousObStart
