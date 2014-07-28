@@ -43,7 +43,7 @@ def main():
     modifyDtb("i_maxTorsion", "  20", obPath)
     modifyDtb("i_ringFlexLevel", "  1", obPath)
     modifyDtb("l_sampleRacemic", "  yes", obPath)
-    modifyDtb("r_ScoreThreshold", "  -25", obPath)
+    modifyDtb("r_ScoreThreshold", "  -20", obPath)
     modifyDtb("r_maxPk", "  15", obPath)
     modifyDtb("r_minPk", "  -10", obPath)
     modifyDtb("s_chargeGroups", "  auto", obPath)
