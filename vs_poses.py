@@ -56,7 +56,8 @@ def main():
     recObName = projName + "_rec"
     recObPath = vsPath + "/vs_setup/" + recObName + ".ob"
     recPdbPath = vsPath + "/poses/" + recObName + ".pdb"
-    readAndWrite([recObPath], [["a_" + recObName + ".", recPdbPath]], icmBin)
+    icmRecObName = "a_" + recObName + "."
+    readAndWrite([recObPath], [[recObName, icmRecObName, recPdbPath]], icmBin)
     print
 
 
@@ -85,8 +86,6 @@ def parseArgs():
     # Make ligIDs a list of IDs integers
     if ligIDs:
         ligIDs = makeIDlist(ligIDs)
-        # print ligIDs
-        # sys.exit()
 
     return resultsPath, X, ligIDs
 
@@ -204,7 +203,11 @@ def printResults(resData):
     print
     print "Rank\tID\tScore\tRepeat"
     for res in resData:
-        print res[0], "\t", res[1], "\t", res[2], "\t", res[3]
+        print res[0], "\t", res[1], "\t", res[2], "\t", res[3],
+        if res[2] > -25.:
+            print "\t (score above -25., may not have been saved)"
+        else:
+            print "\t"
 
 
 def posesPerRepeat(resData):
@@ -244,30 +247,24 @@ def loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin):
 
     for key in repeatsRes.keys():
         # Update progress
-        # print "Extracting", len(repeatsRes[key]), "poses from repeat #", key
-
         # Get the ob file list
         repPath = vsPath + "/" + key + "/"
         # Ligands found in that repeat
-        # print repeatsRes[key], "LIGANDS FOUND IN THAT REPEAT"
         ligsInfo = [[row[1], ""] for row in repeatsRes[key]]
         obFileList = getAnswersList(repPath, ligsInfo)
-        # print repeatsRes[key], "After"
-
-        # print obFileList
 
         # Get the pdb file list
         pdbFileList = []
         for row in repeatsRes[key]:
-            # print row
             ligPos = row[0]
             ligScore = row[2]
             ligID = row[1]
             pdbFilePath = resultsPath + str(ligPos) + "_" + str(ligScore) + \
                 "_" + str(ligID) + ".pdb"
-            icmName = "a_" + projName.replace("-", "_") + str(ligID) + "."
+            selectionName = projName.replace("-", "_") + str(ligID)
+            icmName = "a_" + selectionName + "."
 
-            pdbFileList.append([icmName, pdbFilePath])
+            pdbFileList.append([selectionName, icmName, pdbFilePath])
 
         readAndWrite(obFileList, pdbFileList, icmBin)
 
@@ -292,9 +289,7 @@ def getAnswersList(repPath, ligsInfo):
     # ligInfo[0] = the ligand ID number
     # ligInfo[1] = an empty string that is used to store the path to the
     # corresponding .ob file to be loaded
-    # print
     for lig in ligsInfo:
-        # print lig
         ligID = lig[0]
         # answerPath = ligInfo[1]
 
@@ -305,24 +300,12 @@ def getAnswersList(repPath, ligsInfo):
             obFileStart = obFile[1]
             obFilePath = obFile[0]
 
-            # print
-            # print obFileStart, 'current'
-            # print previousObStart, 'prev'
-            # print obFilePath, 'path'
-            # print ligID, 'ligID'
-            # print
-
             # If the ligand ID number is between between the start of this file
             # and the start of the previous file (part of the current file)
-            # print obFileStart, previousObStart
             if ligID >= obFileStart and ligID < previousObStart:
                 lig[1] = obFilePath
-                # print obFilePath
 
             previousObStart = obFileStart
-
-        # print "ObPath", lig
-        # print
 
     return list(set([lig[1] for lig in ligsInfo]))
 
@@ -348,7 +331,9 @@ def readAndWrite(obFileList, pdbFileList, icmBin):
     # Add the pdb file saving part
     icmScript.write("\n# WRITING FILES\n")
     for pdbFile in pdbFileList:
-        icmScript.write('write pdb ' + pdbFile[0] + ' "' + pdbFile[1] + '"\n')
+        icmScript.write('sel = ' + pdbFile[1] + "\n")
+        icmScript.write('if ( Name(sel) == "' + pdbFile[0] + '") write pdb ' +
+                        pdbFile[1] + ' "' + pdbFile[2] + '"\n')
     icmScript.write("\nquit")
     icmScript.close()
 
