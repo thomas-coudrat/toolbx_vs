@@ -56,7 +56,6 @@ def main():
     recObName = projName + "_rec"
     recObPath = vsPath + "/vs_setup/" + recObName + ".ob"
     recPdbPath = vsPath + "/poses/" + recObName + ".pdb"
-    print "Extracting", recObName
     readAndWrite([recObPath], [["a_" + recObName + ".", recPdbPath]], icmBin)
     print
 
@@ -241,7 +240,7 @@ def loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin):
         shutil.rmtree(resultsPath)
     os.makedirs(resultsPath)
 
-    # print
+    print
 
     for key in repeatsRes.keys():
         # Update progress
@@ -344,7 +343,7 @@ def readAndWrite(obFileList, pdbFileList, icmBin):
     # Add the ob file loading part
     icmScript.write("\n# OPENING FILES\n")
     for obFile in obFileList:
-        print "\tloading:", os.path.basename(obFile)
+        print "loading:", obFile
         icmScript.write('openFile "' + obFile + '"\n')
     # Add the pdb file saving part
     icmScript.write("\n# WRITING FILES\n")
