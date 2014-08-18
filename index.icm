@@ -1,8 +1,0 @@
-#!/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64
-
-call "_startup"
-
-# Create the .inx file, that indexes this database
-makeIndexChemDb "SDF_LIB" "INX_FILE" "mol" { "ID" }
-
-quit
