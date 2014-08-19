@@ -21,6 +21,7 @@ import shutil
 import argparse
 import socket
 from subprocess import check_output, STDOUT, CalledProcessError
+import json
 
 
 def main():
@@ -30,7 +31,7 @@ def main():
 
     # Get the arguments and paths
     resultsPath, X, ligIDs = parseArgs()
-    icmBin = setPath()
+    icmBin = getPath()
 
     # Fix paths
     cwd = os.getcwd()
@@ -123,34 +124,33 @@ def makeIDlist(stringID):
     return rangeID
 
 
-def setPath():
+def getPath():
     """
-    Figure out which machine this script is executed on, and use the
-    corresponding executable path
+    Read in the json file containing the ICM executable paths for each machine
+    Return the ICM executable corresponding to the hostname of the machine being
+    used currently
     """
 
+    # This Json file stores the ICM executable locations for each platform
+    icmExecJson = os.path.dirname(os.path.realpath(__file__)) + "/icm_exec.json"
+
+    # Read content of .json file
+    with open(icmExecJson, "r") as jsonFile:
+        icmExec = json.load(jsonFile)
+
+    # Get the hostname to know which computer this is executed on
     hostname = socket.gethostname()
 
-    icmDesk = "/usr/icm-3.7-3b/icm64"
-    icmLap = "/home/thomas/bin/icm-3.8-0/icm64"
-    icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
-    icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
-
-    if hostname == "linux-T1650":
-        icmBin = icmDesk
-    elif hostname == "Ideapad":
-        icmBin = icmLap
-    elif hostname == "barcoo":
-        icmBin = icmVlsci
-    elif hostname == "msgln4.its.monash.edu.au":
-        icmBin = icmMcc
-    elif hostname == "msgln6.its.monash.edu.au":
-        icmBin = icmMcc
+    # Assign the ICM executable path corresponding to the hostname, if it is not
+    # defined then stop the execution
+    if hostname in icmExec.keys():
+        icm = icmExec[hostname]
     else:
-        print "System not recognised, update script to include executable path"
+        print("The ICM executable is not defined for this machine, please edit\
+            the icm_exec.json file")
         sys.exit()
 
-    return icmBin
+    return icm
 
 
 def parseResultsCsv(resPath):
