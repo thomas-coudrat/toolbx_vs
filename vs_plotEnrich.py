@@ -14,9 +14,7 @@ def main():
     title, rocLegends, resultPaths, zoom, \
         knownIDstr, ommitIDstr, ref, log, gui = parseArgs()
 
-    #
     # Get the knownID range in list format
-    #
     knownIDlist = makeIDlist(knownIDstr)
     ommitIDlist = makeIDlist(ommitIDstr)
     print "\n", "Known ID string", knownIDstr
@@ -24,10 +22,8 @@ def main():
     print "Ommit ID string", ommitIDstr
     print "Ommit ID list", ommitIDlist, "\n"
 
-    #
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
-    #
     if ref:
         # print ref
         refDict = makeRefDict(ref)
@@ -35,10 +31,8 @@ def main():
     else:
         refDict = {}
 
-    #
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
-    #
     allVsResultsIntersect = intersectResults(resultPaths)
     # print resultPaths
     rocPaths = []
@@ -59,10 +53,8 @@ def main():
         allTotalLibs.append(totalLib)
         allTotalKnowns.append(totalKnown)
 
-    #
     # Make sure the total library size and the total number of knowns is the
     # same between all vsResults. Exit and print statement if it isn't
-    #
     for totalL in allTotalLibs:
         if totalLib != totalL:
             print "Total library size not matching between VS experiments"
@@ -72,18 +64,14 @@ def main():
             print "Total number of knowns not matching between VS experiments"
             sys.exit()
 
-    #
     # Extract the data from the ROC files
-    #
     rocData, perfect, xLim, yLim = extractRocData(rocPaths,
                                                   rocLegends,
                                                   totalKnown,
                                                   zoom)
     getAUC_NSQ(rocData, perfect)
 
-    #
     # Plot the values 2 and 3, which correspond to the percentage X and Y
-    #
     plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown,
          gui, log, zoom)
 
@@ -466,40 +454,7 @@ def plot(title, rocData, perfect, xLim, yLim,
 
     # Drawing data on the figure
     for i, rocDatum in enumerate(rocData):
-        # Set color for crystal structures, and the LDM results have their
-        # colors defined by the colormap
-        if i == 0:
-            color = 'black'
-            lw = 4
-        elif i == 1:
-            color = 'grey'
-            lw = 4
-        else:
-            color = scalarMap.to_rgba(i)
-            lw = 2
-        X = rocDatum[0]
-        Y = rocDatum[1]
-        # Add the value 0 in order to have curves that start at the origin
-        X = [0.0] + X
-        Y = [0.0] + Y
-        rocLegend = rocDatum[2]
-        refPlot = rocDatum[3]
-
-        # Plot this curve
-        ax.plot(X, Y, label=rocLegend, linewidth=lw, color=color)
-
-        # Plot a blow up of the first X%
-        if zoom != 0.0:
-            ax2.plot(X, Y, color=color)
-
-        # Plot a vertical line for each refinement ligand
-        for ligName in refPlot.keys():
-            xPos, yPos = refPlot[ligName]
-            ax.axvline(x=xPos, ymax=yPos/100., color=color,
-                       linewidth=3, linestyle='--')
-            print ligName, xPos, yPos
-            # ax.text(xPos, -2, ligName, rotation=-90,
-            #        color=color, transform=ax.transData)
+        X, Y = drawLine(ax, ax2, rocDatum, i, zoom, scalarMap)
 
     # Plot the RANDOM and PERFECT curves on the zoomed and main graph
     if zoom != 0.0:
@@ -549,6 +504,48 @@ def plot(title, rocData, perfect, xLim, yLim,
     else:
         fileName = title.replace(" ", "_") + ".png"
         plt.savefig(fileName, bbox_inches="tight")
+
+
+def drawLine(ax, ax2, rocDatum, i, zoom, scalarMap):
+    """
+    Draw the line corresponding to the set of data passed in arguments
+    """
+    # Set color for crystal structures, and the LDM results have their
+    # colors defined by the colormap
+    if i == 0:
+        color = 'black'
+        lw = 4
+    elif i == 1:
+        color = 'grey'
+        lw = 4
+    else:
+        color = scalarMap.to_rgba(i)
+        lw = 2
+    X = rocDatum[0]
+    Y = rocDatum[1]
+    # Add the value 0 in order to have curves that start at the origin
+    X = [0.0] + X
+    Y = [0.0] + Y
+    rocLegend = rocDatum[2]
+    refPlot = rocDatum[3]
+
+    # Plot this curve
+    ax.plot(X, Y, label=rocLegend, linewidth=lw, color=color)
+
+    # Plot a blow up of the first X%
+    if zoom != 0.0:
+        ax2.plot(X, Y, color=color)
+
+    # Plot a vertical line for each refinement ligand
+    for ligName in refPlot.keys():
+        xPos, yPos = refPlot[ligName]
+        ax.axvline(x=xPos, ymax=yPos/100., color=color,
+                   linewidth=3, linestyle='--')
+        print ligName, xPos, yPos
+        # ax.text(xPos, -2, ligName, rotation=-90,
+        #        color=color, transform=ax.transData)
+
+    return X, Y
 
 
 def writeCommand():
