@@ -13,28 +13,26 @@
 # ------------------------------------------------------------
 
 import os
-import shutil
 import sys
 import argparse
 import socket
 from subprocess import check_output, STDOUT, CalledProcessError
+import json
 
 
 def main():
 
     # Get the paths to the scripts to be executed
-    icm, pocketScript, ligScript = setPaths()
+    icm = getPath()
 
     # Get the arguments
     obPath, inxPath, mapMode, pocket = parseArgs()
 
-    # Running the .icm script creating the maps based on ICMpocket finder
-    if mapMode == "pocket":
-        runPocketScript(icm, pocketScript, obPath, pocket)
+    # Generate script (will return the script relevant to the mode chosen)
+    script = generateScript(mapMode, obPath, pocket, icm)
 
-    # Running the .icm script creating the maps based on the bound ligand
-    if mapMode == "ligand":
-        runLigScript(icm, ligScript, obPath)
+    # Run the .icm script
+    runScript(icm, script)
 
     # Set of calls to modify the .dtb file
     modifyDtb("i_maxHdonor", "  15", obPath)
@@ -48,55 +46,6 @@ def main():
     modifyDtb("r_minPk", "  -10", obPath)
     modifyDtb("s_chargeGroups", "  auto", obPath)
     modifyDtb("s_dbIndex", inxPath, obPath)
-
-
-def setPaths():
-    """
-    Devide which platform this is executed on, and select the proper script
-    paths
-    """
-
-    # Paths to the .icm scripts
-    pocketVlsci = "/vlsci/VR0024/tcoudrat/Scripts/toolbx_vs/mapsPocket.icm"
-    ligandVlsci = "/vlsci/VR0024/tcoudrat/Scripts/toolbx_vs/mapsLigand.icm"
-
-    pocketLocal = "/home/thomas/Copy/toolbx_vs/mapsPocket.icm"
-    ligandLocal = "/home/thomas/Copy/toolbx_vs/mapsLigand.icm"
-
-    pocketMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/toolbx_vs/mapsPocket.icm"
-    ligandMcc = "/nfs/home/hpcpharm/tcoudrat/Scripts/toolbx_vs/mapsLigand.icm"
-
-    # Paths to the icm executables
-    icmVlsci = "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64"
-    icmDesktop = "/usr/icm-3.7-3b/icm64"
-    icmLaptop = "/home/thomas/bin/icm-3.8-0/icm64"
-    icmMcc = "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
-
-    # Get the hostname
-    hostname = socket.gethostname()
-
-    # Select the right path, depending on the platform where this is executed
-    if hostname == "barcoo":
-        pocketScript = pocketVlsci
-        ligScript = ligandVlsci
-        icm = icmVlsci
-    elif hostname == "linux-T1650":
-        pocketScript = pocketLocal
-        ligScript = ligandLocal
-        icm = icmDesktop
-    elif hostname == "Ideapad":
-        pocketScript = pocketLocal
-        ligScript = ligandLocal
-        icm = icmLaptop
-    elif hostname == "msgln6.its.monash.edu.au":
-        pocketScript = pocketMcc
-        ligScript = ligandMcc
-        icm = icmMcc
-    else:
-        print "ICM scripts or ICM executable not found"
-        sys.exit()
-
-    return icm, pocketScript, ligScript
 
 
 def parseArgs():
@@ -155,45 +104,119 @@ def parseArgs():
     return obPath, inxPath, mapMode, pocket
 
 
-def runPocketScript(icm, pocketScript, obPath, pocket):
+def getPath():
     """
-    Copy a temp copy of the .icm script, modify it, and run it
+    Devide which platform this is executed on, and select the proper script
+    paths
     """
-    projName = obPath.replace(".ob", "")
 
-    # Copy
-    shutil.copy(pocketScript, "./temp.icm")
-    # Modify
-    os.system("sed -e 's|VS_PROJECT|" + projName + "|g' ./temp.icm -i")
-    os.system("sed -e 's|POCKET_NUM|" + pocket + "|g' ./temp.icm -i")
-    # Execute
-    try:
-        check_output(icm + " -s ./temp.icm", stderr=STDOUT, shell=True)
-    except CalledProcessError, e:
-        print e.output
+    # This Json file stores the ICM executable locations for each platform
+    icmExecJson = os.path.dirname(os.path.realpath(__file__)) + "/icm_exec.json"
+
+    # Read content of .json file
+    with open(icmExecJson, "r") as jsonFile:
+        icmExec = json.load(jsonFile)
+
+    # Get the hostname to know which computer this is executed on
+    hostname = socket.gethostname()
+
+    # Assign the ICM executable path corresponding to the hostname, if it is not
+    # defined then stop the execution
+    if hostname in icmExec.keys():
+        icm = icmExec[hostname]
+    else:
+        print("The ICM executable is not defined for this machine, please edit\
+              the icm_exec.json file")
         sys.exit()
-    # Delete temp script
-    os.remove("./temp.icm")
+
+    return icm
 
 
-def runLigScript(icm, ligScript, obPath):
+def generateScript(mapMode, obPath, pocket, icm):
+    """
+    The scripts are generated here, and their content is modified to fit the
+    tasks they are supposed to carry out
+    """
+
+    # Ligand-script base
+    scrLig_string = """#!ICM_EXEC
+
+call "_startup"
+
+openFile "VS_PROJ.ob"
+
+# Create sphere around the bound ligand
+as_graph = Sphere( a_VS_PROJ.2 , ( ! a_VS_PROJ.2 ) & Obj( a_VS_PROJ.2) 4. )
+# Delete the ligand
+delete a_VS_PROJ.2
+
+# Setup docking project
+currentDockProj.data[8] = "yes"
+tempsel = as_graph
+dock2SetupReceptor "VS_PROJ" a_ tempsel no "none"
+dock5CalcMaps "VS_PROJ" 0.5 4.0 no
+currentDockProj.data[1] = "VS_PROJ"
+
+quit
+"""
+
+    # Pocket-script base
+    scrPok_string = """#!ICM_EXEC
+
+call "_startup"
+
+openFile "VS_PROJ.ob"
+
+# Get pocket
+icmPocketFinder Mol(a_*.//DD) & a_*.!H,W 4.6 no no
+# Create sphere around fist (best) pocket
+as_graph = Sphere( g_pocketPOCKET_NUM a_VS_PROJ. 2.5)
+
+# Setup docking project
+currentDockProj.data[8] = "yes"
+tempsel = as_graph
+dock2SetupReceptor "VS_PROJ" a_ tempsel no "none"
+dock5CalcMaps "VS_PROJ" 0.5 4.0 no
+currentDockProj.data[1] = "VS_PROJ"
+
+quit
+"""
+
+    # Modify the required script and return its path
+    projName = obPath.replace(".ob", "")
+    if mapMode == "ligand":
+        scr_string = scrLig_string
+        scr_string = scr_string.replace("ICM_EXEC", icm)
+        scr_string = scr_string.replace("VS_PROJ", projName)
+    elif mapMode == "pocket":
+        scr_string = scrPok_string
+        scr_string = scr_string.replace("ICM_EXEC", icm)
+        scr_string = scr_string.replace("VS_PROJ", projName)
+        scr_string = scr_string.replace("POCKET_NUM", pocket)
+
+    # Write the selected script to a file
+    workDir = os.getcwd()
+    scr_path = workDir + "/temp.icm"
+    with open(scr_path, "w") as scr_file:
+        scr_file.write(scr_string)
+
+    return scr_path
+
+
+def runScript(icm, script):
     """
     This modifies and runs the script creating the maps around the bound ligand
     """
-    projName = obPath.replace(".ob", "")
 
-    # Copy
-    shutil.copy(ligScript, "./temp.icm")
-    # Modify
-    os.system("sed -e 's|VS_PROJECT|" + projName + "|g' ./temp.icm -i")
     # Execute
     try:
-        check_output(icm + " -s ./temp.icm", stderr=STDOUT, shell=True)
+        check_output(icm + " -s " + script, stderr=STDOUT, shell=True)
     except CalledProcessError, e:
         print e.output
         sys.exit()
+
     # Delete temp script
-    os.remove("./temp.icm")
+    os.remove(script)
 
 
 def modifyDtb(keyword, value, obPath):
