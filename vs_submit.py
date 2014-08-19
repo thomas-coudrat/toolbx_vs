@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#----------------------------------------------------
+# ----------------------------------------------------
 #
 #   Execute within a VS directory, will crawl through
 #   all its subdirs and submit all .slurm or .pbs
@@ -9,13 +9,14 @@
 #
 #   Thomas Coudrat, February 2014
 #
-#----------------------------------------------------
+# ----------------------------------------------------
 
 import os
 import time
 import argparse
 import sys
 import socket
+import json
 
 
 def main():
@@ -24,7 +25,10 @@ def main():
     """
 
     # Return the queuing system chosen
-    vsDir, queue = parsing()
+    vsDir = parsing()
+
+    # Get the queuing system on this cluster
+    queue = getQueuingSys()
 
     # Get the current working directory
     cwd = os.getcwd()
@@ -53,17 +57,34 @@ def parsing():
     args = parser.parse_args()
     vsDir = args.vsDir
 
-    # Get queuing system from hostname
+    return vsDir
+
+
+def getQueuingSys():
+    """
+    Figure out which queuing system to use depending on the platform this script
+    is executed on
+    """
+
+    # This Json file stores the ICM executable locations for each platform
+    queuesJson = os.path.dirname(os.path.realpath(__file__)) + "/queue_sys.json"
+
+    # Read content of .json file
+    with open(queuesJson, "r") as jsonFile:
+        queues = json.load(jsonFile)
+
+    # Get the hostname to know which computer this is executed on
     hostname = socket.gethostname()
-    if hostname == "msgln6.its.monash.edu.au":
-        queue = ".pbs"
-    elif hostname == "barcoo":
-        queue = ".slurm"
+
+    # Assign the ICM executable path corresponding to the hostname, if it is not
+    # defined then stop the execution
+    if hostname in queues.keys():
+        queue = queues[hostname]
     else:
-        print "Queuing system could not be indentified on your system", hostname
+        print("The queuing system could not be assigned", hostname)
         sys.exit()
 
-    return vsDir, queue
+    return queue
 
 
 def getQueueScripts(vsDir, queue):
@@ -81,7 +102,7 @@ def getQueueScripts(vsDir, queue):
             # For each of these, save every file that ends with .slurm or
             # .pbs in a list, by saving its full path
             for file in files:
-                if file.endswith(queue):
+                if file.endswith("." + queue):
                     queuePaths.append(os.path.join(path, file))
 
     return queuePaths
@@ -101,18 +122,18 @@ def submitQueueScripts(queuePaths, cwd, queue):
         # Get the directory name and the file name separately
         queueDir = os.path.dirname(queueFullPath)
         queueFile = os.path.basename(queuePath)
-        #print queuePath, queueDir
+        # print queuePath, queueDir
 
         # Change to that repeat directory
-        #queuePath = os.path.joindir(cwd, queueDir)
+        # queuePath = os.path.joindir(cwd, queueDir)
         os.chdir(queueDir)
         # And submit using either SLURM or PBS queueing
         # system depending on what was chosen
-        if queue == ".slurm":
-            #print "sbatch " + queueFile
+        if queue == "slurm":
+            # print "sbatch " + queueFile
             os.system("sbatch " + queueFile)
-        elif queue == ".pbs":
-            #print "qsub " + queueFile
+        elif queue == "pbs":
+            # print "qsub " + queueFile
             os.system("qsub " + queueFile)
         time.sleep(1)
 
