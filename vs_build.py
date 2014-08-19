@@ -29,6 +29,7 @@ import shutil
 import re
 import sys
 import socket
+import json
 # from docopt import docopt
 
 
@@ -138,18 +139,23 @@ def getQueuingSys():
     Figure out which queuing system to use depending on the platform this script
     is executed on
     """
-    # Get the hostname
+
+    # This Json file stores the ICM executable locations for each platform
+    queuesJson = os.path.dirname(os.path.realpath(__file__)) + "/queue_sys.json"
+
+    # Read content of .json file
+    with open(queuesJson, "r") as jsonFile:
+        queues = json.load(jsonFile)
+
+    # Get the hostname to know which computer this is executed on
     hostname = socket.gethostname()
 
-    # Check if a queuing system was chosen
-    if hostname == "msgln6.its.monash.edu.au":
-        queue = "pbs"
-    elif hostname == "barcoo":
-        queue = "slurm"
-    elif hostname == "linux-T1650":
-        queue = "slurm"
+    # Assign the ICM executable path corresponding to the hostname, if it is not
+    # defined then stop the execution
+    if hostname in queues.keys():
+        queue = queues[hostname]
     else:
-        "The queuing system could not be assigned", hostname
+        print("The queuing system could not be assigned", hostname)
         sys.exit()
 
     return queue
