@@ -89,8 +89,8 @@ def generateScript(icm, sdfFile):
     Modify its content to apply to the .sdf and .inx files
     """
 
-    # Write the script
-    script_string = """#!ICM_EXEC
+    # Script base
+    scr_string = """#!ICM_EXEC
 call "_startup"
 
 # Create the .inx file, that indexes this database
@@ -98,19 +98,23 @@ makeIndexChemDb "SDF_LIB" "INX_FILE" "mol" { "ID" }
 
 quit
 """
-    workDir = os.getcwd()
-    scriptPath = workDir + "/temp.icm"
-    with open(scriptPath, "w") as script_file:
-        script_file.write(script_string)
 
     # Modify the script
+    workDir = os.getcwd()
     sdfPath = workDir + "/" + sdfFile
     inxPath = sdfPath.replace(".sdf", ".inx")
-    os.system("sed -e 's|SDF_LIB|" + sdfPath + "|g' ./temp.icm -i")
-    os.system("sed -e 's|INX_FILE|" + inxPath + "|g' ./temp.icm -i")
-    os.system("sed -e 's|ICM_EXEC|" + icm + "|g' ./temp.icm -i")
+    scr_string = scr_string.replace("SDF_LIB", sdfPath)
+    scr_string = scr_string.replace("INX_FILE", inxPath)
+    scr_string = scr_string.replace("ICM_EXEC", icm)
 
-    return scriptPath
+    # print scr_string
+
+    # Write it to file
+    scr_path = workDir + "/temp.icm"
+    with open(scr_path, "w") as scr_file:
+        scr_file.write(scr_string)
+
+    return scr_path
 
 
 def executeScript(icm, scriptPath, sdfFile):
