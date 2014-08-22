@@ -9,74 +9,72 @@ import os
 import math
 
 
+class col:
+    head = '\033[95m'
+    blue = '\033[94m'
+    green = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    end = '\033[0m'
+    BOLD = '\033[1m'
+    red = '\033[31m'
+
+
 def main():
+    """
+    Exectute the vs_plot script
+    """
 
-    title, rocLegends, resultPaths, zoom, \
-        knownIDstr, ommitIDstr, ref, log, gui = parseArgs()
+    title, vsLegends, vsPaths, zoom, truePosIDstr, trueNegIDstr, ommitIDstr, \
+        ref, log, gui, roc, enrich = parseArgs()
 
-    # Get the knownID range in list format
-    knownIDlist = makeIDlist(knownIDstr)
-    ommitIDlist = makeIDlist(ommitIDstr)
-    print "\n", "Known ID string", knownIDstr
-    print "Known ID list", knownIDlist
-    print "Ommit ID string", ommitIDstr
-    print "Ommit ID list", ommitIDlist, "\n"
+    # Get the truePosID range in list format
+    truePosIDlist = makeIDlist(truePosIDstr, "True positive ID list: ")
+    trueNegIDlist = makeIDlist(trueNegIDstr, "True negative ID list: ")
+    ommitIDlist = makeIDlist(ommitIDstr, "Ommit ID list: ")
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
     if ref:
-        # print ref
         refDict = makeRefDict(ref)
-        # print refDict
     else:
         refDict = {}
 
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
-    allVsResultsIntersect = intersectResults(resultPaths)
-    # print resultPaths
-    rocPaths = []
-    allTotalLibs = []
-    allTotalKnowns = []
-    # Calculate ROC curves for each of these (write file + return data)
-    for resultPath, vsResult in zip(resultPaths, allVsResultsIntersect):
-        vsDir = os.path.dirname(resultPath)
+    vsIntersects, libraryCount, truePosCount, trueNegCount, ommitCount \
+        = intersectResults(vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist)
+
+    # Calculate % of total curves for each of these (write file + return data)
+    percentPaths = []
+    for vsPath, vsResult in zip(vsPaths, vsIntersects):
+        vsDir = os.path.dirname(vsPath)
         # print knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast
-        rocPath, totalLib, totalKnown = writeRocFile(vsResult, vsDir,
-                                                     knownIDstr,
-                                                     knownIDlist,
-                                                     ommitIDstr,
-                                                     ommitIDlist,
-                                                     refDict)
-        print rocPath, totalLib, totalKnown
-        rocPaths.append(rocPath)
-        allTotalLibs.append(totalLib)
-        allTotalKnowns.append(totalKnown)
+        percentPath = writeEnrichFile(vsResult, vsDir,
+                                      truePosIDstr, truePosIDlist,
+                                      ommitIDstr, ommitIDlist,
+                                      truePosCount, ommitCount, libraryCount,
+                                      refDict)
+        percentPaths.append(percentPath)
+        # writeROCfile()
 
-    # Make sure the total library size and the total number of knowns is the
-    # same between all vsResults. Exit and print statement if it isn't
-    for totalL in allTotalLibs:
-        if totalLib != totalL:
-            print "Total library size not matching between VS experiments"
-            sys.exit()
-    for totalK in allTotalKnowns:
-        if totalKnown != totalK:
-            print "Total number of knowns not matching between VS experiments"
-            sys.exit()
+    # Extract the data from the vs percent data
+    plotData, perfect, xLim, yLim = extractPlotData(percentPaths,
+                                                    vsLegends,
+                                                    truePosCount,
+                                                    zoom)
 
-    # Extract the data from the ROC files
-    rocData, perfect, xLim, yLim = extractRocData(rocPaths,
-                                                  rocLegends,
-                                                  totalKnown,
-                                                  zoom)
-    getAUC_NSQ(rocData, perfect)
+    # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
+    # getAUC_NSQ(plotData, perfect)
 
     # Plot the values 2 and 3, which correspond to the percentage X and Y
-    plot(title, rocData, perfect, xLim, yLim, totalLib, totalKnown,
+    plot(title, plotData, perfect, xLim, yLim, libraryCount, truePosCount,
          gui, log, zoom)
 
     # Write the command used to execute this script into a log file
     writeCommand()
+
+    print("\n")
 
 
 def parseArgs():
@@ -85,62 +83,84 @@ def parseArgs():
     """
 
     # Definition of arguments
-    descr = "Feed VS result data (however many files), plots ROC curves"
+    descr = "Feed VS result data (however many files), plots ROC curves or" \
+        " Enrichment curves"
     descr_title = "Provide a title for the graph, also used as filename"
     descr_results = "Provide resultDataFiles.csv and 'legend titles' for" \
         " each curve: 'legend1!' data1.csv 'legend2?' data2.csv" \
         " 'legend4!!' data4.csv"
-    descr_zoom = "Give the percent of ranked database to be displayed in the" \
-        " zoomed subplot"
-    descr_knownIDstr = "Provide the IDs of known actives ligands" \
+    descr_zoom = "X-axis percentage to be displayed in the zoomed subplot"
+    descr_truePosIDstr = "Provide the IDs of true positive ligands" \
+        " lib (format: 1-514,6001,6700-6702)"
+    descr_trueNegIDstr = "Provide the IDs of true negative ligands" \
         " lib (format: 1-514,6001,6700-6702)"
     descr_ommitIDstr = "Provide the IDs of ligands to ommit" \
-        " from the ROC curve data, same format at knownIDs"
+        " from the VS data, same format at knownIDs"
     descr_ref = "Refinement ligand(s) used on this GPCR binding pocket" \
         " refinement. Provide ligand name and ID in the following format:" \
         " lig1:328,lig2:535"
     descr_log = "Draw this plot on a log scale for the X axis"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
+    descr_modROC = "This mode will plot a ROC curve, which compares the true" \
+        " positive rate to the true negative rate"
+    descr_modEnrich = "This mode will plot an Enrichment curve, which" \
+        " evaluates the rate of recovery of true positives as a function of" \
+        " full library"
 
     # adding arguments to the parser
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("title", help=descr_title)
     parser.add_argument("results", help=descr_results, nargs="+")
     parser.add_argument("zoom", help=descr_zoom)
-    parser.add_argument("knownIDstr", help=descr_knownIDstr)
+    parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
+    parser.add_argument("trueNegIDstr", help=descr_trueNegIDstr)
     parser.add_argument("ommitIDstr", help=descr_ommitIDstr)
     parser.add_argument("--ref", help=descr_ref)
     parser.add_argument("-log", action="store_true", help=descr_log)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
+    parser.add_argument("-modROC", action="store_true", help=descr_modROC)
+    parser.add_argument("-modEnrich", action="store_true", help=descr_modEnrich)
 
     # parsing args
     args = parser.parse_args()
     title = args.title
     results = args.results
     zoom = float(args.zoom)
-    knownIDstr = args.knownIDstr
+    truePosIDstr = args.truePosIDstr
+    trueNegIDstr = args.trueNegIDstr
     ommitIDstr = args.ommitIDstr
     ref = args.ref
     log = args.log
     gui = args.gui
+    roc = args.modROC
+    enrich = args.modEnrich
 
-    # Extrac the ROC paths and legends from the roc variable
-    resultPaths = []
-    rocLegends = []
+    if not roc and not enrich:
+        print("\nOne the modes (ROC or Enrichment curve) has to be chosen\n")
+        sys.exit()
+    elif roc and enrich:
+        print("\nOnly one the modes (ROC or Enrichment curve) can be chosen\n")
+        sys.exit()
+
+    # Extrac the VS results paths and legends
+    vsPaths = []
+    vsLegends = []
     i = 0
     while i < len(results):
-        rocLegends.append(results[i])
-        resultPaths.append(results[i + 1])
+        vsLegends.append(results[i])
+        vsPaths.append(results[i + 1])
         i += 2
 
-    return title, rocLegends, resultPaths, zoom, \
-        knownIDstr, ommitIDstr, ref, log, gui
+    return title, vsLegends, vsPaths, zoom, \
+        truePosIDstr, trueNegIDstr, ommitIDstr, ref, log, gui, roc, enrich
 
 
-def makeIDlist(stringID):
+def makeIDlist(stringID, blurb):
     """
     Get a string defining which IDs to be generated into a list
     """
+
+    print(col.head + "\n\t*MAKING LIGAND ID LIST*" + col.end)
 
     # This stores the range of IDs into a list
     rangeID = []
@@ -167,41 +187,52 @@ def makeIDlist(stringID):
             else:
                 rangeID.append(int(portion))
 
+    # Output this rangeID to the prompt
+    print("\n" + blurb + str(rangeID))
+
     return rangeID
 
 
 def makeRefDict(refStr):
     """
     Get a string describing refinement ligands and their ID, and generate a
-    dictionary to store that information, which is used when plotting the ROC
-    curve
+    dictionary to store that information, which is used when plotting the curves
     """
+
+    print(col.head + "\n\t*MAKING REFERENCE LIGANDS*" + col.end)
+
     # This dictionary will be used for plotting
     refDict = {}
 
     refList = refStr.split(",")
 
-    print refList
-
     for ref in refList:
         refName, refID = ref.split(":")
         refDict[int(refID)] = refName
 
+    # Output the reference ligands
+    print("\nReference ligand list: " + str(refDict))
+
     return refDict
 
 
-def intersectResults(resultPaths):
+def intersectResults(vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist):
     """
     Read in the results provided in .csv format, and figure out the intersect
-    between each of those results set based on the ligID. Then return the
-    results set containing only the intersect results for each set.
+    between each of those results set based on the ligIDs.
+    Also check that the truePositive and trueNegative sets (if provided) are
+    fully present in the intersect set: send a WARNING if they are not
+    Then return the results set containing only the intersect results for each
+    set.
     """
+
+    print(col.head + "\n\t*DEFINING INTERSECT*" + col.end)
 
     allVsResults = []
     allLigIDs = []
 
-    # Read results and populate vsResultsRaw
-    for resultPath in resultPaths:
+    # Read results and populate vsResult
+    for resultPath in vsPaths:
         resultFile = open(resultPath, 'r')
         resultLines = resultFile.readlines()
         resultFile.close()
@@ -209,68 +240,82 @@ def intersectResults(resultPaths):
         vsResult = []
         ligIDs = []
         # loop over the vs result lines omitting the first row
-        print resultPath, len(resultLines)
+        # print resultPath, len(resultLines)
         for line in resultLines[1:]:
             ligInfo = line.strip().split(",")
             vsResult.append(ligInfo)
-            ligIDs.append(ligInfo[0])
+            ligIDs.append(int(ligInfo[0]))
 
         allVsResults.append(vsResult)
         allLigIDs.append(set(ligIDs))
 
     # Get the intersection set
     intersectLigID = set.intersection(*allLigIDs)
+    libraryCount = len(intersectLigID)
+
+    # Verify that truePositives are contained within the intersect of ligIDs
+    truePosIDset = set(truePosIDlist)
+    intersect_truePosID = set.intersection(truePosIDset, intersectLigID)
+    missingTruePos = truePosIDset - intersect_truePosID
+    if len(missingTruePos) > 0:
+        print(col.red + "\nWARNING: " + col.end +
+              "missing true positive IDs: " + str(missingTruePos))
+    truePosCount = len(intersect_truePosID)
+
+    # Verify that trueNegatives are contained within the intersect of ligIDs
+    trueNegIDset = set(trueNegIDlist)
+    intersect_trueNegID = set.intersection(trueNegIDset, intersectLigID)
+    missingTrueNeg = trueNegIDset - intersect_trueNegID
+    if len(missingTrueNeg) > 0:
+        print(col.red + "\nWARNING: " + col.end +
+              "missing true negative IDs: " + str(missingTrueNeg))
+    trueNegCount = len(intersect_trueNegID)
+
+    # Verify that ommits are contained within the intersect of ligIDs
+    ommitIDset = set(ommitIDlist)
+    intersect_ommitID = set.intersection(ommitIDset, intersectLigID)
+    missingOmmit = ommitIDset - intersect_ommitID
+    if len(missingTrueNeg) > 0:
+        print(col.red + "\nWARNING: " + col.end +
+              "missing ommit IDs: " + str(missingOmmit))
+    ommitCount = len(intersect_ommitID)
 
     allVsResultsIntersect = []
     # Loop over vsResults and keep only the ones present in the intersection
-    for resultPath, vsResult in zip(resultPaths, allVsResults):
-        print resultPath, len(vsResult)
+    for resultPath, vsResult in zip(vsPaths, allVsResults):
+        # print resultPath, len(vsResult)
         vsResultIntersect = []
         for i, ligInfo in enumerate(vsResult):
-            if ligInfo[0] in intersectLigID:
+            if int(ligInfo[0]) in intersectLigID:
                 vsResultIntersect.append(ligInfo)
         allVsResultsIntersect.append(vsResultIntersect)
 
-    return allVsResultsIntersect
+    return allVsResultsIntersect, libraryCount, \
+        truePosCount, trueNegCount, ommitCount
 
 
-def writeRocFile(vsResult, vsDir,
-                 knownIDstr, knownIDlist,
-                 ommitIDstr, ommitIDlist,
-                 refDict):
+def writeEnrichFile(vsResult, vsDir,
+                    truePosIDstr, truePosIDlist,
+                    ommitIDstr, ommitIDlist,
+                    truePosCount, ommitCount, libraryCount,
+                    refDict):
     """
     Given this VS result, and information about the ID of known actives
-    in the library, write in a file the information to plot a ROC curve
-    Also collect for each
+    in the library, write in a file the information to plot an enrichment curve
     """
 
-    known = "knowns_" + knownIDstr
+    print(col.head + "\n\t*WRITING ENRICHMENT DATA*" + col.end)
+
+    truePos = "truePos_" + truePosIDstr
     ommit = "ommits_" + ommitIDstr
 
     # Create filename
-    rocPath = vsDir + "/roc_" + known + "_" + ommit + "_" + vsDir + ".csv"
-    print "\t", rocPath
-    rocDataFile = open(rocPath, "w")
+    enrichPath = vsDir + "/enrich_" + truePos + "_" + ommit + \
+        "_" + vsDir + ".csv"
+    print("\n" + enrichPath)
+    enrichDataFile = open(enrichPath, "w")
 
-    # Loop over the results once, in order to check for the actual total number
-    # of knowns present in them
-    totalKnowns = 0
-    for ligInfo in vsResult:
-        ligID = int(ligInfo[0])
-        if ligID in knownIDlist:
-            totalKnowns += 1
-
-    # Get the total library size
-    if len(ommitIDlist):
-        totalLibrary = len(vsResult)
-    else:
-        totalLibrary = len(vsResult) - len(ommitIDlist)
-
-    print "\nTotal knowns:", totalKnowns
-    print "Total library - knowns:", totalLibrary, totalKnowns
-
-    print vsDir, len(vsResult)
-
+    # Build the % data
     X = 0
     Y = 0
     for ligInfo in vsResult:
@@ -286,7 +331,7 @@ def writeRocFile(vsResult, vsDir,
         else:
             # When the sorted ligID corresponds to a known, increase
             # the value of Y by 1
-            if ligID in knownIDlist:
+            if ligID in truePosIDlist:
                 # print "known ligand", ligInfo
                 Y += 1
 
@@ -295,8 +340,8 @@ def writeRocFile(vsResult, vsDir,
             X += 1
 
             # Calculate percentage X and Y
-            Xpercent = (X * 100.0) / totalLibrary
-            Ypercent = (Y * 100.0) / totalKnowns
+            Xpercent = (X * 100.0) / libraryCount
+            Ypercent = (Y * 100.0) / truePosCount
 
             #
             # Find if the current ligand is one of the refinement ligands, if
@@ -305,44 +350,46 @@ def writeRocFile(vsResult, vsDir,
             #
             if ligID in refDict.keys():
                 ligName = refDict[ligID]
-                rocDataFile.write(str(X) + "," + str(Y) + "," +
-                                  str(Xpercent) + "," + str(Ypercent) + "," +
-                                  ligName + "\n")
+                enrichDataFile.write(str(X) + "," + str(Y) + "," +
+                                     str(Xpercent) + "," + str(Ypercent) + "," +
+                                     ligName + "\n")
             else:
-                rocDataFile.write(str(X) + "," + str(Y) + "," +
-                                  str(Xpercent) + "," + str(Ypercent) + "\n")
+                enrichDataFile.write(str(X) + "," + str(Y) + "," +
+                                     str(Xpercent) + "," + str(Ypercent) + "\n")
 
-    rocDataFile.close()
+    enrichDataFile.close()
 
-    return rocPath, totalLibrary, totalKnowns
+    return enrichPath
 
 
-def extractRocData(rocPaths, rocLegends, totalKnown, zoom):
+def extractPlotData(percentPaths, vsLegends, truePosCount, zoom):
     """
-    Read the ROC data files, return the data for plotting
+    Read the % result data files, return the data for plotting
     """
+
+    print(col.head + "\n\t*GETTING PLOTTING DATA*" + col.end)
 
     # Variables that define the x and y limites for the zoomed in subplot
     xLim = 0.0
     yLim = 0.0
 
-    rocData = []
+    plotData = []
 
-    for rocPath, rocLegend in zip(rocPaths, rocLegends):
-        # Read the ROC data file
-        rocFile = open(rocPath, "r")
-        rocLines = rocFile.readlines()
-        rocFile.close()
+    for percentPath, vsLegend in zip(percentPaths, vsLegends):
+        # Read the %data file
+        dataFile = open(percentPath, "r")
+        dataLines = dataFile.readlines()
+        dataFile.close()
 
         refPlot = {}
 
-        print "ROC PATH:", rocPath
+        print "\nData path:", percentPath
 
         perfect = []
         X = []
         Y = []
         val = 0
-        for line in rocLines:
+        for line in dataLines:
             # Get the data from the file
             ll = line.split(",")
             xPercent = float(ll[2])
@@ -353,9 +400,9 @@ def extractRocData(rocPaths, rocLegends, totalKnown, zoom):
             Y.append(yPercent)
 
             # Create the perfect curve
-            if val < totalKnown:
+            if val < truePosCount:
                 val += 1
-            perfect.append((val * 100.0) / totalKnown)
+            perfect.append((val * 100.0) / truePosCount)
 
             # Create the subplot limits
             if xPercent <= zoom:
@@ -369,9 +416,9 @@ def extractRocData(rocPaths, rocLegends, totalKnown, zoom):
                 ligXY = [xPercent, yPercent]
                 refPlot[ligName] = ligXY
 
-        rocData.append((X, Y, rocLegend, refPlot))
+        plotData.append((X, Y, vsLegend, refPlot))
 
-    return rocData, perfect, xLim, yLim
+    return plotData, perfect, xLim, yLim
 
 
 def getAUC_NSQ(rocData, perfect):
@@ -430,11 +477,13 @@ def getAUC_NSQ(rocData, perfect):
         print "**************"
 
 
-def plot(title, rocData, perfect, xLim, yLim,
-         totalLib, totalKnown, gui, log, zoom):
+def plot(title, plotData, perfect, xLim, yLim,
+         libraryCount, truePosCount, gui, log, zoom):
     """
-    Plot the data provided as argument, to draw ROC curves
+    Plot the data provided as argument, to draw curves
     """
+
+    print(col.head + "\n\t*PLOTTING DATA*" + col.end)
 
     # Setting up the figure
     fig = plt.figure(figsize=(13, 12), dpi=100)
@@ -442,19 +491,21 @@ def plot(title, rocData, perfect, xLim, yLim,
     # Create the ZOOMED graph, if requested
     if zoom != 0.0:
         ax2 = plt.axes([.17, .35, .2, .2])
+    else:
+        ax2 = None
 
     # Setting up color scheme
     cm = plt.get_cmap("spectral")
-    cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(rocData))
+    cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(plotData))
     scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
-    # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(rocData))])
+    # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(plotData))])
 
     # Add a value 0 to the perfect curve
     perfect = [0.0] + perfect
 
     # Drawing data on the figure
-    for i, rocDatum in enumerate(rocData):
-        X, Y = drawLine(ax, ax2, rocDatum, i, zoom, scalarMap)
+    for i, plotDatum in enumerate(plotData):
+        X, Y = drawLine(ax, ax2, plotDatum, i, zoom, scalarMap)
 
     # Plot the RANDOM and PERFECT curves on the zoomed and main graph
     if zoom != 0.0:
@@ -470,9 +521,9 @@ def plot(title, rocData, perfect, xLim, yLim,
     # print perfect
 
     # Here axis and ticks are improved
-    ax.set_xlabel("% of ranked database (total=" + str(totalLib) + ")",
+    ax.set_xlabel("% of ranked database (total=" + str(libraryCount) + ")",
                   fontsize=30)
-    ax.set_ylabel("% of known ligands found (total=" + str(totalKnown) + ")",
+    ax.set_ylabel("% of known ligands found (total=" + str(truePosCount) + ")",
                   fontsize=30)
     ax.minorticks_on()
     ax.tick_params(axis="both", which="major", labelsize=30)
@@ -506,7 +557,7 @@ def plot(title, rocData, perfect, xLim, yLim,
         plt.savefig(fileName, bbox_inches="tight")
 
 
-def drawLine(ax, ax2, rocDatum, i, zoom, scalarMap):
+def drawLine(ax, ax2, plotDatum, i, zoom, scalarMap):
     """
     Draw the line corresponding to the set of data passed in arguments
     """
@@ -521,16 +572,17 @@ def drawLine(ax, ax2, rocDatum, i, zoom, scalarMap):
     else:
         color = scalarMap.to_rgba(i)
         lw = 2
-    X = rocDatum[0]
-    Y = rocDatum[1]
+
+    X = plotDatum[0]
+    Y = plotDatum[1]
     # Add the value 0 in order to have curves that start at the origin
     X = [0.0] + X
     Y = [0.0] + Y
-    rocLegend = rocDatum[2]
-    refPlot = rocDatum[3]
+    plotLegend = plotDatum[2]
+    refPlot = plotDatum[3]
 
     # Plot this curve
-    ax.plot(X, Y, label=rocLegend, linewidth=lw, color=color)
+    ax.plot(X, Y, label=plotLegend, linewidth=lw, color=color)
 
     # Plot a blow up of the first X%
     if zoom != 0.0:
@@ -541,7 +593,7 @@ def drawLine(ax, ax2, rocDatum, i, zoom, scalarMap):
         xPos, yPos = refPlot[ligName]
         ax.axvline(x=xPos, ymax=yPos/100., color=color,
                    linewidth=3, linestyle='--')
-        print ligName, xPos, yPos
+        # print ligName, xPos, yPos
         # ax.text(xPos, -2, ligName, rotation=-90,
         #        color=color, transform=ax.transData)
 
