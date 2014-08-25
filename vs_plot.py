@@ -25,13 +25,16 @@ def main():
     Exectute the vs_plot script
     """
 
-    title, vsLegends, vsPaths, zoom, truePosIDstr, trueNegIDstr, ommitIDstr, \
+    title, vsLegends, vsPaths, zoom, \
+        libraryIDstr, truePosIDstr, trueNegIDstr, ommitIDstr, \
         ref, log, gui, roc, enrich = parseArgs()
 
     # Get the truePosID range in list format
-    truePosIDlist = makeIDlist(truePosIDstr, "True positive ID list: ")
-    trueNegIDlist = makeIDlist(trueNegIDstr, "True negative ID list: ")
-    ommitIDlist = makeIDlist(ommitIDstr, "Ommit ID list: ")
+    libraryIDlist = makeIDlist(libraryIDstr, "Library IDs (not displayed): ",
+                               False)
+    truePosIDlist = makeIDlist(truePosIDstr, "True positive ID list: ", True)
+    trueNegIDlist = makeIDlist(trueNegIDstr, "True negative ID list: ", True)
+    ommitIDlist = makeIDlist(ommitIDstr, "Ommit ID list: ", True)
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -46,20 +49,30 @@ def main():
         = intersectResults(vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist)
 
     # Calculate % of total curves for each of these (write file + return data)
-    percentPaths = []
-    for vsPath, vsResult in zip(vsPaths, vsIntersects):
+    percPaths = []
+    for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
         vsDir = os.path.dirname(vsPath)
         # print knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast
-        percentPath = writeEnrichFile(vsResult, vsDir,
-                                      truePosIDstr, truePosIDlist,
-                                      ommitIDstr, ommitIDlist,
-                                      truePosCount, ommitCount, libraryCount,
-                                      refDict)
-        percentPaths.append(percentPath)
+        if enrich:
+            percPath = writePercFile(vsIntersect, vsDir, "enrich", refDict,
+                                     "library", libraryIDstr,
+                                     libraryIDlist, libraryCount,
+                                     "true_pos", truePosIDstr,
+                                     truePosIDlist, truePosCount,
+                                     ommitIDstr, ommitIDlist)
+        elif roc:
+            percPath = writePercFile(vsIntersect, vsDir, "ROC", refDict,
+                                     "true_neg", trueNegIDstr,
+                                     trueNegIDlist, trueNegCount,
+                                     "true_pos", truePosIDstr,
+                                     truePosIDlist, truePosCount,
+                                     ommitIDstr, ommitIDlist)
+
+        percPaths.append(percPath)
         # writeROCfile()
 
     # Extract the data from the vs percent data
-    plotData, perfect, xLim, yLim = extractPlotData(percentPaths,
+    plotData, perfect, xLim, yLim = extractPlotData(percPaths,
                                                     vsLegends,
                                                     truePosCount,
                                                     zoom)
@@ -90,6 +103,7 @@ def parseArgs():
         " each curve: 'legend1!' data1.csv 'legend2?' data2.csv" \
         " 'legend4!!' data4.csv"
     descr_zoom = "X-axis percentage to be displayed in the zoomed subplot"
+    descr_libraryIDstr = "Provide the ID range of the full library screened"
     descr_truePosIDstr = "Provide the IDs of true positive ligands" \
         " lib (format: 1-514,6001,6700-6702)"
     descr_trueNegIDstr = "Provide the IDs of true negative ligands" \
@@ -112,6 +126,7 @@ def parseArgs():
     parser.add_argument("title", help=descr_title)
     parser.add_argument("results", help=descr_results, nargs="+")
     parser.add_argument("zoom", help=descr_zoom)
+    parser.add_argument("libraryIDstr", help=descr_libraryIDstr)
     parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
     parser.add_argument("trueNegIDstr", help=descr_trueNegIDstr)
     parser.add_argument("ommitIDstr", help=descr_ommitIDstr)
@@ -126,6 +141,7 @@ def parseArgs():
     title = args.title
     results = args.results
     zoom = float(args.zoom)
+    libraryIDstr = args.libraryIDstr
     truePosIDstr = args.truePosIDstr
     trueNegIDstr = args.trueNegIDstr
     ommitIDstr = args.ommitIDstr
@@ -152,10 +168,11 @@ def parseArgs():
         i += 2
 
     return title, vsLegends, vsPaths, zoom, \
-        truePosIDstr, trueNegIDstr, ommitIDstr, ref, log, gui, roc, enrich
+        libraryIDstr, truePosIDstr, trueNegIDstr, ommitIDstr, \
+        ref, log, gui, roc, enrich
 
 
-def makeIDlist(stringID, blurb):
+def makeIDlist(stringID, blurb, printOut):
     """
     Get a string defining which IDs to be generated into a list
     """
@@ -188,7 +205,10 @@ def makeIDlist(stringID, blurb):
                 rangeID.append(int(portion))
 
     # Output this rangeID to the prompt
-    print("\n" + blurb + str(rangeID))
+    if printOut:
+        print("\n" + blurb + str(rangeID))
+    else:
+        print("\n" + blurb)
 
     return rangeID
 
@@ -297,11 +317,10 @@ def getDockedLigandSet(ligIDlist, ligType, intersectLigID):
     return ligCount
 
 
-def writeEnrichFile(vsResult, vsDir,
-                    truePosIDstr, truePosIDlist,
-                    ommitIDstr, ommitIDlist,
-                    truePosCount, ommitCount, libraryCount,
-                    refDict):
+def writePercFile(vsIntersect, vsDir, mode, refDict,
+                  xAxisName, xAxisIDstr, xAxisIDlist, xCount,
+                  yAxisName, yAxisIDstr, yAxisIDlist, yCount,
+                  ommitIDstr, ommitIDlist):
     """
     Given this VS result, and information about the ID of known actives
     in the library, write in a file the information to plot an enrichment curve
@@ -309,19 +328,20 @@ def writeEnrichFile(vsResult, vsDir,
 
     print(col.head + "\n\t*WRITING ENRICHMENT DATA*" + col.end)
 
-    truePos = "truePos_" + truePosIDstr
-    ommit = "ommits_" + ommitIDstr
+    m = mode + "_"
+    x = xAxisName + xAxisIDstr + "_"
+    y = yAxisName + yAxisIDstr + "_"
+    ommit = "ommits_" + ommitIDstr + "_"
 
     # Create filename
-    enrichPath = vsDir + "/enrich_" + truePos + "_" + ommit + \
-        "_" + vsDir + ".csv"
-    print("\n" + enrichPath)
-    enrichDataFile = open(enrichPath, "w")
+    percentPath = vsDir + "/" + m + x + y + ommit + vsDir + ".csv"
+    print("\n" + percentPath)
+    percentDataFile = open(percentPath, "w")
 
     # Build the % data
     X = 0
     Y = 0
-    for ligInfo in vsResult:
+    for ligInfo in vsIntersect:
         # print ligInfo
         ligID = int(ligInfo[0])
 
@@ -334,35 +354,35 @@ def writeEnrichFile(vsResult, vsDir,
         else:
             # When the sorted ligID corresponds to a known, increase
             # the value of Y by 1
-            if ligID in truePosIDlist:
+            if ligID in yAxisIDlist:
                 # print "known ligand", ligInfo
                 Y += 1
 
             # For each ligand in the full VS, increase X and write
             # the X,Y pair to the data file
-            X += 1
+            if ligID in xAxisIDlist:
+                X += 1
 
             # Calculate percentage X and Y
-            Xpercent = (X * 100.0) / libraryCount
-            Ypercent = (Y * 100.0) / truePosCount
+            Xpercent = (X * 100.0) / xCount
+            Ypercent = (Y * 100.0) / yCount
 
-            #
             # Find if the current ligand is one of the refinement ligands, if
             # so save its Xpercent value, in order to add a marker at the
             # position where it was recovered in the VS screen
-            #
             if ligID in refDict.keys():
                 ligName = refDict[ligID]
-                enrichDataFile.write(str(X) + "," + str(Y) + "," +
-                                     str(Xpercent) + "," + str(Ypercent) + "," +
-                                     ligName + "\n")
+                percentDataFile.write(str(X) + "," + str(Y) + "," +
+                                      str(Xpercent) + "," + str(Ypercent) +
+                                      "," + ligName + "\n")
             else:
-                enrichDataFile.write(str(X) + "," + str(Y) + "," +
-                                     str(Xpercent) + "," + str(Ypercent) + "\n")
+                percentDataFile.write(str(X) + "," + str(Y) + "," +
+                                      str(Xpercent) + "," + str(Ypercent) +
+                                      "\n")
 
-    enrichDataFile.close()
+    percentDataFile.close()
 
-    return enrichPath
+    return percentPath
 
 
 def extractPlotData(percentPaths, vsLegends, truePosCount, zoom):
@@ -372,14 +392,14 @@ def extractPlotData(percentPaths, vsLegends, truePosCount, zoom):
 
     print(col.head + "\n\t*GETTING PLOTTING DATA*" + col.end)
 
-    # Variables that define the x and y limites for the zoomed in subplot
+    # Variables that define the x and y limits for the zoomed in subplot
     xLim = 0.0
     yLim = 0.0
 
     plotData = []
 
     for percentPath, vsLegend in zip(percentPaths, vsLegends):
-        # Read the %data file
+        # Read the % data file
         dataFile = open(percentPath, "r")
         dataLines = dataFile.readlines()
         dataFile.close()
