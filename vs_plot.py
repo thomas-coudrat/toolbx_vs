@@ -254,31 +254,16 @@ def intersectResults(vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist):
     libraryCount = len(intersectLigID)
 
     # Verify that truePositives are contained within the intersect of ligIDs
-    truePosIDset = set(truePosIDlist)
-    intersect_truePosID = set.intersection(truePosIDset, intersectLigID)
-    missingTruePos = truePosIDset - intersect_truePosID
-    if len(missingTruePos) > 0:
-        print(col.red + "\nWARNING: " + col.end +
-              "missing true positive IDs: " + str(missingTruePos))
-    truePosCount = len(intersect_truePosID)
+    truePosCount = getDockedLigandSet(truePosIDlist,
+                                      "true positive IDs: ", intersectLigID)
 
     # Verify that trueNegatives are contained within the intersect of ligIDs
-    trueNegIDset = set(trueNegIDlist)
-    intersect_trueNegID = set.intersection(trueNegIDset, intersectLigID)
-    missingTrueNeg = trueNegIDset - intersect_trueNegID
-    if len(missingTrueNeg) > 0:
-        print(col.red + "\nWARNING: " + col.end +
-              "missing true negative IDs: " + str(missingTrueNeg))
-    trueNegCount = len(intersect_trueNegID)
+    trueNegCount = getDockedLigandSet(trueNegIDlist,
+                                      "true negative IDs: ", intersectLigID)
 
     # Verify that ommits are contained within the intersect of ligIDs
-    ommitIDset = set(ommitIDlist)
-    intersect_ommitID = set.intersection(ommitIDset, intersectLigID)
-    missingOmmit = ommitIDset - intersect_ommitID
-    if len(missingTrueNeg) > 0:
-        print(col.red + "\nWARNING: " + col.end +
-              "missing ommit IDs: " + str(missingOmmit))
-    ommitCount = len(intersect_ommitID)
+    ommitCount = getDockedLigandSet(ommitIDlist,
+                                    "ommit IDs: ", intersectLigID)
 
     allVsResultsIntersect = []
     # Loop over vsResults and keep only the ones present in the intersection
@@ -292,6 +277,24 @@ def intersectResults(vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist):
 
     return allVsResultsIntersect, libraryCount, \
         truePosCount, trueNegCount, ommitCount
+
+
+def getDockedLigandSet(ligIDlist, ligType, intersectLigID):
+    """
+    From a list of ligands expected to be docked, and the actual list of all
+    ligands docked, return an updated ligand set of actual docked ligands (and
+    their count)
+    """
+
+    ligIDset = set(ligIDlist)
+    intersect_ligID = set.intersection(ligIDset, intersectLigID)
+    missingLigs = ligIDset - intersect_ligID
+    if len(missingLigs) > 0:
+        print(col.red + "\nWARNING: " + col.end +
+              "missing IDs " + ligType + str(missingLigs))
+    ligCount = len(intersect_ligID)
+
+    return ligCount
 
 
 def writeEnrichFile(vsResult, vsDir,
