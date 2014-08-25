@@ -71,18 +71,27 @@ def main():
         percPaths.append(percPath)
         # writeROCfile()
 
-    # Extract the data from the vs percent data
-    plotData, perfect, xLim, yLim = extractPlotData(percPaths,
-                                                    vsLegends,
-                                                    truePosCount,
-                                                    zoom)
+    # Extract the data from the vs percent data (in both enrichment curves and
+    # ROC curves, the truePositive count would be used to draw the perfect curve
+    plotData, perfect, random, xLim, yLim = extractPlotData(percPaths,
+                                                            vsLegends,
+                                                            truePosCount,
+                                                            zoom)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # getAUC_NSQ(plotData, perfect)
 
-    # Plot the values 2 and 3, which correspond to the percentage X and Y
-    plot(title, plotData, perfect, xLim, yLim, libraryCount, truePosCount,
-         gui, log, zoom)
+    # Define title and axis names based on mode
+    if enrich:
+        xAxisName = "% of ranked database (total=" + str(libraryCount) + ")"
+        yAxisName = "% of known ligands found (total=" + str(truePosCount) + ")"
+    elif roc:
+        xAxisName = "% true negatives (total=" + str(trueNegCount) + ")"
+        yAxisName = "% true positives (total=" + str(truePosCount) + ")"
+
+    # Plot the data calculated by writePercFile, and read in by extracPlotData
+    plot(title, plotData, perfect, random, xLim, yLim,
+         xAxisName, yAxisName, gui, log, zoom)
 
     # Write the command used to execute this script into a log file
     writeCommand()
@@ -338,9 +347,14 @@ def writePercFile(vsIntersect, vsDir, mode, refDict,
     print("\n" + percentPath)
     percentDataFile = open(percentPath, "w")
 
+    # Initialize file with values of 0,0,0.0,0.0,0.0
+    # Those are x,y,xPercent,yPercent,yPerfect,yRandom values
+    percentDataFile.write("0,0,0.0,0.0,0.0,0.0\n")
+
     # Build the % data
     X = 0
     Y = 0
+    val = 0
     for ligInfo in vsIntersect:
         # print ligInfo
         ligID = int(ligInfo[0])
@@ -367,6 +381,11 @@ def writePercFile(vsIntersect, vsDir, mode, refDict,
             Xpercent = (X * 100.0) / xCount
             Ypercent = (Y * 100.0) / yCount
 
+            # Calculate what the perfect line should be
+            if val < yCount:
+                val += 1
+            perfect = (val * 100.0) / yCount
+
             # Find if the current ligand is one of the refinement ligands, if
             # so save its Xpercent value, in order to add a marker at the
             # position where it was recovered in the VS screen
@@ -374,10 +393,12 @@ def writePercFile(vsIntersect, vsDir, mode, refDict,
                 ligName = refDict[ligID]
                 percentDataFile.write(str(X) + "," + str(Y) + "," +
                                       str(Xpercent) + "," + str(Ypercent) +
+                                      "," + str(perfect) + "," + str(Xpercent) +
                                       "," + ligName + "\n")
             else:
                 percentDataFile.write(str(X) + "," + str(Y) + "," +
                                       str(Xpercent) + "," + str(Ypercent) +
+                                      "," + str(perfect) + "," + str(Xpercent) +
                                       "\n")
 
     percentDataFile.close()
@@ -409,23 +430,24 @@ def extractPlotData(percentPaths, vsLegends, truePosCount, zoom):
         print "\nData path:", percentPath
 
         perfect = []
+        random = []
         X = []
         Y = []
-        val = 0
         for line in dataLines:
             # Get the data from the file
             ll = line.split(",")
             xPercent = float(ll[2])
             yPercent = float(ll[3])
+            perfVal = float(ll[4])
+            randVal = float(ll[5])
 
             # Create the data curve
             X.append(xPercent)
             Y.append(yPercent)
-
             # Create the perfect curve
-            if val < truePosCount:
-                val += 1
-            perfect.append((val * 100.0) / truePosCount)
+            perfect.append(perfVal)
+            # Create the random curve
+            random.append(randVal)
 
             # Create the subplot limits
             if xPercent <= zoom:
@@ -434,14 +456,14 @@ def extractPlotData(percentPaths, vsLegends, truePosCount, zoom):
                     yLim = yPercent
 
             # Collect the X position of the refinement ligand(s)
-            if len(ll) == 5:
-                ligName = ll[4]
+            if len(ll) == 7:
+                ligName = ll[6]
                 ligXY = [xPercent, yPercent]
                 refPlot[ligName] = ligXY
 
         plotData.append((X, Y, vsLegend, refPlot))
 
-    return plotData, perfect, xLim, yLim
+    return plotData, perfect, random, xLim, yLim
 
 
 def getAUC_NSQ(rocData, perfect):
@@ -500,8 +522,8 @@ def getAUC_NSQ(rocData, perfect):
         print "**************"
 
 
-def plot(title, plotData, perfect, xLim, yLim,
-         libraryCount, truePosCount, gui, log, zoom):
+def plot(title, plotData, perfect, random, xLim, yLim,
+         xAxis, yAxis, gui, log, zoom):
     """
     Plot the data provided as argument, to draw curves
     """
@@ -523,9 +545,6 @@ def plot(title, plotData, perfect, xLim, yLim,
     scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
     # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(plotData))])
 
-    # Add a value 0 to the perfect curve
-    perfect = [0.0] + perfect
-
     # Drawing data on the figure
     for i, plotDatum in enumerate(plotData):
         X, Y = drawLine(ax, ax2, plotDatum, i, zoom, scalarMap)
@@ -533,21 +552,20 @@ def plot(title, plotData, perfect, xLim, yLim,
     # Plot the RANDOM and PERFECT curves on the zoomed and main graph
     if zoom != 0.0:
         ax2.plot(X, perfect, color="grey")
-        ax2.plot(X, X, "--", color="grey")
+        ax2.plot(X, random, "--", color="grey")
         ax2.tick_params(axis="both", which="major", labelsize=15)
         ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
 
     # Now plot random and perfect curves, common for all plotted curves
-    ax.plot(X, X, "--", color="grey")
     ax.plot(X, perfect, color="grey")
+    ax.plot(X, random, "--", color="grey")
     # print X
     # print perfect
 
     # Here axis and ticks are improved
-    ax.set_xlabel("% of ranked database (total=" + str(libraryCount) + ")",
-                  fontsize=30)
-    ax.set_ylabel("% of known ligands found (total=" + str(truePosCount) + ")",
-                  fontsize=30)
+    ax.set_xlabel(xAxis, fontsize=30)
+    ax.set_ylabel(yAxis, fontsize=30)
+
     ax.minorticks_on()
     ax.tick_params(axis="both", which="major", labelsize=30)
     ax.set_title(title, fontsize=30)
@@ -599,8 +617,8 @@ def drawLine(ax, ax2, plotDatum, i, zoom, scalarMap):
     X = plotDatum[0]
     Y = plotDatum[1]
     # Add the value 0 in order to have curves that start at the origin
-    X = [0.0] + X
-    Y = [0.0] + Y
+    X = X
+    Y = Y
     plotLegend = plotDatum[2]
     refPlot = plotDatum[3]
 
