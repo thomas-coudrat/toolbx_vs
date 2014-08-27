@@ -381,10 +381,14 @@ def writePercFile(vsIntersect, vsDir, mode, refDict,
             Xpercent = (X * 100.0) / xCount
             Ypercent = (Y * 100.0) / yCount
 
-            # Calculate what the perfect line should be
-            if val < yCount:
-                val += 1
-            perfect = (val * 100.0) / yCount
+            # Calculate what the perfect line should be, for enrichment curves
+            # only
+            if mode == "enrich":
+                if val < yCount:
+                    val += 1
+                perfect = (val * 100.0) / yCount
+            elif mode == "ROC":
+                perfect = 0.0
 
             # Find if the current ligand is one of the refinement ligands, if
             # so save its Xpercent value, in order to add a marker at the
