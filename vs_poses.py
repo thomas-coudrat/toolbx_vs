@@ -41,7 +41,7 @@ def main():
     # Parse the VS results
     resDataAll = parseResultsCsv(resultsPath)
 
-    # Select results, the top X and optionally specific ligIDs
+    # Select results, the top X and/or optionally specific ligIDs
     resDataSel = selectResults(resDataAll, X, ligIDs)
 
     # Print the selected results
@@ -58,7 +58,10 @@ def main():
     recObPath = vsPath + "/vs_setup/" + recObName + ".ob"
     recPdbPath = vsPath + "/poses/" + recObName + ".pdb"
     icmRecObName = "a_" + recObName + "."
-    readAndWrite([recObPath], [[recObName, icmRecObName, recPdbPath]], icmBin)
+    readAndWrite([recObPath],
+                 [[recObName, icmRecObName, recPdbPath]],
+                 icmBin,
+                 " write pdb ")
     print
 
 
@@ -155,7 +158,7 @@ def getPath():
 
 def parseResultsCsv(resPath):
     """
-    Read the resultsPath, and extract the location (which repeat) of each ligand
+    Read the resultsPath, and return the location (which repeat) of each ligand
     for which the docking pose should be extracted
     """
 
@@ -168,11 +171,10 @@ def parseResultsCsv(resPath):
     resLen = len(resData)
 
     # Generate a selection of the top X docked ligands, selecting only the
-    # ligandID [0], the ICM score [9], and the repeat directory [-1]
-    resDataAll = [[ID, eval(row[0]), eval(row[9]), row[-1]] for row, ID in
-                  zip(resData[1:], range(1, resLen))]
-
-    return resDataAll
+    # overall Rank (ID), the ligandID row[0], the ligand name row[12],
+    # the ICM score [9], and the repeat directory [12]
+    return [[ID, eval(row[0]), row[11], eval(row[9]), row[12]] for row, ID in
+            zip(resData[1:], range(1, resLen))]
 
 
 def selectResults(resDataAll, X, ligIDs):
@@ -200,14 +202,18 @@ def printResults(resData):
     Takes in results and prints them out
     """
 
-    print
-    print "Rank\tID\tScore\tRepeat"
+    print()
+    print("Rank\tID\tName\tScore\tRepeat")
     for res in resData:
-        print res[0], "\t", res[1], "\t", res[2], "\t", res[3],
-        if res[2] > -25.:
-            print "\t (score above -25., may not have been saved)"
+        print(str(res[0]) + "\t" +
+              str(res[1]) + "\t" +
+              str(res[2]) + "\t" +
+              str(res[3]) + "\t" +
+              str(res[4]))
+        if res[3] > -25.:
+            print("\t (score above -25., may not have been saved)")
         else:
-            print "\t"
+            print("\t")
 
 
 def posesPerRepeat(resData):
@@ -220,7 +226,7 @@ def posesPerRepeat(resData):
     repeatsRes = {}
 
     for row in resData:
-        rep = row[3]
+        rep = row[4]
         keys = repeatsRes.keys()
         # if the repeat already exists in the keys, add the row to the list
         if rep in keys:
@@ -243,7 +249,7 @@ def loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin):
         shutil.rmtree(resultsPath)
     os.makedirs(resultsPath)
 
-    print
+    print()
 
     for key in repeatsRes.keys():
         # Update progress
@@ -256,17 +262,19 @@ def loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin):
         # Get the pdb file list
         pdbFileList = []
         for row in repeatsRes[key]:
-            ligPos = row[0]
-            ligScore = row[2]
+            # print(row)
+            ligRank = row[0]
             ligID = row[1]
-            pdbFilePath = resultsPath + str(ligPos) + "_" + str(ligScore) + \
-                "_" + str(ligID) + ".pdb"
+            ligName = row[2]
+            ligScore = row[3]
+            pdbFilePath = resultsPath + str(ligRank) + "_" + str(ligScore) + \
+                "_" + str(ligID) + "_" + ligName + ".mol2"
             selectionName = projName.replace("-", "_") + str(ligID)
             icmName = "a_" + selectionName + "."
 
             pdbFileList.append([selectionName, icmName, pdbFilePath])
 
-        readAndWrite(obFileList, pdbFileList, icmBin)
+        readAndWrite(obFileList, pdbFileList, icmBin, " write mol2 ")
 
 
 def getAnswersList(repPath, ligsInfo):
@@ -310,7 +318,7 @@ def getAnswersList(repPath, ligsInfo):
     return list(set([lig[1] for lig in ligsInfo]))
 
 
-def readAndWrite(obFileList, pdbFileList, icmBin):
+def readAndWrite(obFileList, pdbFileList, icmBin, writeFormat):
     """
     Get the information of which *.ob files to read, and which *.pdb files from
     the loaded molecules to write.
@@ -326,14 +334,14 @@ def readAndWrite(obFileList, pdbFileList, icmBin):
     # Add the ob file loading part
     icmScript.write("\n# OPENING FILES\n")
     for obFile in obFileList:
-        print "loading:", obFile
+        print("loading:" + obFile)
         icmScript.write('openFile "' + obFile + '"\n')
     # Add the pdb file saving part
     icmScript.write("\n# WRITING FILES\n")
     for pdbFile in pdbFileList:
         icmScript.write('sel = ' + pdbFile[1] + "\n")
-        icmScript.write('if ( Name(sel) == "' + pdbFile[0] + '") write pdb ' +
-                        pdbFile[1] + ' "' + pdbFile[2] + '"\n')
+        icmScript.write('if ( Name(sel) == "' + pdbFile[0] + '")' +
+                        writeFormat + pdbFile[1] + ' "' + pdbFile[2] + '"\n')
     icmScript.write("\nquit")
     icmScript.close()
 
@@ -341,7 +349,7 @@ def readAndWrite(obFileList, pdbFileList, icmBin):
     try:
         check_output(icmBin + " -s ./temp.icm", stderr=STDOUT, shell=True)
     except CalledProcessError, e:
-        print e.output
+        print(e.output)
         sys.exit()
 
     # Delete temp script
@@ -349,4 +357,4 @@ def readAndWrite(obFileList, pdbFileList, icmBin):
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
