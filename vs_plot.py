@@ -94,7 +94,7 @@ def main():
          xAxisName, yAxisName, gui, log, zoom)
 
     # Write the command used to execute this script into a log file
-    writeCommand()
+    writeCommand(title)
 
     print("\n")
 
@@ -645,15 +645,16 @@ def drawLine(ax, ax2, plotDatum, i, zoom, scalarMap):
     return X, Y
 
 
-def writeCommand():
+def writeCommand(title):
     """
     Write down the command that was used to exectute this script in a log
     file, at the location where the script is executed. Also write the
     current working directory at the time of execution
     """
 
+    filename = title.replace(" ", "_") + ".txt"
     cwd = os.getcwd()
-    logFile = open("plot.log", "w")
+    logFile = open(filename, "w")
     # Write the directory location: this is not executed upong sh call of the
     # plot.log, but serves as information
     logFile.write(cwd + "\n")
