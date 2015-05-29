@@ -1,3 +1,3 @@
-# This is my README
+### This is my README
 
-## Set of scripts to build, manage and analyse a Virtual Screen (VS) using ICM on Barcoo (VLSCI)
+Setup, monitor and visualise virtual screens (VS) on a cluster (PBS or SLURM)
