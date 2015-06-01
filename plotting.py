@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 import matplotlib
 import scipy.integrate
 import math
+import os, sys
 
 
 class col:
