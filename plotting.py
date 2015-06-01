@@ -20,6 +20,7 @@ class col:
     BOLD = '\033[1m'
     red = '\033[31m'
 
+
 class plotting:
     """
     Contains all methods for plotting VS results
@@ -69,7 +70,8 @@ class plotting:
     def makeRefDict(self, refStr):
         """
         Get a string describing refinement ligands and their ID, and generate a
-        dictionary to store that information, which is used when plotting the curves
+        dictionary to store that information, which is used when plotting the
+        curves
         """
 
         print(col.head + "\n\t*MAKING REFERENCE LIGANDS*" + col.end)
@@ -89,14 +91,15 @@ class plotting:
         return refDict
 
 
-    def intersectResults(self, vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist):
+    def intersectResults(self, vsPaths, truePosIDlist, trueNegIDlist,
+                         ommitIDlist):
         """
-        Read in the results provided in .csv format, and figure out the intersect
-        between each of those results set based on the ligIDs.
-        Also check that the truePositive and trueNegative sets (if provided) are
-        fully present in the intersect set: send a WARNING if they are not
-        Then return the results set containing only the intersect results for each
-        set.
+        Read in the results provided in .csv format, and figure out the
+        intersect between each of those results set based on the ligIDs.
+        Also check that the truePositive and trueNegative sets (if provided)
+        are fully present in the intersect set: send a WARNING if they are not
+        Then return the results set containing only the intersect results for
+        each set.
         """
 
         print(col.head + "\n\t*DEFINING INTERSECT*" + col.end)
@@ -154,9 +157,9 @@ class plotting:
 
     def getDockedLigandSet(self, ligIDlist, ligType, intersectLigID):
         """
-        From a list of ligands expected to be docked, and the actual list of all
-        ligands docked, return an updated ligand set of actual docked ligands (and
-        their count)
+        From a list of ligands expected to be docked, and the actual list of
+        all ligands docked, return an updated ligand set of actual docked
+        ligands (and their count)
         """
 
         ligIDset = set(ligIDlist)
@@ -171,12 +174,13 @@ class plotting:
 
 
     def writePercFile(self, vsIntersect, vsDir, mode, refDict,
-                    xAxisName, xAxisIDstr, xAxisIDlist, xCount,
-                    yAxisName, yAxisIDstr, yAxisIDlist, yCount,
-                    ommitIDstr, ommitIDlist):
+                      xAxisName, xAxisIDstr, xAxisIDlist, xCount,
+                      yAxisName, yAxisIDstr, yAxisIDlist, yCount,
+                      ommitIDstr, ommitIDlist):
         """
         Given this VS result, and information about the ID of known actives
-        in the library, write in a file the information to plot an enrichment curve
+        in the library, write in a file the information to plot an enrichment
+        curve
         """
 
         print(col.head + "\n\t*WRITING ENRICHMENT DATA*" + col.end)
@@ -225,8 +229,8 @@ class plotting:
                 Xpercent = (X * 100.0) / xCount
                 Ypercent = (Y * 100.0) / yCount
 
-                # Calculate what the perfect line should be, for enrichment curves
-                # only
+                # Calculate what the perfect line should be, for enrichment
+                # curves only
                 if mode == "enrich":
                     if val < yCount:
                         val += 1
@@ -234,20 +238,20 @@ class plotting:
                 elif mode == "ROC":
                     perfect = 0.0
 
-                # Find if the current ligand is one of the refinement ligands, if
-                # so save its Xpercent value, in order to add a marker at the
+                # Find if the current ligand is one of the refinement ligands,
+                # if so save its Xpercent value, in order to add a marker at the
                 # position where it was recovered in the VS screen
                 if ligID in refDict.keys():
                     ligName = refDict[ligID]
                     percentDataFile.write(str(X) + "," + str(Y) + "," +
-                                        str(Xpercent) + "," + str(Ypercent) +
-                                        "," + str(perfect) + "," + str(Xpercent) +
-                                        "," + ligName + "\n")
+                                          str(Xpercent) + "," + str(Ypercent) +
+                                          "," + str(perfect) + "," +
+                                          str(Xpercent) + "," + ligName + "\n")
                 else:
                     percentDataFile.write(str(X) + "," + str(Y) + "," +
-                                        str(Xpercent) + "," + str(Ypercent) +
-                                        "," + str(perfect) + "," + str(Xpercent) +
-                                        "\n")
+                                          str(Xpercent) + "," + str(Ypercent) +
+                                          "," + str(perfect) + "," +
+                                          str(Xpercent) + "\n")
 
         percentDataFile.close()
 
@@ -371,7 +375,7 @@ class plotting:
 
 
     def plot(self, title, plotData, perfect, random, xLim, yLim,
-            xAxis, yAxis, gui, log, zoom):
+             xAxis, yAxis, gui, log, zoom):
         """
         Plot the data provided as argument, to draw curves
         """
@@ -419,6 +423,9 @@ class plotting:
         ax.set_title(title, fontsize=30)
         ax.legend(loc="upper left", prop={'size': 30})
         ax.axis('tight')
+        # Needed when plotting scatterplots (redundant for plotting lines)
+        plt.ylim(0, 100)
+        plt.xlim(0, 100)
 
         if log:
             ax.set_xscale("symlog", linthreshx=0.01)
@@ -465,13 +472,13 @@ class plotting:
         X = plotDatum[0]
         Y = plotDatum[1]
         # Add the value 0 in order to have curves that start at the origin
-        X = X
-        Y = Y
+        # X = X
+        # Y = Y
         plotLegend = plotDatum[2]
         refPlot = plotDatum[3]
 
         # Plot this curve
-        ax.plot(X, Y, label=plotLegend, linewidth=lw, color=color)
+        ax.scatter(X, Y, label=plotLegend, linewidth=lw, color=color)
 
         # Plot a blow up of the first X%
         if zoom != 0.0:
@@ -499,8 +506,8 @@ class plotting:
         filename = title.replace(" ", "_") + ".txt"
         cwd = os.getcwd()
         logFile = open(filename, "w")
-        # Write the directory location: this is not executed upong sh call of the
-        # plot.log, but serves as information
+        # Write the directory location: this is not executed upong sh call of
+        # the plot.log, but serves as information
         logFile.write(cwd + "\n")
         logFile.write(sys.argv[0].split("/")[-1] + " ")
         for arg in sys.argv[1:]:
