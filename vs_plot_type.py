@@ -15,12 +15,17 @@ def main():
         libraryIDstr, truePosIDstr, ommitIDstr, \
         ref, log, gui = parseArgs()
 
+    # Define mode
+    mode = "type"
+    # Define zoom
+    zoom = 0.0
+
     # Creating a plotting instance for access to all methods
     p = plotting.plotting()
 
     # Get the truePosID range in list format
     libraryIDlist = p.makeIDlist(libraryIDstr, "Library IDs (not displayed): ",
-                            False)
+                                 False)
 
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
     trueNegIDlist = p.makeIDlist("0-0", "True negative ID list: ", False)
@@ -42,8 +47,11 @@ def main():
     percPaths = []
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
         vsDir = os.path.dirname(vsPath)
+        print("LIBRARY and TRUE-POS")
+        print(libraryCount)
+        print(truePosCount)
         # print knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast
-        percPath = p.writePercFile(vsIntersect, vsDir, "enrich", refDict,
+        percPath = p.writePercFile(vsIntersect, vsDir, mode, refDict,
                                    "library", libraryIDstr,
                                    libraryIDlist, libraryCount,
                                    "true_pos", truePosIDstr,
@@ -58,7 +66,8 @@ def main():
     plotData, perfect, random, xLim, yLim = p.extractPlotData(percPaths,
                                                               vsLegends,
                                                               truePosCount,
-                                                              0.0)
+                                                              zoom,
+                                                              mode)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)
@@ -69,7 +78,7 @@ def main():
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plot(title, plotData, perfect, random, xLim, yLim,
-           xAxisName, yAxisName, gui, log, 0.0)
+           xAxisName, yAxisName, gui, log, zoom)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)
