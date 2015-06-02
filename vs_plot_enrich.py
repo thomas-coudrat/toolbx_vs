@@ -15,6 +15,9 @@ def main():
         libraryIDstr, truePosIDstr, ommitIDstr, \
         ref, zoom, gui = parseArgs()
 
+    # Define mode
+    mode = "enrich"
+
     # Creating a plotting instance for access to all methods
     p = plotting.plotting()
 
@@ -49,7 +52,7 @@ def main():
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
         vsDir = os.path.dirname(vsPath)
         # print knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast
-        percPath = p.writePercFile(vsIntersect, vsDir, "enrich", refDict,
+        percPath = p.writePercFile(vsIntersect, vsDir, mode, refDict,
                                    "library", libraryIDstr,
                                    libraryIDlist, libraryCount,
                                    "true_pos", truePosIDstr,
@@ -64,7 +67,8 @@ def main():
     plotData, perfect, random, xLim, yLim = p.extractPlotData(percPaths,
                                                               vsLegends,
                                                               truePosCount,
-                                                              zoom)
+                                                              zoom,
+                                                              mode)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)

@@ -15,6 +15,11 @@ def main():
         truePosIDstr, trueNegIDstr, ommitIDstr, \
         ref, gui = parseArgs()
 
+    # Define mode
+    mode = "ROC"
+    # Define zoom
+    zoom = 0.0
+
     # Creating a plotting instance for access to all methods
     p = plotting.plotting()
 
@@ -44,7 +49,7 @@ def main():
         vsDir = os.path.dirname(vsPath)
         # print knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast
 
-        percPath = p.writePercFile(vsIntersect, vsDir, "ROC", refDict,
+        percPath = p.writePercFile(vsIntersect, vsDir, mode, refDict,
                                    "true_neg", trueNegIDstr,
                                    trueNegIDlist, trueNegCount,
                                    "true_pos", truePosIDstr,
@@ -59,7 +64,8 @@ def main():
     plotData, perfect, random, xLim, yLim = p.extractPlotData(percPaths,
                                                               vsLegends,
                                                               truePosCount,
-                                                              0.0)
+                                                              zoom,
+                                                              mode)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)
