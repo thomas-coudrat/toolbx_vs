@@ -214,51 +214,64 @@ class plotting:
                 continue
             # Otherwise proceed normally
             else:
+
+                # Calculate percentage X and Y
+                Xpercent = (X * 100.0) / xCount
+                Ypercent = (Y * 100.0) / yCount
+
                 # When the sorted ligID corresponds to a known, increase
                 # the value of Y by 1
                 if ligID in yAxisIDlist:
                     # print "known ligand", ligInfo
                     Y += 1
 
-                # For each ligand in the full VS, increase X and write
-                # the X,Y pair to the data file
+                # For each ligand in the full VS (or in the case of a ROC curve,
+                # in the truePositives/Negatives), increase X
                 if ligID in xAxisIDlist:
                     X += 1
 
-                # Calculate percentage X and Y
-                Xpercent = (X * 100.0) / xCount
-                Ypercent = (Y * 100.0) / yCount
 
-                # Calculate what the perfect line should be, for enrichment
-                # curves only
-                if mode == "enrich":
+
+                # Perfect curve calculated only for the
+                # enrichment curve, not for the ROC curve
+                if mode in ("enrich", "type"):
+                    # Calculate perfect curve
                     if val < yCount:
                         val += 1
                     perfect = (val * 100.0) / yCount
                 elif mode == "ROC":
+                    # Calculate perfect curve
                     perfect = 0.0
 
-                # Find if the current ligand is one of the refinement ligands,
-                # if so save its Xpercent value, in order to add a marker at the
-                # position where it was recovered in the VS screen
+                # Line to be saved to file
+                percLine = ",".join([str(X), str(Y), str(Xpercent),
+                                    str(Ypercent), str(perfect), str(Xpercent)])
+                # If one of the refinement ligand corresponds to that line, add
+                # its name on the line
                 if ligID in refDict.keys():
                     ligName = refDict[ligID]
-                    percentDataFile.write(str(X) + "," + str(Y) + "," +
-                                          str(Xpercent) + "," + str(Ypercent) +
-                                          "," + str(perfect) + "," +
-                                          str(Xpercent) + "," + ligName + "\n")
+                    percLine = percLine + ligName + "\n"
                 else:
-                    percentDataFile.write(str(X) + "," + str(Y) + "," +
-                                          str(Xpercent) + "," + str(Ypercent) +
-                                          "," + str(perfect) + "," +
-                                          str(Xpercent) + "\n")
+                    percLine = percLine + "\n"
+
+                # Saving behaviour of enrichment vs. ROC curve is different:
+                # only the Y increments are saved in an enrichment curve,
+                # whereas both Y and X increments are saved in a ROC curve.
+                if mode in ("enrich", "type"):
+                    # Check again for presence of the current ligID in the y
+                    # axis list. If present then write line, otherwise don't
+                    if ligID in yAxisIDlist:
+                        percentDataFile.write(percLine)
+                elif mode == "ROC":
+                    percentDatFile.write(percLine)
 
         percentDataFile.close()
 
         return percentPath
 
 
-    def extractPlotData(self, percentPaths, vsLegends, truePosCount, zoom):
+    def extractPlotData(self, percentPaths, vsLegends, truePosCount, zoom,
+                        mode):
         """
         Read the % result data files, return the data for plotting
         """
@@ -285,19 +298,42 @@ class plotting:
             random = []
             X = []
             Y = []
+            # keep
+            previous_y = 0
+
             for line in dataLines:
                 # Get the data from the file
                 ll = line.split(",")
+                current_y = int(ll[1])
                 xPercent = float(ll[2])
                 yPercent = float(ll[3])
                 perfVal = float(ll[4])
                 randVal = float(ll[5])
 
-                # Create the data curve
+                """
+                # Only store X and Y values for enrichment curves, if it's a
+                # scatter plot type curve (to display ligand types), then only
+                # save the X and Y values when it's a new Y value occurence
+                if mode == "type":
+                    # if the previous value of y is the same as the current,
+                    # then don't store it
+                    if previous_y == current_y:
+                        pass
+                    # Store values only when there was an increment in y
+                    else:
+                        # Create the data curve
+                        X.append(xPercent)
+                        Y.append(yPercent)
+                    previous_y = current_y
+                elif mode in ("enrich", "ROC"):
+                    # Create the data curve
+                """
                 X.append(xPercent)
                 Y.append(yPercent)
+
                 # Create the perfect curve
                 perfect.append(perfVal)
+
                 # Create the random curve
                 random.append(randVal)
 
@@ -408,8 +444,21 @@ class plotting:
             ax2.tick_params(axis="both", which="major", labelsize=15)
             ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
 
+        print(len(X))
+        print(len(perfect))
+        print(len(random))
+        print(X[0:4])
+        print(perfect[0:4])
+        print(random[0:4])
+        print(X[-1])
+        print(perfect[-1])
+        print(random[-1])
+        # print(len)
+
         # Now plot random and perfect curves, common for all plotted curves
+        print("PERFECT")
         ax.plot(X, perfect, color="grey")
+        print("RANDOM")
         ax.plot(X, random, "--", color="grey")
         # print X
         # print perfect
@@ -471,9 +520,7 @@ class plotting:
 
         X = plotDatum[0]
         Y = plotDatum[1]
-        # Add the value 0 in order to have curves that start at the origin
-        # X = X
-        # Y = Y
+
         plotLegend = plotDatum[2]
         refPlot = plotDatum[3]
 
@@ -522,3 +569,26 @@ class plotting:
                 else:
                     logFile.write("'" + arg + "' ")
         logFile.close()
+
+
+    def ligID_from_sdf(self, sdf_path):
+        """
+        This function takes in the path to an sdf file and returns a list of
+        ligandIDs that were found in this file
+        """
+
+        # Read sdf file line by line, and store ID information
+        lig_IDs = []
+        with open(sdf_path) as f:
+            for line in f:
+                # Get the line directly after the identifier lig_ID
+                if "<lig_ID>" in line:
+                    lig_IDs.append(next(f).strip())
+
+        return lig_IDs
+
+
+if __name__ == "__main__":
+    p = plotting()
+    list = p.ligID_from_sdf("./ADORA2A_inhib_cluster_zm.sdf")
+    print(list)
