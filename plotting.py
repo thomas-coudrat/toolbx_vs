@@ -100,6 +100,8 @@ class plotting:
         are fully present in the intersect set: send a WARNING if they are not
         Then return the results set containing only the intersect results for
         each set.
+        Remove from the set returned the ligands that correspond to the ommited
+        set
         """
 
         print(col.head + "\n\t*DEFINING INTERSECT*" + col.end)
@@ -147,11 +149,15 @@ class plotting:
             # print resultPath, len(vsResult)
             vsResultIntersect = []
             for i, ligInfo in enumerate(vsResult):
-                if int(ligInfo[0]) in intersectLigID:
+                # Get only ligands that were docked in all binding pockets, and
+                # also do not store the ommitted ligand information
+                if int(ligInfo[0]) in intersectLigID and \
+                       int(ligInfo[0]) not in ommitIDlist:
                     vsResultIntersect.append(ligInfo)
             allVsResultsIntersect.append(vsResultIntersect)
 
-        return allVsResultsIntersect, libraryCount, \
+        # Return the library count as the total count - ommit count
+        return allVsResultsIntersect, libraryCount - ommitCount, \
             truePosCount, trueNegCount, ommitCount
 
 
@@ -197,13 +203,13 @@ class plotting:
 
         # Initialize file with values of 0,0,0.0,0.0,0.0
         # Those are x,y,xPercent,yPercent,yPerfect,yRandom values
-        percentDataFile.write("0,0,0.0,0.0,0.0,0.0\n")
+        # percentDataFile.write("0,0,0.0,0.0,0.0,0.0\n")
 
         # Build the % data
         X = 0
         Y = 0
         val = 0
-        for ligInfo in vsIntersect:
+        for i, ligInfo in enumerate(vsIntersect):
             # print ligInfo
             ligID = int(ligInfo[0])
 
@@ -214,10 +220,6 @@ class plotting:
                 continue
             # Otherwise proceed normally
             else:
-
-                # Calculate percentage X and Y
-                Xpercent = (X * 100.0) / xCount
-                Ypercent = (Y * 100.0) / yCount
 
                 # When the sorted ligID corresponds to a known, increase
                 # the value of Y by 1
@@ -230,7 +232,9 @@ class plotting:
                 if ligID in xAxisIDlist:
                     X += 1
 
-
+                # Calculate percentage X and Y
+                Xpercent = (X * 100.0) / xCount
+                Ypercent = (Y * 100.0) / yCount
 
                 # Perfect curve calculated only for the
                 # enrichment curve, not for the ROC curve
@@ -260,7 +264,7 @@ class plotting:
                 if mode in ("enrich", "type"):
                     # Check again for presence of the current ligID in the y
                     # axis list. If present then write line, otherwise don't
-                    if ligID in yAxisIDlist:
+                    if ligID in yAxisIDlist or len(vsIntersect) == i + 1:
                         percentDataFile.write(percLine)
                 elif mode == "ROC":
                     percentDatFile.write(percLine)
@@ -328,6 +332,7 @@ class plotting:
                 elif mode in ("enrich", "ROC"):
                     # Create the data curve
                 """
+
                 X.append(xPercent)
                 Y.append(yPercent)
 
@@ -457,9 +462,12 @@ class plotting:
 
         # Now plot random and perfect curves, common for all plotted curves
         print("PERFECT")
-        ax.plot(X, perfect, color="grey")
+        #ax.plot(X, perfect, ":", color="grey")
+
         print("RANDOM")
-        ax.plot(X, random, "--", color="grey")
+        y = self.formulaRandom(X)
+        ax.plot(X, y, ":", color="grey")
+        # ax.plot(X, random, "--", color="grey")
         # print X
         # print perfect
 
@@ -527,6 +535,7 @@ class plotting:
         # Plot this curve
         ax.scatter(X, Y, label=plotLegend, linewidth=lw, color=color)
 
+
         # Plot a blow up of the first X%
         if zoom != 0.0:
             ax2.plot(X, Y, color=color)
@@ -587,6 +596,21 @@ class plotting:
 
         return lig_IDs
 
+
+    def formulaRandom(self, x):
+        """
+        Return the y value corresponding to random enrichment
+        """
+        return x
+
+    '''
+    def formulaPerfect(self, x, max):
+        """
+        Return the y value corresponding to a perfect enrichment
+        """
+        if x < max:
+            return
+    '''
 
 if __name__ == "__main__":
     p = plotting()
