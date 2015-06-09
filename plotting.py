@@ -396,21 +396,23 @@ class plotting:
         # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(plotData))])
 
         # Drawing data on the figure
+        combined_X = []
         for i, plotDatum in enumerate(plotData):
             X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom, scalarMap, mode)
+            combined_X = combined_X + X
 
-        # Now plot random and perfect curves, common for all plotted curves
-        # Trick to get the equations to plot the perfect and random curves from
-        # the origin, even when "type" is used for sparse scatter plot
-        xOrigin = [0.0] + X
+        # Now plot random and perfect curves, get a range of X values from
+        # 0 to 100, with 0.1 increments. These values are submitted to the
+        # equations to get corresponding Y values
+        xValues = np.arange(0, 100, 0.1)
         # Do not plot a perfect curve for ROC plots, as it won't show, being
         # along the x axis
         if mode in ("enrich", "type"):
-            yPerfect = self.formulaPerfect(xOrigin, libraryCount, truePosCount)
-            ax.plot(xOrigin, yPerfect, "--", color="grey")
+            yPerfect = self.formulaPerfect(xValues, libraryCount, truePosCount)
+            ax.plot(xValues, yPerfect, "--", color="grey")
 
-        yRandom = self.formulaRandom(xOrigin)
-        ax.plot(xOrigin, yRandom, ":", color="grey")
+        yRandom = self.formulaRandom(xValues)
+        ax.plot(xValues, yRandom, ":", color="grey")
 
         # Plot the RANDOM and PERFECT curves on the zoomed and main graph
         if zoom != 0.0:
