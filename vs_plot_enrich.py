@@ -62,15 +62,11 @@ def main():
                                    ommitIDstr, ommitIDlist)
 
         percPaths.append(percPath)
-        # writeROCfile()
 
     # Extract the data from the vs percent data (in both enrichment curves and
     # ROC curves, the truePositive count would be used to draw the perfect curve
-    plotData, perfect, random, xLim, yLim = p.extractPlotData(percPaths,
-                                                              vsLegends,
-                                                              truePosCount,
-                                                              zoom,
-                                                              mode)
+    plotData, xLim, yLim = p.extractPlotData(percPaths, vsLegends,
+                                             truePosCount, zoom, mode)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)

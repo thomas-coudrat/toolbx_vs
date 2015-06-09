@@ -38,8 +38,6 @@ def main():
     else:
         refDict = {}
 
-    # print("ommitID")
-
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
     vsIntersects, libraryCount, truePosCount, trueNegCount, ommitCount \
@@ -49,13 +47,6 @@ def main():
     percPaths = []
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
         vsDir = os.path.dirname(vsPath)
-        # print("LIBRARY and TRUE-POS counts")
-        # print(libraryCount)
-        # print(truePosCount)
-        # print("truePos list len()")
-        # print(truePosIDlist)
-        # print(len(truePosIDlist))
-        # print knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast
         percPath = p.writePercFile(vsIntersect, vsDir, mode, refDict,
                                    "library", libraryIDstr,
                                    libraryIDlist, libraryCount,
@@ -64,18 +55,11 @@ def main():
                                    ommitIDstr, ommitIDlist)
 
         percPaths.append(percPath)
-        # writeROCfile()
 
     # Extract the data from the vs percent data (in both enrichment curves and
     # ROC curves, the truePositive count would be used to draw the perfect curve
-    plotData, perfect, random, xLim, yLim = p.extractPlotData(percPaths,
-                                                              vsLegends,
-                                                              truePosCount,
-                                                              zoom,
-                                                              mode)
-
-    # print("EXTRACTED data")
-    # print(perfect, len(perfect))
+    plotData, xLim, yLim = p.extractPlotData(percPaths, vsLegends,
+                                             truePosCount, zoom, mode)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)

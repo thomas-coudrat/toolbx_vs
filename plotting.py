@@ -202,10 +202,6 @@ class plotting:
         print("\n" + percentPath)
         percentDataFile = open(percentPath, "w")
 
-        # Initialize file with values of 0,0,0.0,0.0,0.0
-        # Those are x,y,xPercent,yPercent,yPerfect,yRandom values
-        # percentDataFile.write("0,0,0.0,0.0,0.0,0.0\n")
-
         # Build the % data
         X = 0
         Y = 0
@@ -250,7 +246,7 @@ class plotting:
 
                 # Line to be saved to file
                 percLine = ",".join([str(X), str(Y), str(Xpercent),
-                                    str(Ypercent), str(perfect), str(Xpercent)])
+                                    str(Ypercent)])
                 # If one of the refinement ligand corresponds to that line, add
                 # its name on the line
                 if ligID in refDict.keys():
@@ -299,8 +295,6 @@ class plotting:
 
             print "\nData path:", percentPath
 
-            perfect = []
-            random = []
             X = []
             Y = []
 
@@ -309,17 +303,9 @@ class plotting:
                 ll = line.split(",")
                 xPercent = float(ll[2])
                 yPercent = float(ll[3])
-                perfVal = float(ll[4])
-                randVal = float(ll[5])
 
                 X.append(xPercent)
                 Y.append(yPercent)
-
-                # Create the perfect curve
-                perfect.append(perfVal)
-
-                # Create the random curve
-                random.append(randVal)
 
                 # Create the subplot limits
                 if xPercent <= zoom:
@@ -335,7 +321,7 @@ class plotting:
 
             plotData.append((X, Y, vsLegend, refPlot))
 
-        return plotData, perfect, random, xLim, yLim
+        return plotData, xLim, yLim
 
 
     def getAUC_NSQ(self, rocData, perfect):
