@@ -233,17 +233,6 @@ class plotting:
                 Xpercent = (X * 100.0) / xCount
                 Ypercent = (Y * 100.0) / yCount
 
-                # Perfect curve calculated only for the
-                # enrichment curve, not for the ROC curve
-                if mode in ("enrich", "type"):
-                    # Calculate perfect curve
-                    if val < yCount:
-                        val += 1
-                    perfect = (val * 100.0) / yCount
-                elif mode == "ROC":
-                    # Calculate perfect curve
-                    perfect = 0.0
-
                 # Line to be saved to file
                 percLine = ",".join([str(X), str(Y), str(Xpercent),
                                     str(Ypercent)])
@@ -263,8 +252,11 @@ class plotting:
                     # axis list. If present then write line, otherwise don't
                     if ligID in yAxisIDlist or len(vsIntersect) == i + 1:
                         percentDataFile.write(percLine)
-                elif mode in ("enrich", "ROC"):
+                elif mode in ("enrich"):
                     percentDataFile.write(percLine)
+                elif mode in ("ROC"):
+                    if ligID in yAxisIDlist or ligID in xAxisIDlist:
+                        percentDataFile.write(percLine)
 
         percentDataFile.close()
 
@@ -411,8 +403,11 @@ class plotting:
         # Trick to get the equations to plot the perfect and random curves from
         # the origin, even when "type" is used for sparse scatter plot
         xOrigin = [0.0] + X
-        yPerfect = self.formulaPerfect(xOrigin, libraryCount, truePosCount)
-        ax.plot(xOrigin, yPerfect, "--", color="grey")
+        # Do not plot a perfect curve for ROC plots, as it won't show, being
+        # along the x axis
+        if mode in ("enrich", "type"):
+            yPerfect = self.formulaPerfect(xOrigin, libraryCount, truePosCount)
+            ax.plot(xOrigin, yPerfect, "--", color="grey")
 
         yRandom = self.formulaRandom(xOrigin)
         ax.plot(xOrigin, yRandom, ":", color="grey")

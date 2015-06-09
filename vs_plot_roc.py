@@ -72,10 +72,7 @@ def main():
     yAxisName = "% true positives (total=" + str(truePosCount) + ")"
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
-    print(libraryCount)
-    print(truePosCount)
-    print(trueNegCount)
-    p.plot(title, plotData, trueNegCount, truePosCount,
+    p.plot(title, plotData, libraryCount, truePosCount,
            xLim, yLim, xAxisName, yAxisName, gui, log, zoom, mode)
 
     # Write the command used to execute this script into a log file
