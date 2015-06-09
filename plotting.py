@@ -262,12 +262,12 @@ class plotting:
                 # Saving behaviour of enrichment vs. ROC curve is different:
                 # only the Y increments are saved in an enrichment curve,
                 # whereas both Y and X increments are saved in a ROC curve.
-                if mode in ("enrich", "type"):
+                if mode in ("type"):
                     # Check again for presence of the current ligID in the y
                     # axis list. If present then write line, otherwise don't
                     if ligID in yAxisIDlist or len(vsIntersect) == i + 1:
                         percentDataFile.write(percLine)
-                elif mode == "ROC":
+                elif mode in ("enrich", "ROC"):
                     percentDataFile.write(percLine)
 
         percentDataFile.close()
@@ -311,7 +311,6 @@ class plotting:
                 yPercent = float(ll[3])
                 perfVal = float(ll[4])
                 randVal = float(ll[5])
-                print(perfVal)
 
                 X.append(xPercent)
                 Y.append(yPercent)
@@ -396,7 +395,7 @@ class plotting:
 
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
-             xAxis, yAxis, gui, log, zoom):
+             xAxis, yAxis, gui, log, zoom, mode):
         """
         Plot the data provided as argument, to draw curves
         """
@@ -420,33 +419,19 @@ class plotting:
 
         # Drawing data on the figure
         for i, plotDatum in enumerate(plotData):
-            X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom, scalarMap)
+            X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom, scalarMap, mode)
 
-        """
-        print(len(X))
-        print(len(perfect))
-        print(len(random))
-        print(X[0:4])
-        print(perfect[0:4])
-        print(random[0:4])
-        print(X[-1])
-        print(perfect[-1])
-        print(random[-1])
-        # print(len)
-        """
+        # Trick to get the equations to start at the origin, draw a single
+        # undisplayed point at the origin
+        if mode in ("enrich", "ROC"):
+            ax.scatter(0.0, 0.0, marker="")
 
         # Now plot random and perfect curves, common for all plotted curves
-        print("PERFECT")
-        print(libraryCount, truePosCount)
         perfect = self.formulaPerfect(X, libraryCount, truePosCount)
-        ax.plot(X, perfect, "--", color="grey", linewidth=6)
+        ax.plot(X, perfect, "--", color="grey")
 
-        print("RANDOM")
         random = self.formulaRandom(X)
         ax.plot(X, random, ":", color="grey")
-        # ax.plot(X, random, "--", color="grey")
-        # print X
-        # print perfect
 
         # Plot the RANDOM and PERFECT curves on the zoomed and main graph
         if zoom != 0.0:
@@ -494,7 +479,7 @@ class plotting:
             plt.savefig(fileName, bbox_inches="tight")
 
 
-    def drawLine(self, ax, ax2, plotDatum, i, zoom, scalarMap):
+    def drawLine(self, ax, ax2, plotDatum, i, zoom, scalarMap, mode):
         """
         Draw the line corresponding to the set of data passed in arguments
         """
@@ -516,9 +501,15 @@ class plotting:
         plotLegend = plotDatum[2]
         refPlot = plotDatum[3]
 
-        # Plot this curve
-        ax.scatter(X, Y, label=plotLegend, linewidth=lw, color=color)
-
+        # Plot this curve: scatter plot if plotting type, curves otherwise
+        if mode in ("type"):
+            X = [0.0] + X
+            Y = [0.0] + Y
+            ax.scatter(X, Y, label=plotLegend, linewidth=lw, color=color)
+        elif mode in ("enrich", "ROC"):
+            X = [0.0] + X
+            Y = [0.0] + Y
+            ax.plot(X, Y, label=plotLegend, linewidth=lw, color=color)
 
         # Plot a blow up of the first X%
         if zoom != 0.0:
@@ -528,7 +519,7 @@ class plotting:
         for ligName in refPlot.keys():
             xPos, yPos = refPlot[ligName]
             ax.axvline(x=xPos, ymax=yPos/100., color=color,
-                    linewidth=3, linestyle='--')
+                       linewidth=3, linestyle='--')
             # print ligName, xPos, yPos
             # ax.text(xPos, -2, ligName, rotation=-90,
             #        color=color, transform=ax.transData)
@@ -590,12 +581,15 @@ class plotting:
 
     def formulaPerfect(self, x, libraryCount, truePosCount):
         """
-        Return the y value corresponding to a perfect enrichment
+        Return the y values corresponding to a perfect enrichment
         """
         # Calculate the percentage value of the
         percentageXmax = ((truePosCount * 1.0 / libraryCount) * 100)
 
+        # Calculate the slope of the line going from the origin to
+        # x = (truePosCount / libraryCount) / 100, and y = 100
         slope = 100 / percentageXmax
+
         return np.multiply(x, slope)
 
 
