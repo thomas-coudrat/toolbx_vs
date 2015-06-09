@@ -396,10 +396,8 @@ class plotting:
         # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(plotData))])
 
         # Drawing data on the figure
-        combined_X = []
         for i, plotDatum in enumerate(plotData):
             X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom, scalarMap, mode)
-            combined_X = combined_X + X
 
         # Now plot random and perfect curves, get a range of X values from
         # 0 to 100, with 0.1 increments. These values are submitted to the
@@ -484,7 +482,12 @@ class plotting:
 
         # Plot this curve: scatter plot if plotting type, curves otherwise
         if mode in ("type"):
+            # first plot individual ligands with scatter plot
             ax.scatter(X, Y, label=plotLegend, linewidth=lw, color=color)
+            # Then draw line that starts from the origin and goes through
+            # each of the scatter dots plotted above
+            X = [0.0] + X
+            Y = [0.0] + Y
             ax.plot(X, Y, linewidth=0.2, color="grey")
         elif mode in ("enrich", "ROC"):
             X = [0.0] + X
