@@ -281,7 +281,7 @@ class plotting:
         Read the % result data files, return the data for plotting
         """
 
-        print(col.red + "\n\t*GETTING PLOTTING DATA*" + col.end)
+        print(col.head + "\n\t*GETTING PLOTTING DATA*" + col.end)
 
         # Variables that define the x and y limits for the zoomed in subplot
         xLim = 0.0
@@ -421,17 +421,15 @@ class plotting:
         for i, plotDatum in enumerate(plotData):
             X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom, scalarMap, mode)
 
-        # Trick to get the equations to start at the origin, draw a single
-        # undisplayed point at the origin
-        if mode in ("enrich", "ROC"):
-            ax.scatter(0.0, 0.0, marker="")
-
         # Now plot random and perfect curves, common for all plotted curves
-        perfect = self.formulaPerfect(X, libraryCount, truePosCount)
-        ax.plot(X, perfect, "--", color="grey")
+        # Trick to get the equations to plot the perfect and random curves from
+        # the origin, even when "type" is used for sparse scatter plot
+        xOrigin = [0.0] + X
+        yPerfect = self.formulaPerfect(xOrigin, libraryCount, truePosCount)
+        ax.plot(xOrigin, yPerfect, "--", color="grey")
 
-        random = self.formulaRandom(X)
-        ax.plot(X, random, ":", color="grey")
+        yRandom = self.formulaRandom(xOrigin)
+        ax.plot(xOrigin, yRandom, ":", color="grey")
 
         # Plot the RANDOM and PERFECT curves on the zoomed and main graph
         if zoom != 0.0:
@@ -487,10 +485,10 @@ class plotting:
         # colors defined by the colormap
         if i == 0:
             color = 'black'
-            lw = 4
+            lw = 2
         elif i == 1:
             color = 'grey'
-            lw = 4
+            lw = 2
         else:
             color = scalarMap.to_rgba(i)
             lw = 2
@@ -503,9 +501,8 @@ class plotting:
 
         # Plot this curve: scatter plot if plotting type, curves otherwise
         if mode in ("type"):
-            X = [0.0] + X
-            Y = [0.0] + Y
             ax.scatter(X, Y, label=plotLegend, linewidth=lw, color=color)
+            ax.plot(X, Y, linewidth=0.2, color="grey")
         elif mode in ("enrich", "ROC"):
             X = [0.0] + X
             Y = [0.0] + Y
