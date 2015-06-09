@@ -19,6 +19,8 @@ def main():
     mode = "ROC"
     # Define zoom
     zoom = 0.0
+    # Define log
+    log = False
 
     # Creating a plotting instance for access to all methods
     p = plotting.plotting()
@@ -76,7 +78,7 @@ def main():
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plot(title, plotData, libraryCount, truePosCount, xLim, yLim,
-           xAxisName, yAxisName, gui, False, 0.0)
+           xAxisName, yAxisName, gui, log, zoom, mode)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)
