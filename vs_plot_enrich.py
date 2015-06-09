@@ -78,7 +78,7 @@ def main():
     yAxisName = "% of known ligands found (total=" + str(truePosCount) + ")"
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
-    p.plot(title, plotData, perfect, random, xLim, yLim,
+    p.plot(title, plotData, libraryCount, truePosCount, xLim, yLim,
            xAxisName, yAxisName, gui, True, zoom)
 
     # Write the command used to execute this script into a txt file
