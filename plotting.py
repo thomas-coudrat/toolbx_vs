@@ -5,6 +5,7 @@ import matplotlib
 import scipy.integrate
 import math
 import os, sys
+import numpy as np
 
 
 class col:
@@ -267,7 +268,7 @@ class plotting:
                     if ligID in yAxisIDlist or len(vsIntersect) == i + 1:
                         percentDataFile.write(percLine)
                 elif mode == "ROC":
-                    percentDatFile.write(percLine)
+                    percentDataFile.write(percLine)
 
         percentDataFile.close()
 
@@ -280,7 +281,7 @@ class plotting:
         Read the % result data files, return the data for plotting
         """
 
-        print(col.head + "\n\t*GETTING PLOTTING DATA*" + col.end)
+        print(col.red + "\n\t*GETTING PLOTTING DATA*" + col.end)
 
         # Variables that define the x and y limits for the zoomed in subplot
         xLim = 0.0
@@ -302,36 +303,15 @@ class plotting:
             random = []
             X = []
             Y = []
-            # keep
-            previous_y = 0
 
             for line in dataLines:
                 # Get the data from the file
                 ll = line.split(",")
-                current_y = int(ll[1])
                 xPercent = float(ll[2])
                 yPercent = float(ll[3])
                 perfVal = float(ll[4])
                 randVal = float(ll[5])
-
-                """
-                # Only store X and Y values for enrichment curves, if it's a
-                # scatter plot type curve (to display ligand types), then only
-                # save the X and Y values when it's a new Y value occurence
-                if mode == "type":
-                    # if the previous value of y is the same as the current,
-                    # then don't store it
-                    if previous_y == current_y:
-                        pass
-                    # Store values only when there was an increment in y
-                    else:
-                        # Create the data curve
-                        X.append(xPercent)
-                        Y.append(yPercent)
-                    previous_y = current_y
-                elif mode in ("enrich", "ROC"):
-                    # Create the data curve
-                """
+                print(perfVal)
 
                 X.append(xPercent)
                 Y.append(yPercent)
@@ -415,7 +395,7 @@ class plotting:
             print "**************"
 
 
-    def plot(self, title, plotData, perfect, random, xLim, yLim,
+    def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
              xAxis, yAxis, gui, log, zoom):
         """
         Plot the data provided as argument, to draw curves
@@ -442,13 +422,7 @@ class plotting:
         for i, plotDatum in enumerate(plotData):
             X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom, scalarMap)
 
-        # Plot the RANDOM and PERFECT curves on the zoomed and main graph
-        if zoom != 0.0:
-            ax2.plot(X, perfect, color="grey")
-            ax2.plot(X, random, "--", color="grey")
-            ax2.tick_params(axis="both", which="major", labelsize=15)
-            ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
-
+        """
         print(len(X))
         print(len(perfect))
         print(len(random))
@@ -459,17 +433,27 @@ class plotting:
         print(perfect[-1])
         print(random[-1])
         # print(len)
+        """
 
         # Now plot random and perfect curves, common for all plotted curves
         print("PERFECT")
-        #ax.plot(X, perfect, ":", color="grey")
+        print(libraryCount, truePosCount)
+        perfect = self.formulaPerfect(X, libraryCount, truePosCount)
+        ax.plot(X, perfect, "--", color="grey", linewidth=6)
 
         print("RANDOM")
-        y = self.formulaRandom(X)
-        ax.plot(X, y, ":", color="grey")
+        random = self.formulaRandom(X)
+        ax.plot(X, random, ":", color="grey")
         # ax.plot(X, random, "--", color="grey")
         # print X
         # print perfect
+
+        # Plot the RANDOM and PERFECT curves on the zoomed and main graph
+        if zoom != 0.0:
+            ax2.plot(X, perfect, color="grey")
+            ax2.plot(X, random, "--", color="grey")
+            ax2.tick_params(axis="both", which="major", labelsize=15)
+            ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
 
         # Here axis and ticks are improved
         ax.set_xlabel(xAxis, fontsize=30)
@@ -603,14 +587,17 @@ class plotting:
         """
         return x
 
-    '''
-    def formulaPerfect(self, x, max):
+
+    def formulaPerfect(self, x, libraryCount, truePosCount):
         """
         Return the y value corresponding to a perfect enrichment
         """
-        if x < max:
-            return
-    '''
+        # Calculate the percentage value of the
+        percentageXmax = ((truePosCount * 1.0 / libraryCount) * 100)
+
+        slope = 100 / percentageXmax
+        return np.multiply(x, slope)
+
 
 if __name__ == "__main__":
     p = plotting()
