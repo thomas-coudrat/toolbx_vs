@@ -196,9 +196,10 @@ class plotting:
         x = xAxisName + xAxisIDstr + "_"
         y = yAxisName + yAxisIDstr + "_"
         ommit = "ommits_" + ommitIDstr + "_"
+        fname = os.path.basename(vsDir)
 
         # Create filename
-        percentPath = vsDir + "/" + m + x + y + ommit + vsDir + ".csv"
+        percentPath = vsDir + "/" + m + x + y + ommit + fname + ".csv"
         print("\n" + percentPath)
         percentDataFile = open(percentPath, "w")
 
