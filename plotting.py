@@ -6,6 +6,7 @@ import scipy.integrate
 import math
 import os, sys
 import numpy as np
+import json
 
 
 class col:
@@ -575,6 +576,41 @@ class plotting:
         slope = 100 / percentageXmax
 
         return np.multiply(x, slope)
+
+
+    def getLigandListFromJson(self, jsonFilePath):
+        """
+        Get a json file as argument that contains the name and path to .sdf
+        ligand libraries. Go through each of these libraries and collect all
+        ligand ID present in the file. Return a dictionary of library names
+        refering to lists ligand IDs.
+        """
+
+        # Extrac information from the json file to a python dictionary
+
+        print jsonFilePath
+        with open(jsonFilePath, "r") as jsonRead:
+            ligand_libraries_paths = json.load(jsonRead)
+
+        # This dictionary will store ligand name (as keys) associated with
+        # lists of ligand IDs
+        lig_libraries_content = {}
+
+        # For each library, open the file and collect ligand IDs
+        for lib_name in ligand_libraries_paths.keys():
+            ligFilePath = ligand_libraries_paths[lib_name]
+
+            ligand_IDs = []
+            with open(ligFilePath) as f:
+                for line in f:
+                    if "<lig_ID>" in line:
+                        ligID = int(next(f).strip())
+                        ligand_IDs.append(ligID)
+
+            # Storing the information collected
+            lig_libraries_content[lib_name] = ligand_IDs
+
+        return lig_libraries_content
 
 
 if __name__ == "__main__":

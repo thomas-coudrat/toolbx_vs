@@ -64,6 +64,13 @@ def main():
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)
 
+    # Get ligand ID list from sdf file(s)
+    lig_libs = p.getLigandListFromJson("ADORA2A_inhib_chem_clusters.json")
+
+    for lib in lig_libs.keys():
+        print lib
+        print lig_libs[lib]
+
     # Define title and axis names based on mode
     xAxisName = "% of ranked database (total=" + str(libraryCount) + ")"
     yAxisName = "% of known ligands found (total=" + str(truePosCount) + ")"
