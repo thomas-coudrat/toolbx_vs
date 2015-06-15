@@ -652,6 +652,17 @@ class plotting:
         return scalarMap
 
 
+    def barPlot(self, plotData, ):
+        """
+        Plot a bar graph showing the EF0.1, EF1 and EF10 (enrichment factors)
+        values for each binding pocket compared.
+        Plot this enrichment factor for each of the library types compared
+        """
+        print(col.head + "\n\t*PLOTTING BAR GRAPH DATA*" + col.end)
+
+
+
+
 if __name__ == "__main__":
     print("Plotting class: create a instance of the plotting object \
           to access functions ")
