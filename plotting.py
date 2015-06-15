@@ -242,13 +242,15 @@ class plotting:
                 # its name on the line
                 if ligID in refDict.keys():
                     ligName = refDict[ligID]
-                    percLine = percLine + ligName + "\n"
+                    percLine = percLine + "," + ligName + "\n"
                 else:
                     percLine = percLine + "\n"
 
-                # Saving behaviour of enrichment vs. ROC curve is different:
-                # only the Y increments are saved in an enrichment curve,
-                # whereas both Y and X increments are saved in a ROC curve.
+                # Saving behaviour of enrichment vs. ROC curve vs. type scatter
+                # All points are saved for an enrichment curve,
+                # whereas only Y and X increments are saved in a ROC curve.
+                # The "type" scatter collects only Y increments plus the last
+                # ligand of the VS (even if it's not a Y increment)
                 if mode in ("type"):
                     # Check again for presence of the current ligID in the y
                     # axis list. If present then write line, otherwise don't
@@ -308,8 +310,8 @@ class plotting:
                         yLim = yPercent
 
                 # Collect the X position of the refinement ligand(s)
-                if len(ll) == 8:
-                    ligName = ll[7]
+                if len(ll) == 6:
+                    ligName = ll[5].strip()
                     ligXY = [xPercent, yPercent]
                     refPlot[ligName] = ligXY
 
@@ -464,34 +466,35 @@ class plotting:
         """
         Draw the line corresponding to the set of data passed in arguments
         """
-        # Set color for crystal structures, and the LDM results have their
-        # colors defined by the colormap
-        if i == 0:
-            color = 'black'
-            lw = 2
-        elif i == 1:
-            color = 'grey'
-            lw = 2
-        else:
-            color = scalarMap.to_rgba(i)
-            lw = 2
-
+        # Extract plotting data
         X = plotDatum[0]
         Y = plotDatum[1]
 
         plotLegend = plotDatum[2]
         refPlot = plotDatum[3]
 
+        # Set color for crystal structures, and the LDM results have their
+        # colors defined by the colormap
+        if i == 0 and "X-ray" in plotLegend:
+            color = 'black'
+            lw = 2
+        elif i == 1 and "X-ray" in plotLegend:
+            color = 'grey'
+            lw = 2
+        else:
+            color = scalarMap.to_rgba(i)
+            lw = 2
+
         # Plot this curve: scatter plot if plotting type, curves otherwise
         if mode in ("type"):
 
             # first plot individual ligands with scatter plot
-            ax.scatter(X, Y, label=plotLegend, linewidth=lw, color=color)
+            ax.scatter(X, Y, linewidth=lw, color='black')
             # Then draw line that starts from the origin and goes through
             # each of the scatter dots plotted above
             X = [0.0] + X
             Y = [0.0] + Y
-            ax.plot(X, Y, linewidth=0.2, color="grey")
+            ax.plot(X, Y, label=plotLegend, linewidth=1, color=color)
         elif mode in ("enrich", "ROC"):
             X = [0.0] + X
             Y = [0.0] + Y
@@ -507,8 +510,8 @@ class plotting:
             ax.axvline(x=xPos, ymax=yPos/100., color=color,
                        linewidth=3, linestyle='--')
             # print ligName, xPos, yPos
-            # ax.text(xPos, -2, ligName, rotation=-90,
-            #        color=color, transform=ax.transData)
+            ax.text(xPos, -2, ligName, rotation=-70,
+                    color=color, transform=ax.transData)
 
         return X, Y
 
