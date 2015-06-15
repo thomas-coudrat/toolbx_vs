@@ -236,7 +236,7 @@ class plotting:
                 Ypercent = (Y * 100.0) / yCount
 
                 # Line to be saved to file
-                percLine = ",".join([str(X), str(Y), str(Xpercent),
+                percLine = ",".join([str(ligID), str(X), str(Y), str(Xpercent),
                                     str(Ypercent)])
                 # If one of the refinement ligand corresponds to that line, add
                 # its name on the line
@@ -295,8 +295,8 @@ class plotting:
             for line in dataLines:
                 # Get the data from the file
                 ll = line.split(",")
-                xPercent = float(ll[2])
-                yPercent = float(ll[3])
+                xPercent = float(ll[3])
+                yPercent = float(ll[4])
 
                 X.append(xPercent)
                 Y.append(yPercent)
@@ -308,8 +308,8 @@ class plotting:
                         yLim = yPercent
 
                 # Collect the X position of the refinement ligand(s)
-                if len(ll) == 7:
-                    ligName = ll[6]
+                if len(ll) == 8:
+                    ligName = ll[7]
                     ligXY = [xPercent, yPercent]
                     refPlot[ligName] = ligXY
 
@@ -484,6 +484,7 @@ class plotting:
 
         # Plot this curve: scatter plot if plotting type, curves otherwise
         if mode in ("type"):
+
             # first plot individual ligands with scatter plot
             ax.scatter(X, Y, label=plotLegend, linewidth=lw, color=color)
             # Then draw line that starts from the origin and goes through
