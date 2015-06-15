@@ -267,10 +267,12 @@ class plotting:
         return percentPath
 
 
-    def extractPlotData(self, percentPaths, vsLegends, truePosCount, zoom,
-                        mode):
+    def extractPlotData(self, percentPaths, vsLegends, zoom, lig_types=False):
         """
         Read the % result data files, return the data for plotting
+        Also collect scattering data for plot_type: lig_types is a dictionary
+        with keys representing ligand types, asssociated with lists
+        representing ligand IDs.
         """
 
         print(col.head + "\n\t*GETTING PLOTTING DATA*" + col.end)
@@ -278,46 +280,71 @@ class plotting:
         # Variables that define the x and y limits for the zoomed in subplot
         xLim = 0.0
         yLim = 0.0
-
         plotData = []
 
         for percentPath, vsLegend in zip(percentPaths, vsLegends):
-            # Read the % data file
-            dataFile = open(percentPath, "r")
-            dataLines = dataFile.readlines()
-            dataFile.close()
-
-            refPlot = {}
 
             print "\nData path:", percentPath
 
+            # initialising variables
+            refPlot = {}
             X = []
             Y = []
 
-            for line in dataLines:
-                # Get the data from the file
-                ll = line.split(",")
-                xPercent = float(ll[3])
-                yPercent = float(ll[4])
+            # Read the % data file
+            with open(percentPath) as dataFile:
+                for line in dataFile:
+                    # Get the data from the file
+                    ll = line.split(",")
+                    ligID = int(ll[0])
+                    xPercent = float(ll[3])
+                    yPercent = float(ll[4])
+                    X.append(xPercent)
+                    Y.append(yPercent)
 
-                X.append(xPercent)
-                Y.append(yPercent)
+                    # Create the subplot limits
+                    if xPercent <= zoom:
+                        if yLim < yPercent:
+                            xLim = xPercent
+                            yLim = yPercent
 
-                # Create the subplot limits
-                if xPercent <= zoom:
-                    if yLim < yPercent:
-                        xLim = xPercent
-                        yLim = yPercent
+                    # Collect the X position of the refinement ligand(s)
+                    if len(ll) == 6:
+                        ligName = ll[5].strip()
+                        ligXY = [xPercent, yPercent]
+                        refPlot[ligName] = ligXY
 
-                # Collect the X position of the refinement ligand(s)
-                if len(ll) == 6:
-                    ligName = ll[5].strip()
-                    ligXY = [xPercent, yPercent]
-                    refPlot[ligName] = ligXY
+                    # Gather scatter data for each ligand type
+                    if lig_types:
+                        for lib_name in lig_types.keys():
+
+                            # Collect the list of ligand IDs that correspond to that
+                            # type
+                            lib_IDs = lig_types[lib_name][0]
+
+                            # If the current ligand ID is in that list, then store
+                            # its X and Y data in the lig_types dictionary
+                            if ligID in lib_IDs:
+                                # Store the X value
+                                lig_types[lib_name][1].append(xPercent)
+                                # Store the Y value
+                                lig_types[lib_name][2].append(yPercent)
+
 
             plotData.append((X, Y, vsLegend, refPlot))
 
-        return plotData, xLim, yLim
+        # Reformat the type data
+        if lig_types:
+            scatterData = []
+            for lib_name in lig_types.keys():
+                scat_X = lig_types[lib_name][1]
+                scat_Y = lig_types[lib_name][2]
+                scatterData.append((scat_X, scat_Y, lib_name))
+
+        else:
+            scatterData = False
+
+        return plotData, xLim, yLim, scatterData
 
 
     def getAUC_NSQ(self, rocData, perfect):
@@ -377,7 +404,7 @@ class plotting:
 
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
-             xAxis, yAxis, gui, log, zoom, mode):
+             xAxis, yAxis, gui, log, zoom, mode, scatterData=False):
         """
         Plot the data provided as argument, to draw curves
         """
@@ -387,21 +414,29 @@ class plotting:
         # Setting up the figure
         fig = plt.figure(figsize=(13, 12), dpi=100)
         ax = fig.add_subplot(111)
+
         # Create the ZOOMED graph, if requested
         if zoom != 0.0:
             ax2 = plt.axes([.17, .35, .2, .2])
         else:
             ax2 = None
 
-        # Setting up color scheme
-        cm = plt.get_cmap("spectral")
-        cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(plotData))
-        scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
-        # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(plotData))])
+        # Create a scalar map matching the data to be plotted
+        scalMapPlot = self.getColorMap("spectral", plotData)
 
         # Drawing data on the figure
         for i, plotDatum in enumerate(plotData):
-            X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom, scalarMap, mode)
+            X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom, scalMapPlot, mode)
+
+        # Plot the scatter data if it was provided (only for plot_type)
+        if scatterData:
+            scalMapScat = self.getColorMap("jet", scatterData)
+            for i, data in enumerate(scatterData):
+                color = scalMapScat.to_rgba(i)
+                scat_X = data[0]
+                scat_Y = data[1]
+                lib_name = data[2]
+                ax.scatter(scat_X, scat_Y, label=lib_name, color=color)
 
         # Now plot random and perfect curves, get a range of X values from
         # 0 to 100, with 0.1 increments. These values are submitted to the
@@ -489,7 +524,7 @@ class plotting:
         if mode in ("type"):
 
             # first plot individual ligands with scatter plot
-            ax.scatter(X, Y, linewidth=lw, color='black')
+            # ax.scatter(X, Y, linewidth=1, color='black')
             # Then draw line that starts from the origin and goes through
             # each of the scatter dots plotted above
             X = [0.0] + X
@@ -544,23 +579,6 @@ class plotting:
         logFile.close()
 
 
-    def ligID_from_sdf(self, sdf_path):
-        """
-        This function takes in the path to an sdf file and returns a list of
-        ligandIDs that were found in this file
-        """
-
-        # Read sdf file line by line, and store ID information
-        lig_IDs = []
-        with open(sdf_path) as f:
-            for line in f:
-                # Get the line directly after the identifier lig_ID
-                if "<lig_ID>" in line:
-                    lig_IDs.append(next(f).strip())
-
-        return lig_IDs
-
-
     def formulaRandom(self, x):
         """
         Return the y value corresponding to random enrichment
@@ -592,7 +610,7 @@ class plotting:
 
         # Extrac information from the json file to a python dictionary
 
-        print jsonFilePath
+        # print jsonFilePath
         with open(jsonFilePath, "r") as jsonRead:
             ligand_libraries_paths = json.load(jsonRead)
 
@@ -604,20 +622,36 @@ class plotting:
         for lib_name in ligand_libraries_paths.keys():
             ligFilePath = ligand_libraries_paths[lib_name]
 
+            # Read the .sdf file and store ligand ID information
             ligand_IDs = []
             with open(ligFilePath) as f:
                 for line in f:
+                    # Get the line directly after the identifier "<lig_ID>"
                     if "<lig_ID>" in line:
                         ligID = int(next(f).strip())
                         ligand_IDs.append(ligID)
 
-            # Storing the information collected
-            lig_libraries_content[lib_name] = ligand_IDs
+            # Storing the information collected: adding empty lists which
+            # will be used later to store X and Y plotting information
+            lig_libraries_content[lib_name] = (ligand_IDs, [], [])
 
         return lig_libraries_content
 
 
+    def getColorMap(self, color_range, data):
+        """
+        Get a color map matching the data to be plotted
+        """
+
+        # Setting up color scheme
+        cm = plt.get_cmap(color_range)
+        cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(data))
+        scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
+        # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(plotData))])
+
+        return scalarMap
+
+
 if __name__ == "__main__":
-    p = plotting()
-    list = p.ligID_from_sdf("./ADORA2A_inhib_cluster_zm.sdf")
-    print(list)
+    print("Plotting class: create a instance of the plotting object \
+          to access functions ")
