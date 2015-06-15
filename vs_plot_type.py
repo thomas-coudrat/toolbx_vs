@@ -12,7 +12,7 @@ def main():
     """
 
     title, vsLegends, vsPaths, \
-        libraryIDstr, truePosIDstr, ommitIDstr, \
+        libraryIDstr, truePosIDstr, ommitIDstr, ligLibsJson, \
         ref, log, gui = parseArgs()
 
     # Define mode
@@ -43,7 +43,7 @@ def main():
     # pharmacology, molecularWeight, or interaction pattern.
     # The information of this ligand "type" is stored in the dictionary key,
     # which points to a .sdf path containing ligands of that "type"
-    lig_types = p.getLigandListFromJson("ADORA2A_inhib_chem_clusters.json")
+    lig_types = p.getLigandListFromJson(ligLibsJson)
 
     # print lig_types
 
@@ -104,6 +104,8 @@ def parseArgs():
         " lib (format: 1-514,6001,6700-6702)"
     descr_ommitIDstr = "Provide the IDs of ligands to ommit" \
         " from the VS data, same format at knownIDs"
+    descr_ligLibs = "JSON file containing a dictionary structure of ligand" \
+        " library names (keys) pointing to library paths in .sdf"
     descr_ref = "Refinement ligand(s) used on this GPCR binding pocket" \
         " refinement. Provide ligand name and ID in the following format:" \
         " lig1:328,lig2:535"
@@ -117,6 +119,7 @@ def parseArgs():
     parser.add_argument("libraryIDstr", help=descr_libraryIDstr)
     parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
     parser.add_argument("ommitIDstr", help=descr_ommitIDstr)
+    parser.add_argument("ligLibs", help=descr_ligLibs)
     parser.add_argument("--ref", help=descr_ref)
     parser.add_argument("-log", action="store_true", help=descr_log)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
@@ -128,6 +131,7 @@ def parseArgs():
     libraryIDstr = args.libraryIDstr
     truePosIDstr = args.truePosIDstr
     ommitIDstr = args.ommitIDstr
+    ligLibsJson = args.ligLibs
     ref = args.ref
     log = args.log
     gui = args.gui
@@ -142,7 +146,7 @@ def parseArgs():
         i += 2
 
     return title, vsLegends, vsPaths, \
-        libraryIDstr, truePosIDstr, ommitIDstr, \
+        libraryIDstr, truePosIDstr, ommitIDstr, ligLibsJson, \
         ref, log, gui
 
 if __name__ == "__main__":
