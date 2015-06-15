@@ -38,6 +38,15 @@ def main():
     else:
         refDict = {}
 
+    # Get ligand ID list from sdf file(s)
+    # Each of the SDF file represents a ligand "type" can be chemotype,
+    # pharmacology, molecularWeight, or interaction pattern.
+    # The information of this ligand "type" is stored in the dictionary key,
+    # which points to a .sdf path containing ligands of that "type"
+    lig_types = p.getLigandListFromJson("ADORA2A_inhib_chem_clusters.json")
+
+    # print lig_types
+
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
     vsIntersects, libraryCount, truePosCount, trueNegCount, ommitCount \
@@ -58,18 +67,11 @@ def main():
 
     # Extract the data from the vs percent data (in both enrichment curves and
     # ROC curves, the truePositive count would be used to draw the perfect curve
-    plotData, xLim, yLim = p.extractPlotData(percPaths, vsLegends,
-                                             truePosCount, zoom, mode)
+    plotData, xLim, yLim, scatterData = p.extractPlotData(percPaths, vsLegends,
+                                                          zoom, lig_types)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)
-
-    # Get ligand ID list from sdf file(s)
-    lig_libs = p.getLigandListFromJson("ADORA2A_inhib_chem_clusters.json")
-
-    for lib in lig_libs.keys():
-        print lib
-        print lig_libs[lib]
 
     # Define title and axis names based on mode
     xAxisName = "% of ranked database (total=" + str(libraryCount) + ")"
@@ -77,7 +79,7 @@ def main():
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plot(title, plotData, libraryCount, truePosCount, xLim, yLim,
-           xAxisName, yAxisName, gui, log, zoom, mode)
+           xAxisName, yAxisName, gui, log, zoom, mode, scatterData)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)

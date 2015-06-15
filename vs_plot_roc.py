@@ -61,8 +61,8 @@ def main():
 
     # Extract the data from the vs percent data (in both enrichment curves and
     # ROC curves, the truePositive count would be used to draw the perfect curve
-    plotData, xLim, yLim = p.extractPlotData(percPaths, vsLegends,
-                                             truePosCount, zoom, mode)
+    plotData, xLim, yLim, scatterData = p.extractPlotData(percPaths, vsLegends,
+                                                          zoom)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)
@@ -73,7 +73,7 @@ def main():
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plot(title, plotData, libraryCount, truePosCount,
-           xLim, yLim, xAxisName, yAxisName, gui, log, zoom, mode)
+           xLim, yLim, xAxisName, yAxisName, gui, log, zoom, mode, scatterData)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)
