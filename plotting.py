@@ -267,7 +267,7 @@ class plotting:
         return percentPath
 
 
-    def extractPlotData(self, percentPaths, vsLegends, zoom, lig_types=False):
+    def extractPlotData(self, vsPockets, vsLegends, zoom):
         """
         Read the % result data files, return the data for plotting
         Also collect scattering data for plot_type: lig_types is a dictionary
@@ -282,9 +282,9 @@ class plotting:
         yLim = 0.0
         plotData = []
 
-        for percentPath, vsLegend in zip(percentPaths, vsLegends):
+        for vsPocket, vsLegend in zip(vsPockets, vsLegends):
 
-            print "\nData path:", percentPath
+            print "\nOpening:", vsLegend, "from path:", vsPocket
 
             # initialising variables
             refPlot = {}
@@ -292,7 +292,7 @@ class plotting:
             Y = []
 
             # Read the % data file
-            with open(percentPath) as dataFile:
+            with open(vsPocket) as dataFile:
                 for line in dataFile:
                     # Get the data from the file
                     ll = line.split(",")
@@ -314,37 +314,9 @@ class plotting:
                         ligXY = [xPercent, yPercent]
                         refPlot[ligName] = ligXY
 
-                    # Gather scatter data for each ligand type
-                    if lig_types:
-                        for lib_name in lig_types.keys():
-
-                            # Collect the list of ligand IDs that correspond to that
-                            # type
-                            lib_IDs = lig_types[lib_name][0]
-
-                            # If the current ligand ID is in that list, then store
-                            # its X and Y data in the lig_types dictionary
-                            if ligID in lib_IDs:
-                                # Store the X value
-                                lig_types[lib_name][1].append(xPercent)
-                                # Store the Y value
-                                lig_types[lib_name][2].append(yPercent)
-
-
             plotData.append((X, Y, vsLegend, refPlot))
 
-        # Reformat the type data
-        if lig_types:
-            scatterData = []
-            for lib_name in lig_types.keys():
-                scat_X = lig_types[lib_name][1]
-                scat_Y = lig_types[lib_name][2]
-                scatterData.append((scat_X, scat_Y, lib_name))
-
-        else:
-            scatterData = False
-
-        return plotData, xLim, yLim, scatterData
+        return plotData, xLim, yLim
 
 
     def getAUC_NSQ(self, rocData, perfect):
@@ -652,7 +624,7 @@ class plotting:
         return scalarMap
 
 
-    def barPlot(self, plotData, ):
+    def barPlot(self, title, enrichFactorData, gui):
         """
         Plot a bar graph showing the EF0.1, EF1 and EF10 (enrichment factors)
         values for each binding pocket compared.
@@ -660,8 +632,108 @@ class plotting:
         """
         print(col.head + "\n\t*PLOTTING BAR GRAPH DATA*" + col.end)
 
+        # Setting up the figure
+        fig = plt.figure(figsize=(13, 12), dpi=100)
+        ax = fig.add_subplot(111)
+
+        # Default values
+        groups = 3
+        ind = np.arange(groups)
+        width = 0.05
+        efNames = sorted(enrichFactorData.keys())
+        efNumber = len(efNames)
+
+        # Create a scalar map matching the data to be plotted
+        scalMapEF = self.getColorMap("spectral", efNames)
+
+        # Go through a sorted list of the pocket-ligType combinations
+        allBars = []
+        for i, efName in enumerate(sorted(enrichFactorData.keys())):
+            # print efName
+            # print enrichFactorData
+            efData = enrichFactorData[efName]
+            color = scalMapEF.to_rgba(i)
+
+            bars = ax.bar(ind + i*width, efData, width, alpha=0.5,
+                          color=color, align="center")
+            allBars.append(bars)
+
+        # Setting ticks and legend
+        ax.set_xticks(ind + ((groups * width) + width / 2.0))
+        ax.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
+        ax.legend([bar[0] for bar in allBars], efNames,
+                  loc="upper left", prop={'size': 30})
+
+        # Display or save barchart
+        if gui:
+            plt.show()
+        else:
+            fileName = title.replace(" ", "_") + "_barchart.png"
+            plt.savefig(fileName, bbox_inches="tight")
 
 
+    def extractLigTypeData(self, percentPaths, vsLegends, lig_types):
+        """
+        Extract enrichment factor data from each binding pocket VS data file
+        """
+
+        print(col.head + "\n\t*GETTING LIGAND TYPE DATA*" + col.end)
+
+        # Dictionary containing enrichment factor information
+        enrichFactorData = {}
+
+        # Read each binding pocket VS data file
+        for percentPath, vsLegend in zip(percentPaths, vsLegends):
+
+            print "\nOpening:", vsLegend, "from path:", percentPath
+
+            with open(percentPath) as dataFile:
+                # Open the binding pocket VS data line by line
+                for line in dataFile:
+                    # Get the data from the file
+                    ll = line.split(",")
+                    ligID = int(ll[0])
+                    xPercent = float(ll[3])
+                    yPercent = float(ll[4])
+
+                    # Read each ligand type ligand ID data
+                    for lib_name in lig_types.keys():
+
+                        # Collect the list of ligand IDs that correspond to that
+                        # type
+                        lib_IDs = lig_types[lib_name][0]
+
+                        # If the current ligand ID is in that list, then store
+                        # its X and Y data in the lig_types dictionary
+                        if ligID in lib_IDs:
+                            # Store the X value
+                            lig_types[lib_name][1].append(xPercent)
+                            # Store the Y value
+                            lig_types[lib_name][2].append(yPercent)
+
+                        # Create a dictionary entry for the pocket-ligType
+                        # combination if it doesn't exist yet. Otherwise
+                        # populate the enrichment factor data (EF0.1, EF1 and
+                        # EF10) if the current line corresponds to a known
+                        # ligand found in the current ligand type list
+                        efName = vsLegend + " - " + lib_name
+                        if efName not in enrichFactorData.keys():
+                            enrichFactorData[efName] = [0,0,0]
+                        else:
+                            if xPercent <= 0.1:
+                                enrichFactorData[efName][0] = yPercent
+                            if xPercent <= 1:
+                                enrichFactorData[efName][1] = yPercent
+                            if xPercent <= 10:
+                                enrichFactorData[efName][2] = yPercent
+
+        scatterData = []
+        for lib_name in lig_types.keys():
+            scat_X = lig_types[lib_name][1]
+            scat_Y = lig_types[lib_name][2]
+            scatterData.append((scat_X, scat_Y, lib_name))
+
+        return scatterData, enrichFactorData
 
 if __name__ == "__main__":
     print("Plotting class: create a instance of the plotting object \
