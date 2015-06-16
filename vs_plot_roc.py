@@ -46,23 +46,22 @@ def main():
         = p.intersectResults(vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist)
 
     # Calculate % of total curves for each of these (write file + return data)
-    percPaths = []
+    vsPockets = []
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
         vsDir = os.path.dirname(vsPath)
 
-        percPath = p.writePercFile(vsIntersect, vsDir, mode, refDict,
+        vsPocket = p.writePercFile(vsIntersect, vsDir, mode, refDict,
                                    "true_neg", trueNegIDstr,
                                    trueNegIDlist, trueNegCount,
                                    "true_pos", truePosIDstr,
                                    truePosIDlist, truePosCount,
                                    ommitIDstr, ommitIDlist)
 
-        percPaths.append(percPath)
+        vsPockets.append(vsPocket)
 
     # Extract the data from the vs percent data (in both enrichment curves and
     # ROC curves, the truePositive count would be used to draw the perfect curve
-    plotData, xLim, yLim, scatterData = p.extractPlotData(percPaths, vsLegends,
-                                                          zoom)
+    plotData, xLim, yLim = p.extractPlotData(vsPockets, vsLegends, zoom)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)
@@ -73,7 +72,8 @@ def main():
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plot(title, plotData, libraryCount, truePosCount,
-           xLim, yLim, xAxisName, yAxisName, gui, log, zoom, mode, scatterData)
+           xLim, yLim, xAxisName, yAxisName, gui, log,
+           zoom, mode, scatterData=False)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)
