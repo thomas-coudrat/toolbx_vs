@@ -703,29 +703,69 @@ class plotting:
                         # type
                         lib_IDs = lig_types[lib_name][0]
 
+                        # print lib_name
+
                         # If the current ligand ID is in that list, then store
                         # its X and Y data in the lig_types dictionary
                         if ligID in lib_IDs:
+                            print lib_name
                             # Store the X value
                             lig_types[lib_name][1].append(xPercent)
                             # Store the Y value
                             lig_types[lib_name][2].append(yPercent)
 
-                        # Create a dictionary entry for the pocket-ligType
-                        # combination if it doesn't exist yet. Otherwise
-                        # populate the enrichment factor data (EF0.1, EF1 and
-                        # EF10) if the current line corresponds to a known
-                        # ligand found in the current ligand type list
-                        efName = vsLegend + " - " + lib_name
-                        if efName not in enrichFactorData.keys():
-                            enrichFactorData[efName] = [0,0,0]
-                        else:
-                            if xPercent <= 0.1:
-                                enrichFactorData[efName][0] = yPercent
-                            if xPercent <= 1:
-                                enrichFactorData[efName][1] = yPercent
-                            if xPercent <= 10:
-                                enrichFactorData[efName][2] = yPercent
+                            # Create a dictionary entry for the pocket-ligType
+                            # combination if it doesn't exist yet. Otherwise
+                            # populate the enrichment factor data (EF0.1, EF1
+                            # and EF10) if the current line corresponds to a
+                            # known ligand found in the current ligand type list
+                            """
+                            # This stores the % of each ligand group recovered
+                            efName = vsLegend + " - " + lib_name
+                            if efName not in enrichFactorData.keys():
+                                enrichFactorData[efName] = [0,0,0]
+                                if xPercent <= 0.1:
+                                    enrichFactorData[efName][0] = yPercent
+                                    print "EF0.1", xPercent, yPercent
+                                if xPercent <= 1:
+                                    enrichFactorData[efName][1] = yPercent
+                                    print "EF1", xPercent, yPercent
+                                if xPercent <= 10:
+                                    enrichFactorData[efName][2] = yPercent
+                                    print "EF10", xPercent, yPercent
+                            else:
+                                if xPercent <= 0.1:
+                                    enrichFactorData[efName][0] = yPercent
+                                    print "EF0.1", xPercent, yPercent
+                                if xPercent <= 1:
+                                    enrichFactorData[efName][1] = yPercent
+                                    print "EF1", xPercent, yPercent
+                                if xPercent <= 10:
+                                    enrichFactorData[efName][2] = yPercent
+                                    print "EF10", xPercent, yPercent
+                            """
+                            efName = vsLegend + " - " + lib_name
+                            if efName not in enrichFactorData.keys():
+                                enrichFactorData[efName] = [0,0,0]
+                                if xPercent <= 0.1:
+                                    enrichFactorData[efName][0] += 1
+                                    print "EF0.1", xPercent, yPercent, enrichFactorData[efName][0]
+                                if xPercent <= 1:
+                                    enrichFactorData[efName][1] += 1
+                                    print "EF1", xPercent, yPercent, enrichFactorData[efName][1]
+                                if xPercent <= 10:
+                                    enrichFactorData[efName][2] += 1
+                                    print "EF10", xPercent, yPercent, enrichFactorData[efName][2]
+                            else:
+                                if xPercent <= 0.1:
+                                    enrichFactorData[efName][0] += 1
+                                    print "EF0.1", xPercent, yPercent, enrichFactorData[efName][0]
+                                if xPercent <= 1:
+                                    enrichFactorData[efName][1] += 1
+                                    print "EF1", xPercent, yPercent, enrichFactorData[efName][1]
+                                if xPercent <= 10:
+                                    enrichFactorData[efName][2] += 1
+                                    print "EF10", xPercent, yPercent, enrichFactorData[efName][2]
 
         scatterData = []
         for lib_name in lig_types.keys():
