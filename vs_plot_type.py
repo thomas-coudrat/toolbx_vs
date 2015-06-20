@@ -72,7 +72,8 @@ def main():
     # Extract data related to ligand type (plotting and barplot data)
     scatterData, enrichFactorData = p.extractLigTypeData(vsPockets,
                                                          vsLegends,
-                                                         lig_types)
+                                                         lig_types,
+                                                         libraryCount)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)

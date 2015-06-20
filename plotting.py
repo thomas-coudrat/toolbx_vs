@@ -580,9 +580,7 @@ class plotting:
         refering to lists ligand IDs.
         """
 
-        # Extrac information from the json file to a python dictionary
-
-        # print jsonFilePath
+        # Extract information from the json file to a python dictionary
         with open(jsonFilePath, "r") as jsonRead:
             ligand_libraries_paths = json.load(jsonRead)
 
@@ -632,9 +630,9 @@ class plotting:
         """
         print(col.head + "\n\t*PLOTTING BAR GRAPH DATA*" + col.end)
 
-        # Setting up the figure
-        fig = plt.figure(figsize=(13, 12), dpi=100)
-        ax = fig.add_subplot(111)
+        # Setting up the barchart figure
+        fig_bar = plt.figure(figsize=(13, 12), dpi=100)
+        ax_bar = fig_bar.add_subplot(111)
 
         # Default values
         groups = 3
@@ -648,39 +646,65 @@ class plotting:
 
         # Go through a sorted list of the pocket-ligType combinations
         allBars = []
+        maxTotal = 0
         for i, efName in enumerate(sorted(enrichFactorData.keys())):
             # print efName
             # print enrichFactorData
-            efData = enrichFactorData[efName]
+            efData = enrichFactorData[efName][0]
+            efTotals = enrichFactorData[efName][1]
             color = scalMapEF.to_rgba(i)
 
-            bars = ax.bar(ind + i*width, efData, width, alpha=0.5,
-                          color=color, align="center")
+            barTots = ax_bar.bar(ind + i*width, efTotals, width, alpha=0.5,
+                                 color="white", align="center")
+            bars = ax_bar.bar(ind + i*width, efData, width, alpha=0.5,
+                              color=color, align="center")
+
+            # Keep the max total information to set the y limit of the final
+            # plot
+            maxTotalCurrent = max(efTotals[0], efTotals[1], efTotals[2])
+            if maxTotalCurrent > maxTotal:
+                maxTotal = maxTotalCurrent
+
             allBars.append(bars)
 
-        # Setting ticks and legend
-        ax.set_xticks(ind + ((groups * width) + width / 2.0))
-        ax.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
-        ax.legend([bar[0] for bar in allBars], efNames,
-                  loc="upper left", prop={'size': 30})
+        # Setting ticks and limits
+        ax_bar.set_xticks(ind + ((groups * width) + width / 2.0))
+        ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
+        # Set the upperlimit at 10% more than the maximum value of the graph
+        ax_bar.set_ylim(0, maxTotal * 1.10)
 
-        # Display or save barchart
+        # Setting legend
+        fig_leg = plt.figure(figsize=(13, 12), dpi=100)
+        plt.figlegend([bar[0] for bar in allBars], efNames,
+                      loc="upper left", prop={'size': 30})
+
+        # Display or save barchart and legend
         if gui:
             plt.show()
         else:
-            fileName = title.replace(" ", "_") + "_barchart.png"
-            plt.savefig(fileName, bbox_inches="tight")
+            barFile = title.replace(" ", "_") + "_bar.png"
+            legFile = title.replace(" ", "_") + "_barLeg.png"
+            fig_bar.savefig(barFile, bbox_inches="tight")
+            fig_leg.savefig(legFile, bbox_inches="tight")
 
 
-    def extractLigTypeData(self, percentPaths, vsLegends, lig_types):
+    def extractLigTypeData(self, percentPaths, vsLegends,
+                           lig_types, libraryCount):
         """
         Extract enrichment factor data from each binding pocket VS data file
+        File format
         """
 
         print(col.head + "\n\t*GETTING LIGAND TYPE DATA*" + col.end)
 
         # Dictionary containing enrichment factor information
         enrichFactorData = {}
+
+        # Calculate the ligand count at each enrichment factor (0.1, 1, and
+        # 10 %). This is evaluated to plot values against totals at each EF.
+        totalLibTenthPercent = int(0.001 * libraryCount)
+        totalLibOnePercent = int(0.01 * libraryCount)
+        totalLibTenPercent = int(0.1 * libraryCount)
 
         # Read each binding pocket VS data file
         for percentPath, vsLegend in zip(percentPaths, vsLegends):
@@ -702,8 +726,25 @@ class plotting:
                         # Collect the list of ligand IDs that correspond to that
                         # type
                         lib_IDs = lig_types[lib_name][0]
+                        # Count number of ligands in that library
+                        ligCount = len(lib_IDs)
 
-                        # print lib_name
+                        # Create the enrichmentFactorData data structure
+                        # Dictionary with keys combining bindingPocket name and
+                        # ligLibrary name. Point to two lists, each initialised
+                        # to 0,0,0. For each list, values at [0], [1], [2]
+                        # correspond to EF0.1, EF1 and EF10 respectively.
+                        # The first list stores values at each EF level, the
+                        # second list stores total hypothetical values at each
+                        # EF (total ligand library numbers normalised to EF 0.1,
+                        # 1 and 10).
+                        efName = vsLegend + " - " + lib_name
+                        if efName not in enrichFactorData.keys():
+                            efTenth = min(ligCount, totalLibTenthPercent)
+                            efOne = min(ligCount, totalLibOnePercent)
+                            efTen = min(ligCount, totalLibTenPercent)
+                            enrichFactorData[efName] = [[0,0,0],
+                                                        [efTenth,efOne,efTen]]
 
                         # If the current ligand ID is in that list, then store
                         # its X and Y data in the lig_types dictionary
@@ -719,53 +760,16 @@ class plotting:
                             # populate the enrichment factor data (EF0.1, EF1
                             # and EF10) if the current line corresponds to a
                             # known ligand found in the current ligand type list
-                            """
-                            # This stores the % of each ligand group recovered
-                            efName = vsLegend + " - " + lib_name
-                            if efName not in enrichFactorData.keys():
-                                enrichFactorData[efName] = [0,0,0]
-                                if xPercent <= 0.1:
-                                    enrichFactorData[efName][0] = yPercent
-                                    print "EF0.1", xPercent, yPercent
-                                if xPercent <= 1:
-                                    enrichFactorData[efName][1] = yPercent
-                                    print "EF1", xPercent, yPercent
-                                if xPercent <= 10:
-                                    enrichFactorData[efName][2] = yPercent
-                                    print "EF10", xPercent, yPercent
-                            else:
-                                if xPercent <= 0.1:
-                                    enrichFactorData[efName][0] = yPercent
-                                    print "EF0.1", xPercent, yPercent
-                                if xPercent <= 1:
-                                    enrichFactorData[efName][1] = yPercent
-                                    print "EF1", xPercent, yPercent
-                                if xPercent <= 10:
-                                    enrichFactorData[efName][2] = yPercent
-                                    print "EF10", xPercent, yPercent
-                            """
-                            efName = vsLegend + " - " + lib_name
-                            if efName not in enrichFactorData.keys():
-                                enrichFactorData[efName] = [0,0,0]
-                                if xPercent <= 0.1:
-                                    enrichFactorData[efName][0] += 1
-                                    print "EF0.1", xPercent, yPercent, enrichFactorData[efName][0]
-                                if xPercent <= 1:
-                                    enrichFactorData[efName][1] += 1
-                                    print "EF1", xPercent, yPercent, enrichFactorData[efName][1]
-                                if xPercent <= 10:
-                                    enrichFactorData[efName][2] += 1
-                                    print "EF10", xPercent, yPercent, enrichFactorData[efName][2]
-                            else:
-                                if xPercent <= 0.1:
-                                    enrichFactorData[efName][0] += 1
-                                    print "EF0.1", xPercent, yPercent, enrichFactorData[efName][0]
-                                if xPercent <= 1:
-                                    enrichFactorData[efName][1] += 1
-                                    print "EF1", xPercent, yPercent, enrichFactorData[efName][1]
-                                if xPercent <= 10:
-                                    enrichFactorData[efName][2] += 1
-                                    print "EF10", xPercent, yPercent, enrichFactorData[efName][2]
+                            if xPercent <= 0.1:
+                                enrichFactorData[efName][0][0] += 1
+                                print "EF0.1", xPercent, yPercent, enrichFactorData[efName][0][0]
+                            if xPercent <= 1:
+                                enrichFactorData[efName][0][1] += 1
+                                print "EF1", xPercent, yPercent, enrichFactorData[efName][0][1]
+                            if xPercent <= 10:
+                                enrichFactorData[efName][0][2] += 1
+                                print "EF10", xPercent, yPercent, enrichFactorData[efName][0][2]
+
 
         scatterData = []
         for lib_name in lig_types.keys():
@@ -774,6 +778,7 @@ class plotting:
             scatterData.append((scat_X, scat_Y, lib_name))
 
         return scatterData, enrichFactorData
+
 
 if __name__ == "__main__":
     print("Plotting class: create a instance of the plotting object \
