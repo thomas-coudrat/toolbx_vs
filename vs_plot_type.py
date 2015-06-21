@@ -88,7 +88,7 @@ def main():
 
     # Plot the barplot represeting the enrochment factors (EFs) in known ligands
     # at 0.1 %, 1 % and 10 % of the screened library
-    p.barPlot(title, enrichFactorData, gui)
+    p.barPlot(title, enrichFactorData, vsLegends, lig_types, gui)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)

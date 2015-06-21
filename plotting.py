@@ -530,7 +530,7 @@ class plotting:
         current working directory at the time of execution
         """
 
-        filename = title.replace(" ", "_") + ".txt"
+        filename = title.replace(" ", "_") + ".sh"
         cwd = os.getcwd()
         logFile = open(filename, "w")
         # Write the directory location: this is not executed upong sh call of
@@ -622,7 +622,7 @@ class plotting:
         return scalarMap
 
 
-    def barPlot(self, title, enrichFactorData, gui):
+    def barPlot(self, title, enrichFactorData, pocketNames, lig_types, gui):
         """
         Plot a bar graph showing the EF0.1, EF1 and EF10 (enrichment factors)
         values for each binding pocket compared.
@@ -638,26 +638,70 @@ class plotting:
         groups = 3
         ind = np.arange(groups)
         width = 0.05
+        separator = 0.02
         efNames = sorted(enrichFactorData.keys())
         efNumber = len(efNames)
 
-        # Create a scalar map matching the data to be plotted
-        scalMapEF = self.getColorMap("spectral", efNames)
+        # Create the list of hatches for each ligand type
+        # Hatches will be stored in this dictionary
+        ligLibHatches = {}
+        # Finite set of patterns to be associated with ligand types
+        patterns = ('/', '.', 'x', '\\', '|', '-', "\\\\", 'o', '*', 'O')
+        # print lig_types
+        for i, lig_lib in enumerate(lig_types.keys()):
+            # Create the name as "ligType (lig_count)"
+            lig_lib_name = lig_lib + " (" + str(len(lig_types[lig_lib][0]))+ ")"
+            # Add a dictionary value, associate it to a new pattern
+            if i <= len(patterns) - 1:
+                ligLibHatches[lig_lib_name] = patterns[i]
+            else:
+                ligLibHatches[lig_lib_name] = ""
+
+        # Create a scalar map matching the binding pockets to be plotted
+        scalMapEF = self.getColorMap("spectral", pocketNames)
 
         # Go through a sorted list of the pocket-ligType combinations
         allBars = []
         maxTotal = 0
         for i, efName in enumerate(sorted(enrichFactorData.keys())):
-            # print efName
-            # print enrichFactorData
+            # Get the data to be plotted
             efData = enrichFactorData[efName][0]
             efTotals = enrichFactorData[efName][1]
-            color = scalMapEF.to_rgba(i)
 
-            barTots = ax_bar.bar(ind + i*width, efTotals, width, alpha=0.5,
-                                 color="white", align="center")
-            bars = ax_bar.bar(ind + i*width, efData, width, alpha=0.5,
-                              color=color, align="center")
+            # Choose the bar color: match the pocket
+            curr_pocket_name = enrichFactorData[efName][2][0]
+            # Loop over pocket names to get the pocket index (use 0 if pocket
+            # nawas not found)
+            num = 0
+            for j, pocketName in enumerate(pocketNames):
+                if curr_pocket_name == pocketName:
+                    num = j
+            # X-ray pockets use black and grey, remaining pockets use colors
+            # matching the scalMapEF defined above
+            if num == 0 and "X-ray" in curr_pocket_name:
+                color = 'black'
+            elif num == 1 and "X-ray" in curr_pocket_name:
+                color = 'grey'
+            else:
+                color = scalMapEF.to_rgba(num)
+
+            # Choose bar hatch: match the ligand types
+            curr_lib_name = enrichFactorData[efName][2][1]
+            # print lib_name
+            # print ligLibHatches.keys()
+            if curr_lib_name in ligLibHatches.keys():
+                hatch = ligLibHatches[curr_lib_name]
+                # print lib_name
+            else:
+                hatch = ""
+
+            # Plotting totals in white bars
+            barTots = ax_bar.bar(ind + i*(width), efTotals, width,
+                                 alpha=0.5, color="white", align="center")
+            # Plotting bar (with matching color and hatch)
+            bars = ax_bar.bar(ind + i*(width), efData, width,
+                              alpha=0.5, color=color, align="center",
+                              hatch=hatch)
 
             # Keep the max total information to set the y limit of the final
             # plot
@@ -738,13 +782,15 @@ class plotting:
                         # second list stores total hypothetical values at each
                         # EF (total ligand library numbers normalised to EF 0.1,
                         # 1 and 10).
-                        efName = vsLegend + " - " + lib_name
+                        libNameNum = lib_name + " (" + str(ligCount) + ")"
+                        efName = vsLegend + " - " + libNameNum
                         if efName not in enrichFactorData.keys():
                             efTenth = min(ligCount, totalLibTenthPercent)
                             efOne = min(ligCount, totalLibOnePercent)
                             efTen = min(ligCount, totalLibTenPercent)
                             enrichFactorData[efName] = [[0,0,0],
-                                                        [efTenth,efOne,efTen]]
+                                                        [efTenth,efOne,efTen],
+                                                        [vsLegend, libNameNum]]
 
                         # If the current ligand ID is in that list, then store
                         # its X and Y data in the lig_types dictionary
@@ -769,7 +815,6 @@ class plotting:
                             if xPercent <= 10:
                                 enrichFactorData[efName][0][2] += 1
                                 print "EF10", xPercent, yPercent, enrichFactorData[efName][0][2]
-
 
         scatterData = []
         for lib_name in lig_types.keys():
