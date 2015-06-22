@@ -713,7 +713,10 @@ class plotting:
 
         # Setting ticks and limits
         ax_bar.set_xticks(ind + ((groups * width) + width / 2.0))
+        y_axis = ax_bar.get_yaxis()
+        y_axis.set_major_locator(plt.MaxNLocator(integer=True))
         ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
+        ax_bar.tick_params(axis="both", which="major", labelsize=30)
         # Set the upperlimit at 10% more than the maximum value of the graph
         ax_bar.set_ylim(0, maxTotal * 1.10)
 
