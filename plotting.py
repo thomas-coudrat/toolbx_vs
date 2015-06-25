@@ -413,7 +413,7 @@ class plotting:
         # Now plot random and perfect curves, get a range of X values from
         # 0 to 100, with 0.1 increments. These values are submitted to the
         # equations to get corresponding Y values
-        xValues = np.arange(0, 100, 0.1)
+        xValues = np.arange(0, 100, 0.001)
         # Do not plot a perfect curve for ROC plots, as it won't show, being
         # along the x axis
         if mode in ("enrich", "type"):
