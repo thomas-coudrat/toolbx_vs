@@ -62,7 +62,7 @@ class plotting:
 
         # Output this rangeID to the prompt
         if printOut:
-            print("\n" + blurb + str(rangeID))
+            print("\n" + blurb + " : " + str(rangeID))
         else:
             print("\n" + blurb)
 
@@ -93,8 +93,7 @@ class plotting:
         return refDict
 
 
-    def intersectResults(self, vsPaths, truePosIDlist, trueNegIDlist,
-                         ommitIDlist):
+    def intersectResults(self, vsPaths, libraryIDlist):
         """
         Read in the results provided in .csv format, and figure out the
         intersect between each of those results set based on the ligIDs.
@@ -119,6 +118,7 @@ class plotting:
 
             vsResult = []
             ligIDs = []
+
             # loop over the vs result lines omitting the first row
             # print resultPath, len(resultLines)
             for line in resultLines[1:]:
@@ -130,53 +130,41 @@ class plotting:
             allLigIDs.append(set(ligIDs))
 
         # Get the intersection set
-        intersectLigID = set.intersection(*allLigIDs)
-        libraryCount = len(intersectLigID)
+        ligIDintersectSet = set.intersection(*allLigIDs)
 
-        # Verify that truePositives are contained within the intersect of ligIDs
-        truePosCount = self.getDockedLigandSet(truePosIDlist,
-                                        "true positive IDs: ", intersectLigID)
-
-        # Verify that trueNegatives are contained within the intersect of ligIDs
-        trueNegCount = self.getDockedLigandSet(trueNegIDlist,
-                                        "true negative IDs: ", intersectLigID)
-
-        # Verify that ommits are contained within the intersect of ligIDs
-        ommitCount = self.getDockedLigandSet(ommitIDlist,
-                                        "ommit IDs: ", intersectLigID)
-
-        allVsResultsIntersect = []
         # Loop over vsResults and keep only the ones present in the intersection
+        vsIntersects = []
         for resultPath, vsResult in zip(vsPaths, allVsResults):
             # print resultPath, len(vsResult)
             vsResultIntersect = []
             for i, ligInfo in enumerate(vsResult):
                 # Get only ligands that were docked in all binding pockets, and
-                # also do not store the ommitted ligand information
-                if int(ligInfo[0]) in intersectLigID and \
-                       int(ligInfo[0]) not in ommitIDlist:
+                # also part of the library ID list provided
+                if int(ligInfo[0]) in ligIDintersectSet and \
+                       int(ligInfo[0]) in libraryIDlist:
                     vsResultIntersect.append(ligInfo)
-            allVsResultsIntersect.append(vsResultIntersect)
+            vsIntersects.append(vsResultIntersect)
 
         # Return the library count as the total count - ommit count
-        return allVsResultsIntersect, libraryCount - ommitCount, \
-            truePosCount, trueNegCount, ommitCount
+        return vsIntersects, ligIDintersectSet
 
 
-    def getDockedLigandSet(self, ligIDlist, ligType, intersectLigID):
+    def updatedLigCounts(self, ligIDintersectSet, ligIDlist, lig_type):
         """
-        From a list of ligands expected to be docked, and the actual list of
-        all ligands docked, return an updated ligand set of actual docked
-        ligands (and their count)
+        Get list of docked ligands kept for analysis (intersection of all
+        binding pockets' results). Check which of the true positive, true
+        negative and library ligands is present in that intersection set: print
+        warnings when ligands are not present from these three original sets,
+        and return actual counts for each.
         """
 
         ligIDset = set(ligIDlist)
-        intersect_ligID = set.intersection(ligIDset, intersectLigID)
-        missingLigs = ligIDset - intersect_ligID
+        intersectLig_IDs = set.intersection(ligIDset, ligIDintersectSet)
+        missingLigs = ligIDset - intersectLig_IDs
         if len(missingLigs) > 0:
             print(col.red + "\nWARNING: " + col.end +
-                "missing IDs " + ligType + str(missingLigs))
-        ligCount = len(intersect_ligID)
+                "missing IDs" + lig_type + " : " + str(missingLigs))
+        ligCount = len(intersectLig_IDs)
 
         return ligCount
 

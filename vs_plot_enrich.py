@@ -24,10 +24,13 @@ def main():
     p = plotting.plotting()
 
     # Get the truePosID range in list format
-    libraryIDlist = p.makeIDlist(libraryIDstr, "Library IDs (not displayed): ",
-                                 False)
-    truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
-    trueNegIDlist = p.makeIDlist("0-0", "True negative ID list: ", False)
+    libraryIDlist = p.makeIDlist(libraryIDstr,
+                                 "Library IDs (not displayed)",
+                                 printOut=False)
+    truePosIDlist = p.makeIDlist(truePosIDstr,
+                                 "True positive ID list",
+                                 printOut=True)
+    # trueNegIDlist = p.makeIDlist("0-0", "True negative ID list: ", False)
     ommitIDlist = p.makeIDlist(ommitIDstr, "Ommit ID list: ", True)
 
     # Generate a dictionary containing the refinement ligands, if any
@@ -45,9 +48,20 @@ def main():
         zoom = 0.0
 
     # Read the results of each VS and keep only the ligIDs that are common
-    # to all of them
-    vsIntersects, libraryCount, truePosCount, trueNegCount, ommitCount \
-        = p.intersectResults(vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist)
+    # to all of them (create an interesect result list)
+    vsIntersects, ligIDintersectSet = p.intersectResults(vsPaths, libraryIDlist)
+
+    # Get updated true positive, true negative and library counts given the
+    # intersect results
+    truePosCount = p.updatedLigCounts(ligIDintersectSet,
+                                      truePosIDlist,
+                                      "true positives")
+    #trueNegCount = p.updatedLigCounts(ligIDintersectSet,
+    #                                  trueNegIDlist,
+    #                                  "true negatives")
+    libraryCount = p.updatedLigCounts(ligIDintersectSet,
+                                      libraryIDlist,
+                                      "whole library")
 
     # Calculate % of total curves for each of these (write file + return data)
     vsPockets = []
