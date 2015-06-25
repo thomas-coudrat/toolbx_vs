@@ -12,8 +12,7 @@ def main():
     """
 
     title, vsLegends, vsPaths, \
-        truePosIDstr, trueNegIDstr, ommitIDstr, \
-        ref, gui = parseArgs()
+        truePosIDstr, trueNegIDstr, ref, gui = parseArgs()
 
     # Define mode
     mode = "ROC"
@@ -28,10 +27,8 @@ def main():
     # Get the truePosID range in list format
     libraryIDlist = p.makeIDlist("0-0", "Library IDs (not displayed): ",
                                  False)
-
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
     trueNegIDlist = p.makeIDlist(trueNegIDstr, "True negative ID list: ", True)
-    ommitIDlist = p.makeIDlist(ommitIDstr, "Ommit ID list: ", True)
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -42,8 +39,19 @@ def main():
 
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
-    vsIntersects, libraryCount, truePosCount, trueNegCount, ommitCount \
-        = p.intersectResults(vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist)
+    vsIntersects, ligIDintersectSet = p.intersectResults(vsPaths, libraryIDlist)
+
+    # Get updated true positive, true negative and library counts given the
+    # intersect results
+    truePosCount = p.updatedLigCounts(ligIDintersectSet,
+                                      truePosIDlist,
+                                      "true positives")
+    trueNegCount = p.updatedLigCounts(ligIDintersectSet,
+                                      trueNegIDlist,
+                                      "true negatives")
+    # libraryCount = p.updatedLigCounts(ligIDintersectSet,
+    #                                   libraryIDlist,
+    #                                   "whole library")
 
     # Calculate % of total curves for each of these (write file + return data)
     vsPockets = []
@@ -54,8 +62,7 @@ def main():
                                    "true_neg", trueNegIDstr,
                                    trueNegIDlist, trueNegCount,
                                    "true_pos", truePosIDstr,
-                                   truePosIDlist, truePosCount,
-                                   ommitIDstr, ommitIDlist)
+                                   truePosIDlist, truePosCount)
 
         vsPockets.append(vsPocket)
 
@@ -97,8 +104,6 @@ def parseArgs():
         " lib (format: 1-514,6001,6700-6702)"
     descr_trueNegIDstr = "Provide the IDs of true negative ligands" \
         " lib (format: 1-514,6001,6700-6702)"
-    descr_ommitIDstr = "Provide the IDs of ligands to ommit" \
-        " from the VS data, same format at knownIDs"
     descr_ref = "Refinement ligand(s) used on this GPCR binding pocket" \
         " refinement. Provide ligand name and ID in the following format:" \
         " lig1:328,lig2:535"
@@ -110,7 +115,6 @@ def parseArgs():
     parser.add_argument("results", help=descr_results, nargs="+")
     parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
     parser.add_argument("trueNegIDstr", help=descr_trueNegIDstr)
-    parser.add_argument("ommitIDstr", help=descr_ommitIDstr)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
     parser.add_argument("--ref", help=descr_ref)
 
@@ -120,7 +124,6 @@ def parseArgs():
     results = args.results
     truePosIDstr = args.truePosIDstr
     trueNegIDstr = args.trueNegIDstr
-    ommitIDstr = args.ommitIDstr
     ref = args.ref
     gui = args.gui
 
@@ -134,8 +137,7 @@ def parseArgs():
         i += 2
 
     return title, vsLegends, vsPaths, \
-        truePosIDstr, trueNegIDstr, ommitIDstr, \
-        ref, gui
+        truePosIDstr, trueNegIDstr, ref, gui
 
 if __name__ == "__main__":
     main()

@@ -12,13 +12,15 @@ def main():
     """
 
     title, vsLegends, vsPaths, \
-        libraryIDstr, truePosIDstr, ommitIDstr, ligLibsJson, \
-        ref, log, gui = parseArgs()
+        libraryIDstr, truePosIDstr, ligLibsJson, \
+        ref, gui = parseArgs()
 
     # Define mode
     mode = "type"
     # Define zoom
     zoom = 0.0
+    # Define log
+    log = True
 
     # Creating a plotting instance for access to all methods
     p = plotting.plotting()
@@ -26,10 +28,8 @@ def main():
     # Get the truePosID range in list format
     libraryIDlist = p.makeIDlist(libraryIDstr, "Library IDs (not displayed): ",
                                  False)
-
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
     trueNegIDlist = p.makeIDlist("0-0", "True negative ID list: ", False)
-    ommitIDlist = p.makeIDlist(ommitIDstr, "Ommit ID list: ", True)
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -45,12 +45,21 @@ def main():
     # which points to a .sdf path containing ligands of that "type"
     lig_types = p.getLigandListFromJson(ligLibsJson)
 
-    # print lig_types
-
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
-    vsIntersects, libraryCount, truePosCount, trueNegCount, ommitCount \
-        = p.intersectResults(vsPaths, truePosIDlist, trueNegIDlist, ommitIDlist)
+    vsIntersects, ligIDintersectSet = p.intersectResults(vsPaths, libraryIDlist)
+
+    # Get updated true positive, true negative and library counts given the
+    # intersect results
+    truePosCount = p.updatedLigCounts(ligIDintersectSet,
+                                      truePosIDlist,
+                                      "true positives")
+    #trueNegCount = p.updatedLigCounts(ligIDintersectSet,
+    #                                  trueNegIDlist,
+    #                                  "true negatives")
+    libraryCount = p.updatedLigCounts(ligIDintersectSet,
+                                      libraryIDlist,
+                                      "whole library")
 
     # Calculate % of total curves for each of these (write file + return data)
     vsPockets = []
@@ -60,8 +69,7 @@ def main():
                                    "library", libraryIDstr,
                                    libraryIDlist, libraryCount,
                                    "true_pos", truePosIDstr,
-                                   truePosIDlist, truePosCount,
-                                   ommitIDstr, ommitIDlist)
+                                   truePosIDlist, truePosCount)
 
         vsPockets.append(vsPocket)
 
@@ -111,14 +119,11 @@ def parseArgs():
     descr_libraryIDstr = "Provide the ID range of the full library screened"
     descr_truePosIDstr = "Provide the IDs of true positive ligands" \
         " lib (format: 1-514,6001,6700-6702)"
-    descr_ommitIDstr = "Provide the IDs of ligands to ommit" \
-        " from the VS data, same format at knownIDs"
     descr_ligLibs = "JSON file containing a dictionary structure of ligand" \
         " library names (keys) pointing to library paths in .sdf"
     descr_ref = "Refinement ligand(s) used on this GPCR binding pocket" \
         " refinement. Provide ligand name and ID in the following format:" \
         " lig1:328,lig2:535"
-    descr_log = "Draw this plot on a log scale for the X axis"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
 
     # adding arguments to the parser
@@ -127,10 +132,8 @@ def parseArgs():
     parser.add_argument("results", help=descr_results, nargs="+")
     parser.add_argument("libraryIDstr", help=descr_libraryIDstr)
     parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
-    parser.add_argument("ommitIDstr", help=descr_ommitIDstr)
     parser.add_argument("ligLibs", help=descr_ligLibs)
     parser.add_argument("--ref", help=descr_ref)
-    parser.add_argument("-log", action="store_true", help=descr_log)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
 
     # parsing args
@@ -139,10 +142,8 @@ def parseArgs():
     results = args.results
     libraryIDstr = args.libraryIDstr
     truePosIDstr = args.truePosIDstr
-    ommitIDstr = args.ommitIDstr
     ligLibsJson = args.ligLibs
     ref = args.ref
-    log = args.log
     gui = args.gui
 
     # Extrac the VS results paths and legends
@@ -155,8 +156,8 @@ def parseArgs():
         i += 2
 
     return title, vsLegends, vsPaths, \
-        libraryIDstr, truePosIDstr, ommitIDstr, ligLibsJson, \
-        ref, log, gui
+        libraryIDstr, truePosIDstr, ligLibsJson, \
+        ref, gui
 
 if __name__ == "__main__":
     main()

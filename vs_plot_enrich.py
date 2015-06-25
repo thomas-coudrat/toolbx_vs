@@ -12,8 +12,7 @@ def main():
     """
 
     title, vsLegends, vsPaths, \
-        libraryIDstr, truePosIDstr, ommitIDstr, \
-        ref, zoom, gui = parseArgs()
+        libraryIDstr, truePosIDstr, ref, zoom, gui = parseArgs()
 
     # Define mode
     mode = "enrich"
@@ -30,8 +29,6 @@ def main():
     truePosIDlist = p.makeIDlist(truePosIDstr,
                                  "True positive ID list",
                                  printOut=True)
-    # trueNegIDlist = p.makeIDlist("0-0", "True negative ID list: ", False)
-    ommitIDlist = p.makeIDlist(ommitIDstr, "Ommit ID list: ", True)
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -67,13 +64,11 @@ def main():
     vsPockets = []
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
         vsDir = os.path.dirname(vsPath)
-        # print knownIDfirst, knownIDlast, ommitIDfirst, ommitIDlast
         vsPocket = p.writePercFile(vsIntersect, vsDir, mode, refDict,
                                    "library", libraryIDstr,
                                    libraryIDlist, libraryCount,
                                    "true_pos", truePosIDstr,
-                                   truePosIDlist, truePosCount,
-                                   ommitIDstr, ommitIDlist)
+                                   truePosIDlist, truePosCount)
 
         vsPockets.append(vsPocket)
 
@@ -113,8 +108,6 @@ def parseArgs():
     descr_libraryIDstr = "Provide the ID range of the full library screened"
     descr_truePosIDstr = "Provide the IDs of true positive ligands" \
         " lib (format: 1-514,6001,6700-6702)"
-    descr_ommitIDstr = "Provide the IDs of ligands to ommit" \
-        " from the VS data, same format at knownIDs"
     descr_ref = "Refinement ligand(s) used on this GPCR binding pocket" \
         " refinement. Provide ligand name and ID in the following format:" \
         " lig1:328,lig2:535"
@@ -128,7 +121,6 @@ def parseArgs():
     parser.add_argument("results", help=descr_results, nargs="+")
     parser.add_argument("libraryIDstr", help=descr_libraryIDstr)
     parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
-    parser.add_argument("ommitIDstr", help=descr_ommitIDstr)
     parser.add_argument("--ref", help=descr_ref)
     parser.add_argument("--zoom", help=descr_zoom)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
@@ -139,7 +131,6 @@ def parseArgs():
     results = args.results
     libraryIDstr = args.libraryIDstr
     truePosIDstr = args.truePosIDstr
-    ommitIDstr = args.ommitIDstr
     ref = args.ref
     zoom = args.zoom
     gui = args.gui
@@ -154,8 +145,7 @@ def parseArgs():
         i += 2
 
     return title, vsLegends, vsPaths, \
-        libraryIDstr, truePosIDstr, ommitIDstr, \
-        ref, zoom, gui
+        libraryIDstr, truePosIDstr, ref, zoom, gui
 
 if __name__ == "__main__":
     main()

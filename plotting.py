@@ -101,8 +101,6 @@ class plotting:
         are fully present in the intersect set: send a WARNING if they are not
         Then return the results set containing only the intersect results for
         each set.
-        Remove from the set returned the ligands that correspond to the ommited
-        set
         """
 
         print(col.head + "\n\t*DEFINING INTERSECT*" + col.end)
@@ -145,7 +143,7 @@ class plotting:
                     vsResultIntersect.append(ligInfo)
             vsIntersects.append(vsResultIntersect)
 
-        # Return the library count as the total count - ommit count
+        # Return the intersect VS data and intersect ligand ID set
         return vsIntersects, ligIDintersectSet
 
 
@@ -160,10 +158,10 @@ class plotting:
 
         ligIDset = set(ligIDlist)
         intersectLig_IDs = set.intersection(ligIDset, ligIDintersectSet)
-        missingLigs = ligIDset - intersectLig_IDs
+        missingLigs = sorted(list(ligIDset - intersectLig_IDs))
         if len(missingLigs) > 0:
             print(col.red + "\nWARNING: " + col.end +
-                "missing IDs" + lig_type + " : " + str(missingLigs))
+                "missing IDs " + lig_type + " : " + str(missingLigs))
         ligCount = len(intersectLig_IDs)
 
         return ligCount
@@ -171,8 +169,7 @@ class plotting:
 
     def writePercFile(self, vsIntersect, vsDir, mode, refDict,
                       xAxisName, xAxisIDstr, xAxisIDlist, xCount,
-                      yAxisName, yAxisIDstr, yAxisIDlist, yCount,
-                      ommitIDstr, ommitIDlist):
+                      yAxisName, yAxisIDstr, yAxisIDlist, yCount):
         """
         Given this VS result, and information about the ID of known actives
         in the library, write in a file the information to plot an enrichment
@@ -184,11 +181,10 @@ class plotting:
         m = mode + "_"
         x = xAxisName + xAxisIDstr + "_"
         y = yAxisName + yAxisIDstr + "_"
-        ommit = "ommits_" + ommitIDstr + "_"
         fname = os.path.basename(vsDir)
 
         # Create filename
-        percentPath = vsDir + "/" + m + x + y + ommit + fname + ".csv"
+        percentPath = vsDir + "/" + m + x + y + fname + ".csv"
         print("\n" + percentPath)
         percentDataFile = open(percentPath, "w")
 
@@ -200,55 +196,47 @@ class plotting:
             # print ligInfo
             ligID = int(ligInfo[0])
 
-            # Skip if ligID is part of the range that needs to be ommited
-            # If the ommit values are '0', then there is no ligand to ommit
-            if ligID in ommitIDlist:
-                # print "ligand skipped", ligInfo
-                continue
-            # Otherwise proceed normally
+            # When the sorted ligID corresponds to a known, increase
+            # the value of Y by 1
+            if ligID in yAxisIDlist:
+                # print "known ligand", ligInfo
+                Y += 1
+
+            # For each ligand in the full VS (or in the case of a ROC curve,
+            # in the truePositives/Negatives), increase X
+            if ligID in xAxisIDlist:
+                X += 1
+
+            # Calculate percentage X and Y
+            Xpercent = (X * 100.0) / xCount
+            Ypercent = (Y * 100.0) / yCount
+
+            # Line to be saved to file
+            percLine = ",".join([str(ligID), str(X), str(Y), str(Xpercent),
+                                str(Ypercent)])
+            # If one of the refinement ligand corresponds to that line, add
+            # its name on the line
+            if ligID in refDict.keys():
+                ligName = refDict[ligID]
+                percLine = percLine + "," + ligName + "\n"
             else:
+                percLine = percLine + "\n"
 
-                # When the sorted ligID corresponds to a known, increase
-                # the value of Y by 1
-                if ligID in yAxisIDlist:
-                    # print "known ligand", ligInfo
-                    Y += 1
-
-                # For each ligand in the full VS (or in the case of a ROC curve,
-                # in the truePositives/Negatives), increase X
-                if ligID in xAxisIDlist:
-                    X += 1
-
-                # Calculate percentage X and Y
-                Xpercent = (X * 100.0) / xCount
-                Ypercent = (Y * 100.0) / yCount
-
-                # Line to be saved to file
-                percLine = ",".join([str(ligID), str(X), str(Y), str(Xpercent),
-                                    str(Ypercent)])
-                # If one of the refinement ligand corresponds to that line, add
-                # its name on the line
-                if ligID in refDict.keys():
-                    ligName = refDict[ligID]
-                    percLine = percLine + "," + ligName + "\n"
-                else:
-                    percLine = percLine + "\n"
-
-                # Saving behaviour of enrichment vs. ROC curve vs. type scatter
-                # All points are saved for an enrichment curve,
-                # whereas only Y and X increments are saved in a ROC curve.
-                # The "type" scatter collects only Y increments plus the last
-                # ligand of the VS (even if it's not a Y increment)
-                if mode in ("type"):
-                    # Check again for presence of the current ligID in the y
-                    # axis list. If present then write line, otherwise don't
-                    if ligID in yAxisIDlist or len(vsIntersect) == i + 1:
-                        percentDataFile.write(percLine)
-                elif mode in ("enrich"):
+            # Saving behaviour of enrichment vs. ROC curve vs. type scatter
+            # All points are saved for an enrichment curve,
+            # whereas only Y and X increments are saved in a ROC curve.
+            # The "type" scatter collects only Y increments plus the last
+            # ligand of the VS (even if it's not a Y increment)
+            if mode in ("type"):
+                # Check again for presence of the current ligID in the y
+                # axis list. If present then write line, otherwise don't
+                if ligID in yAxisIDlist or len(vsIntersect) == i + 1:
                     percentDataFile.write(percLine)
-                elif mode in ("ROC"):
-                    if ligID in yAxisIDlist or ligID in xAxisIDlist:
-                        percentDataFile.write(percLine)
+            elif mode in ("enrich"):
+                percentDataFile.write(percLine)
+            elif mode in ("ROC"):
+                if ligID in yAxisIDlist or ligID in xAxisIDlist:
+                    percentDataFile.write(percLine)
 
         percentDataFile.close()
 
