@@ -143,6 +143,9 @@ class plotting:
                     vsResultIntersect.append(ligInfo)
             vsIntersects.append(vsResultIntersect)
 
+        print("\nNumber of intersecting docked ligands: " + \
+              str(len(ligIDintersectSet)))
+
         # Return the intersect VS data and intersect ligand ID set
         return vsIntersects, ligIDintersectSet
 
@@ -156,6 +159,8 @@ class plotting:
         and return actual counts for each.
         """
 
+        print(col.head + "\n\t*UPDATE LIGAND COUNTS*" + col.end)
+
         ligIDset = set(ligIDlist)
         intersectLig_IDs = set.intersection(ligIDset, ligIDintersectSet)
         missingLigs = sorted(list(ligIDset - intersectLig_IDs))
@@ -163,6 +168,8 @@ class plotting:
             print(col.red + "\nWARNING: " + col.end +
                 "missing IDs " + lig_type + " : " + str(missingLigs))
         ligCount = len(intersectLig_IDs)
+
+        print("\nUpdated " + lig_type + ": " + str(ligCount))
 
         return ligCount
 
