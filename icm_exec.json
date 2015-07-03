@@ -1,7 +1,7 @@
 {
-  "linux-T1650": "/usr/icm-3.7-3b/icm64", 
-  "Ideapad": "/home/thomas/bin/icm-3.8-0/icm64", 
-  "barcoo": "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64", 
-  "msgln4.its.monash.edu.au": "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64", 
+  "linux-T1650": "/usr/icm-3.7-3b/icm64",
+  "Ideapad": "/home/thomas/bin/icm-3.8-0/icm64",
+  "barcoo": "/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b/icm64",
+  "msgln4.its.monash.edu.au": "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64",
   "msgln6.its.monash.edu.au": "/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/icm64"
 }
