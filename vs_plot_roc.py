@@ -20,15 +20,16 @@ def main():
     zoom = 0.0
     # Define log
     log = False
+    # Define scatterData
+    scatterData = False
 
     # Creating a plotting instance for access to all methods
     p = plotting.plotting()
 
     # Get the truePosID range in list format
-    libraryIDlist = p.makeIDlist("0-0", "Library IDs (not displayed): ",
-                                 False)
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
     trueNegIDlist = p.makeIDlist(trueNegIDstr, "True negative ID list: ", True)
+    libraryIDlist = truePosIDlist + trueNegIDlist
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -49,9 +50,11 @@ def main():
     trueNegCount = p.updatedLigCounts(ligIDintersectSet,
                                       trueNegIDlist,
                                       "true negatives")
-    # libraryCount = p.updatedLigCounts(ligIDintersectSet,
-    #                                   libraryIDlist,
-    #                                   "whole library")
+    # This value is actually not used, but it complies with the plot() function
+    # libraryCount = truePosCount + trueNegCount
+    libraryCount = p.updatedLigCounts(ligIDintersectSet,
+                                       libraryIDlist,
+                                       "whole library")
 
     # Calculate % of total curves for each of these (write file + return data)
     vsPockets = []
@@ -80,7 +83,7 @@ def main():
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plot(title, plotData, libraryCount, truePosCount,
            xLim, yLim, xAxisName, yAxisName, gui, log,
-           zoom, mode, scatterData=False)
+           zoom, mode, scatterData)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)
