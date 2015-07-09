@@ -50,7 +50,7 @@ class plotting:
                 if start == 0 or end == 0:
                     pass
                 else:
-                    rangeID = rangeID + range(start, end + 1)
+                    rangeID = rangeID + list(range(start, end + 1))
             # Treat single IDs
             else:
                 portion = int(portion)
@@ -267,7 +267,7 @@ class plotting:
 
         for vsPocket, vsLegend in zip(vsPockets, vsLegends):
 
-            print "\nOpening:", vsLegend, "from path:", vsPocket
+            print("\nOpening:", vsLegend, "from path:", vsPocket)
 
             # initialising variables
             refPlot = {}
@@ -310,7 +310,7 @@ class plotting:
 
         # aucData = []
 
-        print "perfect=", len(perfect)
+        print("perfect=", len(perfect))
         # perfectSq = [math.sqrt(i) for i in perfect]
 
         for rocDatum in rocData:
@@ -321,9 +321,8 @@ class plotting:
             Xsq = [math.sqrt(i) for i in X]
             # Ysq = [math.sqrt(i) for i in Y]
 
-            print "X=", len(X)
-            print "Y=", len(Y)
-
+            print("X=", len(X))
+            print("Y=", len(Y))
             auc = scipy.integrate.trapz(Y, X)
             aucSq = scipy.integrate.trapz(Y, Xsq)
             # auc2 = scipy.integrate.simps(Y, X)
@@ -336,26 +335,25 @@ class plotting:
             randSq = scipy.integrate.trapz(X, Xsq)
             # rand2 = scipy.integrate.simps(X, X)
 
-            print "**************"
+            print("**************")
 
-            print legend
-            print "auc", auc        # , auc2
-            print "aucSq", aucSq
-            print "perfect", perf   # , perf2
-            print "perfectSq", perfSq
-            print "rand", rand      # , rand2
-            print "randSq", randSq
-            print
+            print(legend)
+            print("auc", auc)        # , auc2
+            print("aucSq", aucSq)
+            print("perfect", perf)   # , perf2
+            print("perfectSq", perfSq)
+            print("rand", rand)      # , rand2
+            print("randSq", randSq)
 
             nsq_auc = (aucSq - randSq) / (perfSq / randSq)
             nsq_auc_perf = (perfSq - randSq) / (perfSq / randSq)
             nsq_auc_rand = (randSq - randSq) / (perfSq / randSq)
 
-            print "NSQ_AUC:", nsq_auc
-            print "NSQ_AUC - perf:", nsq_auc_perf
-            print "NSQ_AUC - rand:", nsq_auc_rand
+            print("NSQ_AUC:", nsq_auc)
+            print("NSQ_AUC - perf:", nsq_auc_perf)
+            print("NSQ_AUC - rand:", nsq_auc_rand)
 
-            print "**************"
+            print("**************")
 
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
@@ -631,7 +629,7 @@ class plotting:
         # Finite set of patterns to be associated with ligand types
         patterns = ('/', '.', 'x', '\\', '|', '-', "\\\\", 'o', '*', 'O')
         # print lig_types
-        for i, lig_lib in enumerate(lig_types.keys()):
+        for i, lig_lib in sorted(enumerate(lig_types.keys())):
             # Create the name as "ligType (lig_count)"
             lig_lib_name = lig_lib + " (" + str(len(lig_types[lig_lib][0]))+ ")"
             # Add a dictionary value, associate it to a new pattern
@@ -704,8 +702,33 @@ class plotting:
         ax_bar.set_ylim(0, maxTotal * 1.10)
 
         # Setting legend
-        fig_leg = plt.figure(figsize=(13, 12), dpi=100)
-        plt.figlegend([bar[0] for bar in allBars], efNames,
+        fig_leg = plt.figure(dpi=100)
+
+        # Generate the two lists that store the custom legend information
+        # This could have been done in the for loop above, but is abstracted
+        # here for code simplicity
+        legRects = []
+        legNames = []
+        # Binding-pockets legend
+        for i, pocketName in enumerate(pocketNames):
+            if i == 0 and "X-ray" in pocketName:
+                color = 'black'
+            elif i == 1 and "X-ray" in pocketName:
+                color = 'grey'
+            else:
+                color = scalMapEF.to_rgba(i)
+
+            legRects.append(plt.Rectangle((0, 0), 10, 10, facecolor=color))
+            legNames.append(pocketName)
+
+        # Ligand-types legend
+        for hatchKey in sorted(ligLibHatches.keys()):
+            legRects.append(plt.Rectangle((0, 0), 10, 10,
+                                      hatch=ligLibHatches[hatchKey],
+                                      facecolor="white"))
+            legNames.append(hatchKey)
+        # Create the custom figure legend
+        plt.figlegend(legRects, legNames,
                       loc="upper left", prop={'size': 30})
 
         # Display or save barchart and legend
@@ -739,7 +762,7 @@ class plotting:
         # Read each binding pocket VS data file
         for percentPath, vsLegend in zip(percentPaths, vsLegends):
 
-            print "\nOpening:", vsLegend, "from path:", percentPath
+            print("\nOpening:", vsLegend, "from path:", percentPath)
 
             with open(percentPath) as dataFile:
                 # Open the binding pocket VS data line by line
@@ -781,7 +804,7 @@ class plotting:
                         # If the current ligand ID is in that list, then store
                         # its X and Y data in the lig_types dictionary
                         if ligID in lib_IDs:
-                            print lib_name
+                            print(lib_name)
                             # Store the X value
                             lig_types[lib_name][1].append(xPercent)
                             # Store the Y value
@@ -794,13 +817,16 @@ class plotting:
                             # known ligand found in the current ligand type list
                             if xPercent <= 0.1:
                                 enrichFactorData[efName][0][0] += 1
-                                print "EF0.1", xPercent, yPercent, enrichFactorData[efName][0][0]
+                                print("EF0.1", xPercent, yPercent,
+                                      enrichFactorData[efName][0][0])
                             if xPercent <= 1:
                                 enrichFactorData[efName][0][1] += 1
-                                print "EF1", xPercent, yPercent, enrichFactorData[efName][0][1]
+                                print("EF1", xPercent, yPercent,
+                                      enrichFactorData[efName][0][1])
                             if xPercent <= 10:
                                 enrichFactorData[efName][0][2] += 1
-                                print "EF10", xPercent, yPercent, enrichFactorData[efName][0][2]
+                                print("EF10", xPercent, yPercent,
+                                      enrichFactorData[efName][0][2])
 
         scatterData = []
         for lib_name in lig_types.keys():
