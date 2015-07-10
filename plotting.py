@@ -399,10 +399,10 @@ class plotting:
         # along the x axis
         if mode in ("enrich", "type"):
             yPerfect = self.formulaPerfect(xValues, libraryCount, truePosCount)
-            ax.plot(xValues, yPerfect, "--", color="grey")
+            ax.plot(xValues, yPerfect, "--", color="grey", alpha=0.7)
 
         yRandom = self.formulaRandom(xValues)
-        ax.plot(xValues, yRandom, ":", color="grey")
+        ax.plot(xValues, yRandom, ":", color="grey", alpha=0.7)
 
         # Plot the RANDOM and PERFECT curves on the zoomed and main graph
         if zoom != 0.0:
@@ -482,11 +482,13 @@ class plotting:
             # each of the scatter dots plotted above
             X = [0.0] + X
             Y = [0.0] + Y
-            ax.plot(X, Y, label=plotLegend, linewidth=1, color=color)
+            ax.plot(X, Y, label=plotLegend,
+                    linewidth=1, color=color, alpha=0.7)
         elif mode in ("enrich", "ROC"):
             X = [0.0] + X
             Y = [0.0] + Y
-            ax.plot(X, Y, label=plotLegend, linewidth=lw, color=color)
+            ax.plot(X, Y, label=plotLegend,
+                    linewidth=lw, color=color, alpha=0.7)
 
         # Plot a blow up of the first X%
         if zoom != 0.0:
@@ -617,9 +619,8 @@ class plotting:
 
         # Default values
         groups = 3
-        ind = np.arange(groups)
-        width = 0.05
-        separator = 0.02
+        ind = np.arange(groups*2, step=2)
+        width = 0.07
         efNames = sorted(enrichFactorData.keys())
         efNumber = len(efNames)
 
@@ -643,7 +644,7 @@ class plotting:
 
         # Go through a sorted list of the pocket-ligType combinations
         allBars = []
-        maxTotal = 0
+        maxY = 0
         for i, efName in enumerate(sorted(enrichFactorData.keys())):
             # Get the data to be plotted
             efData = enrichFactorData[efName][0]
@@ -678,28 +679,29 @@ class plotting:
 
             # Plotting totals in white bars
             barTots = ax_bar.bar(ind + i*(width), efTotals, width,
-                                 alpha=0.5, color="white", align="center")
+                                 alpha=0.7, color="white", align="center")
             # Plotting bar (with matching color and hatch)
             bars = ax_bar.bar(ind + i*(width), efData, width,
-                              alpha=0.5, color=color, align="center",
+                              alpha=0.7, color=color, align="center",
                               hatch=hatch)
 
-            # Keep the max total information to set the y limit of the final
-            # plot
-            maxTotalCurrent = max(efTotals[0], efTotals[1], efTotals[2])
-            if maxTotalCurrent > maxTotal:
-                maxTotal = maxTotalCurrent
+            # Keep the max Y total value to set the Y limit
+            maxYcurrent = max(efTotals[0], efTotals[1], efTotals[2])
+            if maxYcurrent > maxY:
+                maxY = maxYcurrent
 
             allBars.append(bars)
 
         # Setting ticks and limits
-        ax_bar.set_xticks(ind + ((groups * width) + width / 2.0))
+        ax_bar.set_xticks(ind + (efNumber * width)/2)
         y_axis = ax_bar.get_yaxis()
         y_axis.set_major_locator(plt.MaxNLocator(integer=True))
         ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
         ax_bar.tick_params(axis="both", which="major", labelsize=30)
         # Set the upperlimit at 10% more than the maximum value of the graph
-        ax_bar.set_ylim(0, maxTotal * 1.10)
+        ax_bar.set_ylim(0, maxY * 1.10)
+        # Set margins left and right of the bar groups
+        ax_bar.margins(x=.1)
 
         # Setting legend
         fig_leg = plt.figure(dpi=100)
@@ -718,7 +720,8 @@ class plotting:
             else:
                 color = scalMapEF.to_rgba(i)
 
-            legRects.append(plt.Rectangle((0, 0), 10, 10, facecolor=color))
+            legRects.append(plt.Rectangle((0, 0), 10, 10, facecolor=color,
+                                          alpha=0.7))
             legNames.append(pocketName)
 
         # Ligand-types legend
