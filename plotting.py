@@ -442,7 +442,6 @@ class plotting:
                 # print xLimRound
                 # plt.setp(ax2, xlim=(0, zoom), ylim=(0, yLim),
                 #         xticks=[0, zoom], yticks=[0, yLimRound])
-
         if gui:
             plt.show()
         else:
@@ -475,7 +474,6 @@ class plotting:
 
         # Plot this curve: scatter plot if plotting type, curves otherwise
         if mode in ("type"):
-
             # first plot individual ligands with scatter plot
             # ax.scatter(X, Y, linewidth=1, color='black')
             # Then draw line that starts from the origin and goes through
@@ -694,8 +692,7 @@ class plotting:
 
         # Setting ticks and limits
         ax_bar.set_xticks(ind + (efNumber * width)/2)
-        y_axis = ax_bar.get_yaxis()
-        y_axis.set_major_locator(plt.MaxNLocator(integer=True))
+        ax_bar.set_yticks(np.arange(0, maxY+1, 5))
         ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
         ax_bar.tick_params(axis="both", which="major", labelsize=30)
         # Set the upperlimit at 10% more than the maximum value of the graph
@@ -777,7 +774,8 @@ class plotting:
                     yPercent = float(ll[4])
 
                     # Read each ligand type ligand ID data
-                    for lib_name in lig_types.keys():
+                    for lib_name in sorted(lig_types.keys()):
+                        #print(lib_name)
 
                         # Collect the list of ligand IDs that correspond to that
                         # type
@@ -807,29 +805,28 @@ class plotting:
                         # If the current ligand ID is in that list, then store
                         # its X and Y data in the lig_types dictionary
                         if ligID in lib_IDs:
-                            print(lib_name)
+                            #print("Ligand found!")
                             # Store the X value
                             lig_types[lib_name][1].append(xPercent)
                             # Store the Y value
                             lig_types[lib_name][2].append(yPercent)
 
-                            # Create a dictionary entry for the pocket-ligType
-                            # combination if it doesn't exist yet. Otherwise
-                            # populate the enrichment factor data (EF0.1, EF1
+                            # Populate the enrichment factor data (EF0.1, EF1
                             # and EF10) if the current line corresponds to a
                             # known ligand found in the current ligand type list
                             if xPercent <= 0.1:
                                 enrichFactorData[efName][0][0] += 1
-                                print("EF0.1", xPercent, yPercent,
-                                      enrichFactorData[efName][0][0])
+                                #print("\tEF0.1", xPercent, yPercent,
+                                #      enrichFactorData[efName][0][0])
                             if xPercent <= 1:
                                 enrichFactorData[efName][0][1] += 1
-                                print("EF1", xPercent, yPercent,
-                                      enrichFactorData[efName][0][1])
+                                #print("\tEF1", xPercent, yPercent,
+                                #      enrichFactorData[efName][0][1])
                             if xPercent <= 10:
                                 enrichFactorData[efName][0][2] += 1
-                                print("EF10", xPercent, yPercent,
-                                      enrichFactorData[efName][0][2])
+                                #print("\tEF10", xPercent, yPercent,
+                                #      enrichFactorData[efName][0][2])
+                    #print("\n")
 
         scatterData = []
         for lib_name in lig_types.keys():
