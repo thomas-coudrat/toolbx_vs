@@ -131,17 +131,33 @@ class plotting:
         ligIDintersectSet = set.intersection(*allLigIDs)
 
         # Loop over vsResults and keep only the ones present in the intersection
+        # Also identify which binding pocket does not have which docked ligand
+        # information
         vsIntersects = []
-        for resultPath, vsResult in zip(vsPaths, allVsResults):
-            # print resultPath, len(vsResult)
+        for resultPath, vsResult, ligIDs in zip(vsPaths, allVsResults, allLigIDs):
             vsResultIntersect = []
-            for i, ligInfo in enumerate(vsResult):
+            for ligInfo in vsResult:
+                ligID = int(ligInfo[0])
                 # Get only ligands that were docked in all binding pockets, and
                 # also part of the library ID list provided
-                if int(ligInfo[0]) in ligIDintersectSet and \
-                       int(ligInfo[0]) in libraryIDlist:
+                if ligID in ligIDintersectSet and ligID in libraryIDlist:
                     vsResultIntersect.append(ligInfo)
+            # Complete docking data for each pocket
             vsIntersects.append(vsResultIntersect)
+
+            # Identify which of the binding pocket is missing which ligand
+            # print resultPath
+            libraryIDset = set(libraryIDlist)
+            # Get the set of ligIDs found in the total library ID set, but not
+            # in the current binding pocket docked data
+            notDockedLigIDlist = sorted(list(libraryIDset.difference(ligIDs)))
+            # Print the binding pocket name, along with the IDs not docked
+            bpName = os.path.basename(resultPath)
+            if len(notDockedLigIDlist) > 0:
+                print("\n" + bpName + col.blue +
+                      " missing the following ligands:" + col.end + "\t" + 
+                      str(notDockedLigIDlist))
+
 
         print("\nNumber of intersecting docked ligands: " + \
               str(len(ligIDintersectSet)))
