@@ -194,14 +194,21 @@ def cleanVSdir(workDir):
         print
 
         # Prompting for removal
-        answer = raw_input('Are you sure you want to delete them? (y/n)\n')
-        if answer == "y":
+        answer = raw_input('Three options:\n' +
+                           '(abort) operation,\n' +
+                           '(delete) all existing files and continue,\n' +
+                           '(keep) existing files and continue (note that ' +
+                           'you risk overwriting some files)\n' +
+                           'abort/delete/keep? (default=abort)')
+        if answer == "delete":
             print "DELETING PREVIOUS FILES..."
             for filePath in delList:
                 if filePath.endswith(".log"):
                     os.remove(filePath)
                 else:
                     shutil.rmtree(filePath)
+        elif answer == "keep":
+            print "CONTINUE WITHOUT DELETING FILES..."
         else:
             print "NOT DELETING, QUIT..."
             sys.exit()
