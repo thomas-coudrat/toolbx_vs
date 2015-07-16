@@ -171,7 +171,8 @@ def cleanRepeatDir(repeatDir):
     """
 
     # Get files in workDir
-    filePaths = glob.glob(repeatDir + "/*")
+    allPaths = glob.glob(repeatDir + "/*")
+    filePaths = [f for f in allPaths if not os.path.basename(f).startswith("backup_")]
 
     # If files were found in this directory, display what they are and prompt
     # for deletion
@@ -196,7 +197,7 @@ def cleanRepeatDir(repeatDir):
         if answer == "delete":
             print "DELETING PREVIOUS FILES..."
             for filePath in filePaths:
-                shutil.rmtree(filePath)
+                os.remove(filePath)
         elif answer == "keep":
             print "CONTINUE WITHOUT DELETING FILES..."
         elif answer == 'backup':
