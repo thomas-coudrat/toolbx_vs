@@ -30,6 +30,8 @@ import re
 import sys
 import socket
 import json
+import datetime
+import time
 # from docopt import docopt
 
 
@@ -56,7 +58,8 @@ def main():
     workDir = os.getcwd()
 
     # Clean files present in the current repeat directories, if any
-    cleanVSdir(workDir)
+    for repeatDir in glob.glob(workDir + "/[0-9]*"):
+        cleanRepeatDir(repeatDir)
 
     reportLines.append("\nPARAMETERS:\n")
     reportLines.append("\t libStart: " + str(libStart))
@@ -161,36 +164,24 @@ def getQueuingSys():
     return queue
 
 
-def cleanVSdir(workDir):
+def cleanRepeatDir(repeatDir):
     """
     Checks for file already present in this VS directory, and prompts
     the user to confirm removal, before creating a new set of files
     """
 
     # Get files in workDir
-    filePaths = glob.glob(workDir + "/*")
-
-    # Store files and dirs to be deleted in this list
-    delList = []
-
-    # Loop over the files in this dir
-    for filePath in filePaths:
-        fileName = os.path.basename(filePath)
-        if fileName.isdigit() or fileName.endswith(".log"):
-            delList.append(filePath)
+    filePaths = glob.glob(repeatDir + "/*")
 
     # If files were found in this directory, display what they are and prompt
     # for deletion
-    if len(delList) > 0:
+    if len(filePaths) > 0:
 
         # Displaying existing files
-        print
-        print "####"
-        print "#### VS files were found in this directory ####"
-        print "####"
-        print
-        for filePath in delList:
-            print filePath
+        print "\n#### VS files were found in this directory ####\n"
+        print repeatDir
+        for filePath in filePaths:
+            print "\t" + os.path.basename(filePath)
         print
 
         # Prompting for removal
@@ -199,16 +190,23 @@ def cleanVSdir(workDir):
                            '(delete) all existing files and continue,\n' +
                            '(keep) existing files and continue (note that ' +
                            'you risk overwriting some files)\n' +
-                           'abort/delete/keep? (default=abort)')
+                           '(backup) existing file in a timestamped folder ' +
+                           'per repeat dir\n\n'
+                           'abort/delete/keep/backup? (default=abort) ')
         if answer == "delete":
             print "DELETING PREVIOUS FILES..."
-            for filePath in delList:
-                if filePath.endswith(".log"):
-                    os.remove(filePath)
-                else:
-                    shutil.rmtree(filePath)
+            for filePath in filePaths:
+                shutil.rmtree(filePath)
         elif answer == "keep":
             print "CONTINUE WITHOUT DELETING FILES..."
+        elif answer == 'backup':
+            print "BACKING UP FILES..."
+            t = time.time()
+            humanTime = datetime.datetime.fromtimestamp(int(t)).strftime('%Y-%m-%d_%H:%M:%S')
+            backupDir = repeatDir + "/backup_" + humanTime
+            os.makedirs(backupDir)
+            for filePath in filePaths:
+                shutil.move(filePath, backupDir)
         else:
             print "NOT DELETING, QUIT..."
             sys.exit()
