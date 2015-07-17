@@ -327,12 +327,12 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
         # Update the repeat number
         repeat += 1
 
-        slurmSrun(projName, walltime, repeatDir, repeat, sliceCount - 1)
+        slurmSrun(projName, libStart, libEnd, walltime, repeatDir, repeat, sliceCount - 1)
 
     return reportLines
 
 
-def slurmSrun(projName, walltime, repeatDir, repeat, sliceCount):
+def slurmSrun(projName, libStart, libEnd,  walltime, repeatDir, repeat, sliceCount):
     """
     Create the srun SLURM script which will group all SLURM submissions together
     """
@@ -354,7 +354,8 @@ def slurmSrun(projName, walltime, repeatDir, repeat, sliceCount):
     lines.append("done")
     lines.append("wait")
 
-    with open(repeatDir + "srun.slurm", "w") as slurmFile:
+    libRange = str(libStart) + "-" + str(libEnd)
+    with open(repeatDir + "srun_" + libRange  + ".slurm", "w") as slurmFile:
         for line in lines:
             slurmFile.write(line + "\n")
 
@@ -375,7 +376,8 @@ def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit, repeatDir, re
                  " >& " + projName + "_" + str(upperLimit) + ".ou")
 
     # WRITE SLURM LINES TO FILE
-    with open(repeatDir + "slice_" + str(sliceCount) + ".sh", "w") as sliceFile:
+    sliceName = str(lowerLimit) + "-" + str(upperLimit) + "_" + str(sliceCount)
+    with open(repeatDir + "slice_" + sliceName + ".sh", "w") as sliceFile:
         for line in lines:
             sliceFile.write(line + "\n")
 
