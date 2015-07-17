@@ -283,7 +283,8 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
     while repeat <= repeatNum:
 
         # Initialize variables for this repeat
-        repeatDir = os.getcwd() + "/" + str(repeat) + "/"
+        cwd = os.getcwd()
+        repeatDir = cwd + "/" + str(repeat) + "/"
         # Update the report
         reportLines.append("\n")
         reportLines.append("REPEAT:" + repeatDir + "\n")
@@ -312,9 +313,8 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
             # Create a slice, check for submission system, run the appropriate
             # command
             if queue == "slurm":
-                reportLines = slurmSlice(walltime, sliceName, projName, thor,
-                                         lowerLimit, upperLimit, repeatDir,
-                                         reportLines)
+                reportLines = slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
+                                         repeatDir, reportLines)
             elif queue == "pbs":
                 reportLines = pbsSlice(walltime, sliceName, projName, thor,
                                        lowerLimit, upperLimit, repeatDir,
@@ -328,14 +328,16 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
         # Update the repeat number
         repeat += 1
 
+        slurmSrun(walltime, repeatDir, sliceCount)
+
     return reportLines
 
 
-def slurmSlice(walltime, sliceName, projName, thor,
-               lowerLimit, upperLimit, repeatDir, reportLines):
+def slurmSrun(walltime, repeatDir, sliceCount):
     """
-    Create a slurm slice and write to a file with the info provided
+    Create the srun SLURM script which will group all SLURM submissions together
     """
+
     lines = []
     lines.append("#!/bin/bash")
     lines.append("#SBATCH -p main")
@@ -343,6 +345,26 @@ def slurmSlice(walltime, sliceName, projName, thor,
     lines.append("#SBATCH --mem-per-cpu=1024")
     lines.append("#SBATCH --time=" + walltime)
     lines.append("#SBATCH --job-name=" + sliceName)
+    lines.append("")
+    lines.append("for i in `seq 1 $SLURM_NTASKS`")
+    lines.append("do")
+    lines.append("\tsrun --nodes=1 --ntasks=1 --cpus-per-task=1 " + 
+                 "sh -c "(sh slurm_$i.sh)" &")
+    lines.append("done")
+    lines.append("wait")
+
+    with open(repeatDir + "/srun.slurm") as slurmFile:
+        for line in lines:
+            slurmFile.write(line + "\n")
+
+
+def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit, repeatDir, reportLines):
+    """
+    Create a slurm slice and write to a file with the info provided
+    """
+
+    lines = []
+    lines.append("#!/bin/bash")
     lines.append("")
     lines.append("ICMHOME=/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b")
     lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
@@ -352,13 +374,13 @@ def slurmSlice(walltime, sliceName, projName, thor,
                  " >& " + projName + "_" + str(upperLimit) + ".ou")
 
     # WRITE SLURM LINES TO FILE
-    slurmFile = open(repeatDir + sliceName + ".slurm", "w")
-    for line in lines:
-        slurmFile.write(line + "\n")
-    slurmFile.close()
+    with open(repeatDir + "slurm_" + sliceCount + ".sh", "w") as sliceFile:
+        for line in lines:
+            sliceFile.write(line + "\n")
 
     # Update report
-    reportLines.append("\t SLICE:" + sliceName + ".slurm")
+    reportLines.append("\tproject: " + projName + ", repeat:" + repeatDir +
+                       ", slice:" + sliceCount)
 
     return reportLines
 
