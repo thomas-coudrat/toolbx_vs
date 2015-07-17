@@ -327,32 +327,34 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
         # Update the repeat number
         repeat += 1
 
-        slurmSrun(walltime, repeatDir, sliceCount)
+        slurmSrun(projName, walltime, repeatDir, repeat, sliceCount - 1)
 
     return reportLines
 
 
-def slurmSrun(walltime, repeatDir, sliceCount):
+def slurmSrun(projName, walltime, repeatDir, repeat, sliceCount):
     """
     Create the srun SLURM script which will group all SLURM submissions together
     """
 
+    slurmName = projName + "_" + str(repeat)
+
     lines = []
     lines.append("#!/bin/bash")
     lines.append("#SBATCH -p main")
-    lines.append("#SBATCH --ntasks=1")
+    lines.append("#SBATCH --ntasks=" + str(sliceCount))
     lines.append("#SBATCH --mem-per-cpu=1024")
     lines.append("#SBATCH --time=" + walltime)
-    lines.append("#SBATCH --job-name=" + sliceName)
+    lines.append("#SBATCH --job-name=" + slurmName)
     lines.append("")
     lines.append("for i in `seq 1 $SLURM_NTASKS`")
     lines.append("do")
-    lines.append("\tsrun --nodes=1 --ntasks=1 --cpus-per-task=1 " + 
-                 "sh -c "(sh slurm_$i.sh)" &")
+    lines.append('\tsrun --nodes=1 --ntasks=1 --cpus-per-task=1 ' +
+                 'sh -c "(sh slice_$i.sh)" &')
     lines.append("done")
     lines.append("wait")
 
-    with open(repeatDir + "/srun.slurm") as slurmFile:
+    with open(repeatDir + "srun.slurm", "w") as slurmFile:
         for line in lines:
             slurmFile.write(line + "\n")
 
@@ -373,13 +375,14 @@ def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit, repeatDir, re
                  " >& " + projName + "_" + str(upperLimit) + ".ou")
 
     # WRITE SLURM LINES TO FILE
-    with open(repeatDir + "slurm_" + sliceCount + ".sh", "w") as sliceFile:
+    with open(repeatDir + "slice_" + str(sliceCount) + ".sh", "w") as sliceFile:
         for line in lines:
             sliceFile.write(line + "\n")
 
     # Update report
-    reportLines.append("\tproject: " + projName + ", repeat:" + repeatDir +
-                       ", slice:" + sliceCount)
+    reportLines.append("\tproject: " + projName +
+                       ", repeat:" + os.path.relpath(repeatDir) +
+                       ", slice:" + str(sliceCount))
 
     return reportLines
 
@@ -397,7 +400,7 @@ def pbsSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
     lines.append("#$ -q hqu9")
     lines.append("#$ -l dpod=1")
     lines.append("#$ -cwd")
-    lines.append("#$ -N " + sliceName)
+    lines.append("#$ -N " + str(sliceName))
     lines.append("")
     lines.append("ICMHOME=/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/")
     lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
