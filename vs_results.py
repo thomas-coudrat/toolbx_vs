@@ -85,7 +85,7 @@ def collectScoreData(vsDir, ligDict):
     Go through the repeat directories and collect the score data
     """
 
-    print "\nPARSING:\n"
+    print("\nPARSING:\n")
 
     maxRepeatNum = -1
 
@@ -111,7 +111,7 @@ def collectScoreData(vsDir, ligDict):
                 ligDockedNum += 1
                 parseScoreLine(ligDict, line, repeatNum)
 
-        print "\t", ouFilePath, "\t", ligDockedNum, "ligands"
+        print("\t" + ouFilePath + "\t" + str(ligDockedNum) + " ligands")
 
         # Update the repeat number in order to grab the max repeat number
         if maxRepeatNum < int(repeatNum):
@@ -179,8 +179,7 @@ def removeFailed(ligDict, totalRepeatNum, minRepeatNum):
     """
 
     # Get the max ligID of the docked ligands
-    ligIDs = ligDict.keys()
-    ligIDs.sort()
+    ligIDs = sorted(ligDict.keys())
     minLigID = ligIDs[0]
     maxLigID = ligIDs[-1]
     # Create a range list of IDs, stopping at the max
@@ -188,27 +187,28 @@ def removeFailed(ligDict, totalRepeatNum, minRepeatNum):
     rangeFlag = dict([(ligID, False) for ligID in rangeIDs])
     # print rangeFlag
 
-    print "\nINCOMPLETE DOCKINGS:\n"
+    print("\nINCOMPLETE DOCKINGS:\n")
 
-    keys = ligDict.keys()
-    for key in keys:
+    #keys = ligDict.keys()
+    for key in ligIDs:
         currRepeatNum = len(ligDict[key])
 
         # When the number of repeats found is not equal to the max number of
         # repeats expected
         if currRepeatNum != totalRepeatNum:
-            print "\tid:", key, "# of sucessful repeats:", currRepeatNum,
+            print("\tid:" + str(key) + "# of sucessful repeats:" +
+                  str(currRepeatNum))
             # For cases where a ligand was docked more than the defined repeat
             # number (when there was mistake in the VS setup)
             if currRepeatNum > totalRepeatNum:
-                print "(included)"
+                print("\t\t(included)")
             # For cases where the repeat number of a given ligand is above or
             # equal to the user defined minimum repeat number
             elif currRepeatNum >= minRepeatNum:
-                print "(included)"
+                print("\t\t(included)")
             # Otherwise delete the ligand's information from the list
             else:
-                print "(deleted)"
+                print("\t\t(deleted)")
                 del ligDict[key]
 
         # Flag the current ligID when it is found
@@ -217,11 +217,11 @@ def removeFailed(ligDict, totalRepeatNum, minRepeatNum):
 
     for key in rangeFlag.keys():
         if rangeFlag[key] is False:
-            print "\tid:", key, "# of successful repeats: 0 (not included)"
+            print("\tid:", key, "# of successful repeats: 0 (not included)")
 
-    print "\nSUMMARY:\n"
+    print("\nSUMMARY:\n")
 
-    print "\tTotal ligands docked:", len(ligDict.keys())
+    print("\tTotal ligands docked:" + str(len(ligDict.keys())))
 
 
 def sortRepeats(ligDict):
@@ -262,17 +262,17 @@ def writeResultFile(ligDict, projName, vsDir, allRep):
     # Sort the vsResult based on score, for the sorted full VS result
     vsResult = sorted(vsResult, key=lambda lig: lig[9])
 
-    print "\nWRITING:\n"
+    print("\nWRITING:\n")
 
     # Create results file
-    print "\tresults_" + projName + ".csv"
+    print("\tresults_" + projName + ".csv")
     fileResult = open(vsDir + "/results_" + projName + ".csv", "w")
     fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf" +
                      ",dEel,dEhp,Score,mfScore,Name,Run#\n")
 
     # Create all results file, if flag was used
     if allRep:
-        print "\tall_results_" + projName + ".csv"
+        print("\tall_results_" + projName + ".csv")
         fileResultAll = open(vsDir + "/all_results_" + projName + ".csv", "w")
         fileResultAll.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf" +
                             ",dEel,dEhp,Score,mfScore,Name,Run#\n")
