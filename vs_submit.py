@@ -36,7 +36,8 @@ def main():
     # Store all queueing scripts to be submitted in this directory
     queuePaths = getQueueScripts(vsDir, queue)
 
-    print "\n SUBMITTING", str(len(queuePaths)), "JOBS: \n"
+    # Ask for confirmation to submit run
+    confirmSubmit(queuePaths)
 
     # Submit all those scripts (using the proper queueing system)
     submitQueueScripts(queuePaths, cwd, queue)
@@ -58,6 +59,23 @@ def parsing():
     vsDir = args.vsDir
 
     return vsDir
+
+
+def confirmSubmit(queuePaths):
+    """
+    Ask for user input confirmation to submit the jobs, listing information
+    on what is about to be submitted
+    """
+
+    print "\nYou are about to submit " + str(len(queuePaths)) + " jobs."
+
+    answer = raw_input("Do you want to proceed? (yes/no) ")
+
+    if answer == "yes":
+        print("\nSubmitting jobs...\n")
+    else:
+        print("Quit...\n")
+        sys.exit()
 
 
 def getQueuingSys():
