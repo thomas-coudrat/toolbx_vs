@@ -91,10 +91,10 @@ def parseArgs():
         pocket = "1"
 
     if not pocketMap and not ligandMap:
-        print "A map mode must be selected, either -pocketMap or -ligandMap"
+        print("A map mode must be selected, either -pocketMap or -ligandMap")
         sys.exit()
     elif pocketMap and ligandMap:
-        print "Only one of -pocketMap or -ligandMap options must be selected"
+        print ("Only one of -pocketMap or -ligandMap options must be selected")
         sys.exit()
     elif pocketMap:
         mapMode = "pocket"
@@ -211,8 +211,8 @@ def runScript(icm, script):
     # Execute
     try:
         check_output(icm + " -s " + script, stderr=STDOUT, shell=True)
-    except CalledProcessError, e:
-        print e.output
+    except CalledProcessError as e:
+        print(e.output)
         sys.exit()
 
     # Delete temp script
