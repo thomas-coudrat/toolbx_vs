@@ -312,8 +312,9 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
             # Create a slice, check for submission system, run the appropriate
             # command
             if queue == "slurm":
-                reportLines = slurmSlice(sliceCount, projName, thor, libStart, libEnd,
+                reportLines = slurmSlice(sliceCount, projName, thor,
                                          lowerLimit, upperLimit,
+                                         libStart, libEnd,
                                          repeatDir, reportLines)
             elif queue == "pbs":
                 reportLines = pbsSlice(walltime, sliceName, projName, thor,
@@ -340,7 +341,7 @@ def slurmSrun(projName, libStart, libEnd,  walltime, repeatDir, repeat, sliceCou
 
     slurmName = projName + "_" + str(repeat)
 
-    startEnd = str(libStart) + "-" + str(libEnd) + "_"
+    libRange = str(libStart) + "-" + str(libEnd)
 
     lines = []
     lines.append("#!/bin/bash")
@@ -353,11 +354,10 @@ def slurmSrun(projName, libStart, libEnd,  walltime, repeatDir, repeat, sliceCou
     lines.append("for i in `seq 1 $SLURM_NTASKS`")
     lines.append("do")
     lines.append('\tsrun --nodes=1 --ntasks=1 --cpus-per-task=1 ' +
-                 'sh -c "(sh slice_' + startEnd + '$i.sh)" &')
+                 'sh -c "(sh slice_' + libRange + '_$i.sh)" &')
     lines.append("done")
     lines.append("wait")
 
-    libRange = str(libStart) + "-" + str(libEnd)
     with open(repeatDir + "srun_" + libRange  + ".slurm", "w") as slurmFile:
         for line in lines:
             slurmFile.write(line + "\n")
