@@ -54,8 +54,8 @@ def parseArgs():
     """
 
     # Definition of the arguments
-    descr = "Creates maps for VS with ICM, requires target in .ob and " \
-            "library index in .inx format"
+    descr = "Creates maps for VS with ICM, requires target in .ob as an ICM " \
+            "object and library index in .inx format"
     descr_obPath = "Provide the path to the .ob file containing the target " \
                    "for the VS"
     descr_inxPath = "Provide the path to the .inx index to the ligand " \
