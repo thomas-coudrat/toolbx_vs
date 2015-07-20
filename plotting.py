@@ -155,7 +155,7 @@ class plotting:
             bpName = os.path.basename(resultPath)
             if len(notDockedLigIDlist) > 0:
                 print("\n" + bpName + col.blue +
-                      " missing the following ligands:" + col.end + "\t" + 
+                      " missing the following ligands:" + col.end + "\t" +
                       str(notDockedLigIDlist))
 
 
@@ -694,10 +694,25 @@ class plotting:
             # Plotting totals in white bars
             barTots = ax_bar.bar(ind + i*(width), efTotals, width,
                                  alpha=0.7, color="white", align="center")
+
             # Plotting bar (with matching color and hatch)
             bars = ax_bar.bar(ind + i*(width), efData, width,
                               alpha=0.7, color=color, align="center",
                               hatch=hatch)
+
+            # Calculating and writing percentages above each batTots
+            for totalRect, valueRect in zip(barTots, bars):
+                total = totalRect.get_height()
+                x = totalRect.get_x()
+                y = totalRect.get_y()
+                value = valueRect.get_height()
+                percent = str(round(value/total*100, 2)) + " %"
+                #print("Percentage:" + percent)
+                ax_bar.text(x + 0.08, total + 0.5, percent,
+                            fontsize=8, color="black",
+                            verticalalignment="bottom",
+                            horizontalalignment="right",
+                            rotation=90)
 
             # Keep the max Y total value to set the Y limit
             maxYcurrent = max(efTotals[0], efTotals[1], efTotals[2])
