@@ -433,7 +433,7 @@ class plotting:
 
         ax.minorticks_on()
         ax.tick_params(axis="both", which="major", labelsize=30)
-        ax.set_title(title, fontsize=30)
+        ax.set_title(title, fontsize=35, y=1.08)
         ax.legend(loc="upper left", prop={'size': 30})
         ax.axis('tight')
         # Needed when plotting scatterplots (redundant for plotting lines)
@@ -461,8 +461,13 @@ class plotting:
         if gui:
             plt.show()
         else:
-            fileName = title.replace(" ", "_") + ".png"
-            plt.savefig(fileName, bbox_inches="tight")
+            fileName = title.replace(" ", "_")
+            # Save png version
+            plt.savefig(fileName + ".png", bbox_inches="tight",
+                        format="png")
+            # Save pdf version
+            plt.savefig(fileName + ".pdf", bbox_inches="tight",
+                        format="pdf", dpi=1200)
 
 
     def drawLine(self, ax, ax2, plotDatum, i, zoom, scalarMap, mode):
@@ -511,10 +516,10 @@ class plotting:
         # Plot a vertical line for each refinement ligand
         for ligName in refPlot.keys():
             xPos, yPos = refPlot[ligName]
-            ax.axvline(x=xPos, ymax=yPos/100., color=color,
+            ax.axvline(x=xPos, ymax=yPos/100., color=color, alpha=0.7,
                        linewidth=3, linestyle='--')
             # print ligName, xPos, yPos
-            ax.text(xPos, -2, ligName, rotation=-70,
+            ax.text(xPos, -2, ligName, rotation=-70, alpha=0.7, fontsize=20,
                     color=color, transform=ax.transData)
 
         return X, Y
@@ -722,6 +727,7 @@ class plotting:
             allBars.append(bars)
 
         # Setting ticks and limits
+        ax_bar.set_title(title, fontsize=35, y=1.08)
         ax_bar.set_xticks(ind + (efNumber * width)/2)
         ax_bar.set_yticks(np.arange(0, maxY+1, 5))
         ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
@@ -766,10 +772,18 @@ class plotting:
         if gui:
             plt.show()
         else:
-            barFile = title.replace(" ", "_") + "_bar.png"
-            legFile = title.replace(" ", "_") + "_barLeg.png"
-            fig_bar.savefig(barFile, bbox_inches="tight")
-            fig_leg.savefig(legFile, bbox_inches="tight")
+            barFile = title.replace(" ", "_") + "_bar"
+            legFile = title.replace(" ", "_") + "_barLeg"
+            # Save png versions
+            fig_bar.savefig(barFile + ".png", bbox_inches="tight",
+                            format="png")
+            fig_leg.savefig(legFile + ".png", bbox_inches="tight",
+                            format="png")
+            # Save pdf versions
+            fig_bar.savefig(barFile + ".pdf", bbox_inches="tight",
+                            format="pdf", dpi=1200)
+            fig_leg.savefig(legFile + ".pdf", bbox_inches="tight",
+                            format="pdf", dpi=1200)
 
 
     def extractLigTypeData(self, percentPaths, vsLegends,
