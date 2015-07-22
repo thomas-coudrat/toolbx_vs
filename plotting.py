@@ -391,7 +391,8 @@ class plotting:
             ax2 = None
 
         # Create a scalar map matching the data to be plotted
-        scalMapPlot = self.getColorMap("spectral", plotData)
+        # nonXrayPockets = [p for p in plotData if "X-ray" not in p]
+        scalMapPlot = self.getColorMap("jet", plotData)
 
         # Drawing data on the figure
         for i, plotDatum in enumerate(plotData):
@@ -433,7 +434,7 @@ class plotting:
 
         ax.minorticks_on()
         ax.tick_params(axis="both", which="major", labelsize=30)
-        ax.set_title(title, fontsize=35, y=1.08)
+        # ax.set_title(title, fontsize=35, y=1.08)
         ax.legend(loc="upper left", prop={'size': 30})
         ax.axis('tight')
         # Needed when plotting scatterplots (redundant for plotting lines)
@@ -659,7 +660,8 @@ class plotting:
                 ligLibHatches[lig_lib_name] = ""
 
         # Create a scalar map matching the binding pockets to be plotted
-        scalMapEF = self.getColorMap("spectral", pocketNames)
+        #nonXrayPockets = [p for p in pocketNames if "X-ray" not in p]
+        scalMapEF = self.getColorMap("jet", pocketNames)
 
         # Go through a sorted list of the pocket-ligType combinations
         allBars = []
@@ -727,7 +729,7 @@ class plotting:
             allBars.append(bars)
 
         # Setting ticks and limits
-        ax_bar.set_title(title, fontsize=35, y=1.08)
+        # ax_bar.set_title(title, fontsize=35, y=1.08)
         ax_bar.set_xticks(ind + (efNumber * width)/2)
         ax_bar.set_yticks(np.arange(0, maxY+1, 5))
         ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
@@ -765,8 +767,8 @@ class plotting:
                                       facecolor="white"))
             legNames.append(hatchKey)
         # Create the custom figure legend
-        plt.figlegend(legRects, legNames,
-                      loc="upper left", prop={'size': 30})
+        plt.figlegend(legRects, legNames, prop={'size': 30},
+                      loc="center")
 
         # Display or save barchart and legend
         if gui:
