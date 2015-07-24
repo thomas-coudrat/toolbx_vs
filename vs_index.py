@@ -122,15 +122,14 @@ def executeScript(icm, scriptPath, sdfFile):
     Execute the index.icm script
     """
 
-    print
-    print "CREATING .INX FOR:", sdfFile
-    print
+    print("\nCREATING .INX FOR:" + sdfFile + "\n")
+
     # Execute
     try:
         check_output(icm + " -s " + scriptPath, stderr=STDOUT, shell=True)
-    except CalledProcessError, e:
-        print "\n Error executing the ICM script"
-        print e.output
+    except CalledProcessError as e:
+        print("\n Error executing the ICM script")
+        print(e.output)
         sys.exit()
     # Delete
     os.remove("./temp.icm")

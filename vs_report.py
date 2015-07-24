@@ -20,9 +20,7 @@ def main():
     # Setting up variables
     workDir = os.getcwd()
 
-    print
-    print "************************"
-    print
+    print("\n************************\n")
 
     specs, skipCount = loopOverRepeats(workDir)
 
@@ -83,7 +81,7 @@ def printCompleted(subDir, scoreCount):
     Print the score count for the current VS repeat
     """
 
-    print "SCORE COUNT FOR", subDir, ":", str(scoreCount)
+    print("SCORE COUNT FOR " + subDir + ": " + str(scoreCount))
 
 
 def countSkipped(line, specs, skipCount):
@@ -135,18 +133,17 @@ def printSkipped(specs, skipCount):
     """
     # Print out the result
     keys = specs.keys()
- 
-    print
-    print "************************"
-    print "THERE WERE", skipCount, "LIGANDS SKIPPED:"
-    print
+
+    print("\n************************")
+    print("THERE WERE", skipCount, "LIGANDS SKIPPED:\n")
 
     for key in keys:
-        print key
-        print "MIN:{:>10} \t MAX:{:>10} \t COUNT:{:>10}".format(specs[key][0], specs[key][1], specs[key][2])
+        print(key)
+        print("MIN:{:>10} \t MAX:{:>10} \t COUNT:{:>10}".format(specs[key][0],
+                                                                specs[key][1],
+                                                                specs[key][2]))
         #print key, "| MIN:", [0], ", MAX:", specs[key][1], ", COUNT:", specs[key][2]
-    print
-
+    print("\n")
 
 def printSlurmOuts(workDir):
     """
@@ -154,9 +151,8 @@ def printSlurmOuts(workDir):
     they contain errors that might have occured
     """
 
-    print "************************"
-    print "ERRORS?"
-    print
+    print("\n************************")
+    print("ERRORS?\n")
 
     # Loop through the directories in this VS
     for subDir in os.listdir(workDir):
@@ -173,10 +169,10 @@ def printSlurmOuts(workDir):
                 slurmOutFile.close()
 
                 if len(slurmLines) > 0:
-                    print slurmOutPath
+                    print(slurmOutPath)
                     for line in slurmLines:
-                        print line
-    print
+                        print(line)
+    print("\n")
 
 
 if __name__ == "__main__":
