@@ -434,7 +434,7 @@ class plotting:
 
         ax.minorticks_on()
         ax.tick_params(axis="both", which="major", labelsize=30)
-        # ax.set_title(title, fontsize=35, y=1.08)
+        ax.set_title(title, fontsize=35, y=1.08)
         ax.legend(loc="upper left", prop={'size': 30})
         ax.axis('tight')
         # Needed when plotting scatterplots (redundant for plotting lines)
