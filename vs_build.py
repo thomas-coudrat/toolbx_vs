@@ -179,11 +179,11 @@ def cleanRepeatDir(repeatDir):
     if len(filePaths) > 0:
 
         # Displaying existing files
-        print "\n#### VS files were found in this directory ####\n"
-        print repeatDir
+        print("\n#### VS files were found in this directory ####\n")
+        print(repeatDir)
         for filePath in filePaths:
-            print "\t" + os.path.basename(filePath)
-        print
+            print("\t" + os.path.basename(filePath))
+        print("\n")
 
         # Prompting for removal
         answer = raw_input('Three options:\n' +
@@ -195,13 +195,13 @@ def cleanRepeatDir(repeatDir):
                            'per repeat dir\n\n'
                            'abort/delete/keep/backup? (default=abort) ')
         if answer == "delete":
-            print "DELETING PREVIOUS FILES..."
+            print("DELETING PREVIOUS FILES...")
             for filePath in filePaths:
                 os.remove(filePath)
         elif answer == "keep":
-            print "CONTINUE WITHOUT DELETING FILES..."
+            print("CONTINUE WITHOUT DELETING FILES...")
         elif answer == 'backup':
-            print "BACKING UP FILES..."
+            print("BACKING UP FILES...")
             t = time.time()
             humanTime = datetime.datetime.fromtimestamp(int(t)).strftime('%Y-%m-%d_%H:%M:%S')
             backupDir = repeatDir + "/backup_" + humanTime
@@ -209,7 +209,7 @@ def cleanRepeatDir(repeatDir):
             for filePath in filePaths:
                 shutil.move(filePath, backupDir)
         else:
-            print "NOT DELETING, QUIT..."
+            print("NOT DELETING, QUIT...")
             sys.exit()
 
 
@@ -436,7 +436,7 @@ def printWriteReport(reportLines, workDir, projName):
     reportFile = open(workDir + "/" + projName + ".log", "w")
 
     for line in reportLines:
-        print line
+        print(line)
         reportFile.write(line + "\n")
 
     reportFile.close()
