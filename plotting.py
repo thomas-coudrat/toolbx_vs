@@ -384,6 +384,9 @@ class plotting:
         fig = plt.figure(figsize=(13, 12), dpi=100)
         ax = fig.add_subplot(111)
 
+        lineWidth = 4
+        alphaVal = 0.8
+
         # Create the ZOOMED graph, if requested
         if zoom != 0.0:
             ax2 = plt.axes([.17, .35, .2, .2])
@@ -396,7 +399,8 @@ class plotting:
 
         # Drawing data on the figure
         for i, plotDatum in enumerate(plotData):
-            X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom, scalMapPlot, mode)
+            X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom,
+                                 scalMapPlot, mode, lineWidth, alphaVal)
 
         # Plot the scatter data if it was provided (only for plot_type)
         if scatterData:
@@ -416,10 +420,12 @@ class plotting:
         # along the x axis
         if mode in ("enrich", "type"):
             yPerfect = self.formulaPerfect(xValues, libraryCount, truePosCount)
-            ax.plot(xValues, yPerfect, "--", color="grey", alpha=0.7)
+            ax.plot(xValues, yPerfect, "--", color="grey",
+                    alpha=alphaVal, linewidth=lineWidth)
 
         yRandom = self.formulaRandom(xValues)
-        ax.plot(xValues, yRandom, ":", color="grey", alpha=0.7)
+        ax.plot(xValues, yRandom, ":", color="grey",
+                alpha=alphaVal, linewidth=lineWidth)
 
         # Plot the RANDOM and PERFECT curves on the zoomed and main graph
         if zoom != 0.0:
@@ -471,7 +477,8 @@ class plotting:
                         format="pdf", dpi=1200)
 
 
-    def drawLine(self, ax, ax2, plotDatum, i, zoom, scalarMap, mode):
+    def drawLine(self, ax, ax2, plotDatum, i, zoom, scalarMap,
+                 mode, lineWidth, alphaVal):
         """
         Draw the line corresponding to the set of data passed in arguments
         """
@@ -486,13 +493,10 @@ class plotting:
         # colors defined by the colormap
         if i == 0 and "X-ray" in plotLegend:
             color = 'black'
-            lw = 2
         elif i == 1 and "X-ray" in plotLegend:
             color = 'grey'
-            lw = 2
         else:
             color = scalarMap.to_rgba(i)
-            lw = 2
 
         # Plot this curve: scatter plot if plotting type, curves otherwise
         if mode in ("type"):
@@ -503,12 +507,12 @@ class plotting:
             X = [0.0] + X
             Y = [0.0] + Y
             ax.plot(X, Y, label=plotLegend,
-                    linewidth=1, color=color, alpha=0.7)
+                    linewidth=lineWidth, color=color, alpha=alphaVal)
         elif mode in ("enrich", "ROC"):
             X = [0.0] + X
             Y = [0.0] + Y
             ax.plot(X, Y, label=plotLegend,
-                    linewidth=lw, color=color, alpha=0.7)
+                    linewidth=lineWidth, color=color, alpha=alphaVal)
 
         # Plot a blow up of the first X%
         if zoom != 0.0:
@@ -517,11 +521,11 @@ class plotting:
         # Plot a vertical line for each refinement ligand
         for ligName in refPlot.keys():
             xPos, yPos = refPlot[ligName]
-            ax.axvline(x=xPos, ymax=yPos/100., color=color, alpha=0.7,
-                       linewidth=3, linestyle='--')
+            ax.axvline(x=xPos, ymax=yPos/100., color=color, alpha=alphaVal,
+                       linewidth=lineWidth, linestyle='--')
             # print ligName, xPos, yPos
-            ax.text(xPos, -2, ligName, rotation=-70, alpha=0.7, fontsize=20,
-                    color=color, transform=ax.transData)
+            ax.text(xPos, -4, ligName, rotation=-70, alpha=alphaVal,
+                    fontsize=30, color=color, transform=ax.transData)
 
         return X, Y
 
