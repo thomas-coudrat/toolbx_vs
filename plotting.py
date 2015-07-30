@@ -380,12 +380,15 @@ class plotting:
 
         print(col.head + "\n\t*PLOTTING DATA*" + col.end)
 
-        # Setting up the figure
-        fig = plt.figure(figsize=(13, 12), dpi=100)
-        ax = fig.add_subplot(111)
-
+        dpiVal = 200
         lineWidth = 4
         alphaVal = 0.8
+
+        # Setting up the figure
+        fig = plt.figure(figsize=(13, 12), dpi=dpiVal)
+        ax = fig.add_subplot(111)
+
+
 
         # Create the ZOOMED graph, if requested
         if zoom != 0.0:
@@ -471,10 +474,10 @@ class plotting:
             fileName = title.replace(" ", "_")
             # Save png version
             plt.savefig(fileName + ".png", bbox_inches="tight",
-                        format="png")
+                        format="png", dpi=dpiVal)
             # Save pdf version
             plt.savefig(fileName + ".pdf", bbox_inches="tight",
-                        format="pdf", dpi=1200)
+                        format="pdf", dpi=dpiVal)
 
 
     def drawLine(self, ax, ax2, plotDatum, i, zoom, scalarMap,
@@ -504,13 +507,13 @@ class plotting:
             # ax.scatter(X, Y, linewidth=1, color='black')
             # Then draw line that starts from the origin and goes through
             # each of the scatter dots plotted above
-            X = [0.0] + X
-            Y = [0.0] + Y
+            # X = [0.0] + X
+            # Y = [0.0] + Y
             ax.plot(X, Y, label=plotLegend,
                     linewidth=lineWidth, color=color, alpha=alphaVal)
         elif mode in ("enrich", "ROC"):
-            X = [0.0] + X
-            Y = [0.0] + Y
+            # X = [0.0] + X
+            # Y = [0.0] + Y
             ax.plot(X, Y, label=plotLegend,
                     linewidth=lineWidth, color=color, alpha=alphaVal)
 
@@ -637,8 +640,11 @@ class plotting:
         """
         print(col.head + "\n\t*PLOTTING BAR GRAPH DATA*" + col.end)
 
+        dpiVal = 200
+        alphaVal = 0.8
+
         # Setting up the barchart figure
-        fig_bar = plt.figure(figsize=(13, 12), dpi=100)
+        fig_bar = plt.figure(figsize=(30, 12), dpi=dpiVal)
         ax_bar = fig_bar.add_subplot(111)
 
         # Default values
@@ -704,11 +710,11 @@ class plotting:
 
             # Plotting totals in white bars
             barTots = ax_bar.bar(ind + i*(width), efTotals, width,
-                                 alpha=0.7, color="white", align="center")
+                                 alpha=alphaVal, color="white", align="center")
 
             # Plotting bar (with matching color and hatch)
             bars = ax_bar.bar(ind + i*(width), efData, width,
-                              alpha=0.7, color=color, align="center",
+                              alpha=alphaVal, color=color, align="center",
                               hatch=hatch)
 
             # Calculating and writing percentages above each batTots
@@ -719,8 +725,8 @@ class plotting:
                 value = valueRect.get_height()
                 percent = str(round(value/total*100, 2)) + " %"
                 #print("Percentage:" + percent)
-                ax_bar.text(x + 0.08, total + 0.5, percent,
-                            fontsize=8, color="black",
+                ax_bar.text(x + 0.075, total + 0.5, percent,
+                            fontsize=20, color="black",
                             verticalalignment="bottom",
                             horizontalalignment="right",
                             rotation=90)
@@ -733,18 +739,18 @@ class plotting:
             allBars.append(bars)
 
         # Setting ticks and limits
-        # ax_bar.set_title(title, fontsize=35, y=1.08)
+        ax_bar.set_title(title, fontsize=35, y=1.08)
         ax_bar.set_xticks(ind + (efNumber * width)/2)
-        ax_bar.set_yticks(np.arange(0, maxY+1, 5))
+        ax_bar.set_yticks(np.arange(0, maxY*1.20, 5))
         ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
         ax_bar.tick_params(axis="both", which="major", labelsize=30)
         # Set the upperlimit at 10% more than the maximum value of the graph
-        ax_bar.set_ylim(0, maxY * 1.10)
+        ax_bar.set_ylim(0, maxY * 1.20)
         # Set margins left and right of the bar groups
         ax_bar.margins(x=.1)
 
         # Setting legend
-        fig_leg = plt.figure(dpi=100)
+        #fig_leg = plt.figure(dpi=dpiVal)
 
         # Generate the two lists that store the custom legend information
         # This could have been done in the for loop above, but is abstracted
@@ -771,25 +777,27 @@ class plotting:
                                       facecolor="white"))
             legNames.append(hatchKey)
         # Create the custom figure legend
-        plt.figlegend(legRects, legNames, prop={'size': 30},
-                      loc="center")
+        #plt.figlegend(legRects, legNames, prop={'size': 30},
+        #              loc="center")
+        ax_bar.legend(legRects, legNames,
+                      loc="upper left", prop={"size": 30})
 
         # Display or save barchart and legend
         if gui:
             plt.show()
         else:
-            barFile = title.replace(" ", "_") + "_bar"
-            legFile = title.replace(" ", "_") + "_barLeg"
+            barFile = title.replace(" ", "_")
+            #legFile = title.replace(" ", "_") + "_barLeg"
             # Save png versions
             fig_bar.savefig(barFile + ".png", bbox_inches="tight",
-                            format="png")
-            fig_leg.savefig(legFile + ".png", bbox_inches="tight",
-                            format="png")
+                            format="png", dpi=dpiVal)
+            #fig_leg.savefig(legFile + ".png", bbox_inches="tight",
+            #                format="png", dpi=dpiVal)
             # Save pdf versions
             fig_bar.savefig(barFile + ".pdf", bbox_inches="tight",
-                            format="pdf", dpi=1200)
-            fig_leg.savefig(legFile + ".pdf", bbox_inches="tight",
-                            format="pdf", dpi=1200)
+                            format="pdf", dpi=dpiVal)
+            #fig_leg.savefig(legFile + ".pdf", bbox_inches="tight",
+            #                format="pdf", dpi=dpiVal)
 
 
     def extractLigTypeData(self, percentPaths, vsLegends,
