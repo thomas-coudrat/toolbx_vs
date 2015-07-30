@@ -91,8 +91,8 @@ def main():
     yAxisName = "% of known ligands found (total=" + str(truePosCount) + ")"
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
-    p.plot(title, plotData, libraryCount, truePosCount, xLim, yLim,
-           xAxisName, yAxisName, gui, log, zoom, mode, scatterData)
+    # p.plot(title, plotData, libraryCount, truePosCount, xLim, yLim,
+    #        xAxisName, yAxisName, gui, log, zoom, mode, scatterData)
 
     # Plot the barplot represeting the enrochment factors (EFs) in known ligands
     # at 0.1 %, 1 % and 10 % of the screened library
