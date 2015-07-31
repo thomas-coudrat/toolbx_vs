@@ -12,7 +12,7 @@ def main():
     """
 
     title, vsLegends, vsPaths, \
-        truePosIDstr, trueNegIDstr, ref, gui = parseArgs()
+        truePosIDstr, trueNegIDstr, xAxisName, yAxisName, ref, gui = parseArgs()
 
     # Define mode
     mode = "ROC"
@@ -77,8 +77,8 @@ def main():
     # p.getAUC_NSQ(plotData, perfect)
 
     # Define title and axis names based on mode
-    xAxisName = "% true negatives (total=" + str(trueNegCount) + ")"
-    yAxisName = "% true positives (total=" + str(truePosCount) + ")"
+    yAxisName = yAxisName + " (total=" + str(truePosCount) + ")"
+    xAxisName = xAxisName + " (total=" + str(trueNegCount) + ")"
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plot(title, plotData, libraryCount, truePosCount,
@@ -107,6 +107,8 @@ def parseArgs():
         " lib (format: 1-514,6001,6700-6702)"
     descr_trueNegIDstr = "Provide the IDs of true negative ligands" \
         " lib (format: 1-514,6001,6700-6702)"
+    descr_yAxisName = "Name of the Y-axis in the ROC curve"
+    descr_xAxisName = "Name of the X-axis in the ROC curve"
     descr_ref = "Refinement ligand(s) used on this GPCR binding pocket" \
         " refinement. Provide ligand name and ID in the following format:" \
         " lig1:328,lig2:535"
@@ -118,6 +120,8 @@ def parseArgs():
     parser.add_argument("results", help=descr_results, nargs="+")
     parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
     parser.add_argument("trueNegIDstr", help=descr_trueNegIDstr)
+    parser.add_argument("yAxisName", help=descr_yAxisName)
+    parser.add_argument("xAxisName", help=descr_xAxisName)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
     parser.add_argument("--ref", help=descr_ref)
 
@@ -127,6 +131,8 @@ def parseArgs():
     results = args.results
     truePosIDstr = args.truePosIDstr
     trueNegIDstr = args.trueNegIDstr
+    yAxisName = args.yAxisName
+    xAxisName = args.xAxisName
     ref = args.ref
     gui = args.gui
 
@@ -140,7 +146,7 @@ def parseArgs():
         i += 2
 
     return title, vsLegends, vsPaths, \
-        truePosIDstr, trueNegIDstr, ref, gui
+        truePosIDstr, trueNegIDstr, xAxisName, yAxisName, ref, gui
 
 if __name__ == "__main__":
     main()
