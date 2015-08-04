@@ -26,7 +26,7 @@ def main():
     icm = getPath()
 
     # Get the arguments
-    obPath, inxPath, mapMode, pocket = parseArgs()
+    obPath, inxPath, dbType, mapMode, pocket = parseArgs()
 
     # Generate script (will return the script relevant to the mode chosen)
     script = generateScript(mapMode, obPath, pocket, icm)
@@ -40,12 +40,17 @@ def main():
     modifyDtb("i_maxNO", "  20", obPath)
     modifyDtb("i_maxTorsion", "  20", obPath)
     modifyDtb("i_ringFlexLevel", "  1", obPath)
-    modifyDtb("l_sampleRacemic", "  yes", obPath)
     modifyDtb("r_ScoreThreshold", "  -20", obPath)
     modifyDtb("r_maxPk", "  15", obPath)
     modifyDtb("r_minPk", "  -10", obPath)
     modifyDtb("s_chargeGroups", "  auto", obPath)
     modifyDtb("s_dbIndex", inxPath, obPath)
+    if dbType == "3D":
+        modifyDtb("s_dbType", "mol 3D", obPath)
+        modifyDtb("l_sampleRacemic", "  no", obPath)
+    elif dbType == "2Drac":
+        modifyDtb("s_dbType", "mol 2D", obPath)
+        modifyDtb("l_sampleRacemic", "  yes", obPath)
 
 
 def parseArgs():
@@ -60,6 +65,8 @@ def parseArgs():
                    "for the VS"
     descr_inxPath = "Provide the path to the .inx index to the ligand " \
                     "to be used for this VS"
+    descr_dbType = "Database type: '3D' for 3D chiral compounds or '2Drac' " \
+                   " for 2D racemic compounds, to be sampled"
     descr_pocketMap = "Use this flag if the maps are to be created using" \
                       " the ICMpocketFinder method"
     descr_ligandMap = "Use this flag if the maps are to be created using" \
@@ -74,6 +81,7 @@ def parseArgs():
     parser.add_argument("inxPath", help=descr_inxPath)
     parser.add_argument("-pocketMap", action="store_true",
                         help=descr_pocketMap)
+    parser.add_argument("dbType", help=descr_dbType)
     parser.add_argument("-ligandMap", action="store_true",
                         help=descr_ligandMap)
     parser.add_argument("--pocket", help=descr_pocket)
@@ -82,6 +90,7 @@ def parseArgs():
     # Store arguments
     obPath = args.obPath
     inxPath = args.inxPath
+    dbType = args.dbType
     pocketMap = args.pocketMap
     ligandMap = args.ligandMap
     pocket = args.pocket
@@ -101,7 +110,11 @@ def parseArgs():
     elif ligandMap:
         mapMode = "ligand"
 
-    return obPath, inxPath, mapMode, pocket
+    if dbType not in ("3D", "2Drac"):
+        print("For the ligand database type, use either '3D' or '2Drac'")
+        sys.exit()
+
+    return obPath, inxPath, dbType, mapMode, pocket
 
 
 def getPath():
