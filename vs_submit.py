@@ -64,7 +64,7 @@ def parsing():
     vsDir = args.vsDir
     queue = args.queue
 
-    if queue not in ("sge", slurm):
+    if queue not in ("sge", "slurm"):
         print("Only 'sge' and 'slurm' are accepted queuing system options")
         sys.exit()
 
