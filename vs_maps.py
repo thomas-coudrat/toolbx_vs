@@ -65,13 +65,13 @@ def parseArgs():
                    "for the VS"
     descr_inxPath = "Provide the path to the .inx index to the ligand " \
                     "to be used for this VS"
+    descr_mapMode = "Choose map creation mode: 'ligand' create a map around " \
+                    "bound ligand (on object containing ligand). Deletes " \
+                    "ligand." \
+                    "'pocket' searches for binding pocket using " \
+                    "ICMpocketFinder (on object not containing ligand)."
     descr_dbType = "Database type: '3D' for 3D chiral compounds or '2Drac' " \
                    " for 2D racemic compounds, to be sampled"
-    descr_pocketMap = "Use this flag if the maps are to be created using" \
-                      " the ICMpocketFinder method"
-    descr_ligandMap = "Use this flag if the maps are to be created using" \
-                      " the residues around the bound ligand (also deletes " \
-                      "the ligand)"
     descr_pocket = "Define the pocket number to use (determined by " \
                    "ICMpocket finder). Default is pocket #1."
 
@@ -79,11 +79,8 @@ def parseArgs():
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("obPath", help=descr_obPath)
     parser.add_argument("inxPath", help=descr_inxPath)
-    parser.add_argument("-pocketMap", action="store_true",
-                        help=descr_pocketMap)
     parser.add_argument("dbType", help=descr_dbType)
-    parser.add_argument("-ligandMap", action="store_true",
-                        help=descr_ligandMap)
+    parser.add_argument("mapMode", help=descr_mapMode)
     parser.add_argument("--pocket", help=descr_pocket)
     args = parser.parse_args()
 
@@ -91,24 +88,16 @@ def parseArgs():
     obPath = args.obPath
     inxPath = args.inxPath
     dbType = args.dbType
-    pocketMap = args.pocketMap
-    ligandMap = args.ligandMap
+    mapMode = args.mapMode
     pocket = args.pocket
 
     # Deal with arguments
     if not pocket:
         pocket = "1"
 
-    if not pocketMap and not ligandMap:
-        print("A map mode must be selected, either -pocketMap or -ligandMap")
+    if mapMode not in ("ligand", "pocket"):
+        print ("Either use option 'pocket' or 'ligand' for map mode creation")
         sys.exit()
-    elif pocketMap and ligandMap:
-        print ("Only one of -pocketMap or -ligandMap options must be selected")
-        sys.exit()
-    elif pocketMap:
-        mapMode = "pocket"
-    elif ligandMap:
-        mapMode = "ligand"
 
     if dbType not in ("3D", "2Drac"):
         print("For the ligand database type, use either '3D' or '2Drac'")
