@@ -3,7 +3,7 @@
 # ----------------------------------------------------
 #
 #   Execute within a VS directory, will crawl through
-#   all its subdirs and submit all .slurm or .pbs
+#   all its subdirs and submit all .slurm or .sge
 #   files found there, while pausing for 1 second
 #   between each submission
 #
@@ -25,10 +25,10 @@ def main():
     """
 
     # Return the queuing system chosen
-    vsDir = parsing()
+    vsDir, queue = parsing()
 
     # Get the queuing system on this cluster
-    queue = getQueuingSys()
+    #queue = getQueuingSys()
 
     # Get the current working directory
     cwd = os.getcwd()
@@ -51,14 +51,24 @@ def parsing():
     """
 
     # Define and collect arguments
-    descr = "Submits a VS using either -slurm or -pbs queuing system"
+    descr = "Submits a VS using either -slurm or -sge queuing system"
     descr_vsDir = "VS directory to be submitted to the queue"
+    descr_queue = "Queuing system to be used (sge/slurm)"
+
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("vsDir", help=descr_vsDir)
-    args = parser.parse_args()
-    vsDir = args.vsDir
+    parser.add_argument("queue", help=descr_queue)
 
-    return vsDir
+    args = parser.parse_args()
+
+    vsDir = args.vsDir
+    queue = args.queue
+
+    if queue not in ("sge", slurm):
+        print("Only 'sge' and 'slurm' are accepted queuing system options")
+        sys.exit()
+
+    return vsDir, queue
 
 
 def confirmSubmit(queuePaths):
@@ -118,7 +128,7 @@ def getQueueScripts(vsDir, queue):
             files = os.listdir(path)
 
             # For each of these, save every file that ends with .slurm or
-            # .pbs in a list, by saving its full path
+            # .sge in a list, by saving its full path
             for file in files:
                 if file.endswith("." + queue):
                     queuePaths.append(os.path.join(path, file))
@@ -131,7 +141,7 @@ def submitQueueScripts(queuePaths, cwd, queue):
     Submit all the queueing scripts
     """
 
-    # Loop over the saved .slurm or .pbs paths
+    # Loop over the saved .slurm or .sge paths
     for queuePath in queuePaths:
 
         # Get the full path relative to the root
@@ -145,12 +155,12 @@ def submitQueueScripts(queuePaths, cwd, queue):
         # Change to that repeat directory
         # queuePath = os.path.joindir(cwd, queueDir)
         os.chdir(queueDir)
-        # And submit using either SLURM or PBS queueing
+        # And submit using either SLURM or SGE queueing
         # system depending on what was chosen
         if queue == "slurm":
             # print "sbatch " + queueFile
             os.system("sbatch " + queueFile)
-        elif queue == "pbs":
+        elif queue == "sge":
             # print "qsub " + queueFile
             os.system("qsub " + queueFile)
         time.sleep(1)

@@ -45,10 +45,10 @@ def main():
 
     # Getting all the args
     libStart, libEnd, sliceSize, repeatNum, thor, \
-        walltime, setupDir, projName = parsing()
+        walltime, setupDir, projName, queue = parsing()
 
     # Figure out the queuing system
-    queue = getQueuingSys()
+    #queue = getQueuingSys()
 
     # Store all the report lines in this file, will be used for printout
     # and to write to file
@@ -106,6 +106,7 @@ def parsing():
     descr_thor = "Thoroughness of the docking (format: 5.)"
     descr_walltime = "Walltime for a single slice (format: 1-24:00:00)"
     descr_setupDir = "Name of the directory containing setup files"
+    descr_queue = "Queuing system to be used (sge/slurm)"
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
@@ -116,6 +117,7 @@ def parsing():
     parser.add_argument("thor", help=descr_thor)
     parser.add_argument("walltime", help=descr_walltime)
     parser.add_argument("setupDir", help=descr_setupDir)
+    parser.add_argument("queue", help=descr_queue)
 
     # Parsing and storing into variables
     args = parser.parse_args()
@@ -128,13 +130,18 @@ def parsing():
     thor = args.thor
     # VS params
     walltime = args.walltime
+    queue = args.queue
     # Project info
     setupDir = args.setupDir
     dtbFileName = glob.glob(setupDir + "/*.dtb")[0]
     projName = dtbFileName.replace(".dtb", "").split("/")[1]
 
+    if queue not in ("sge", "slurm"):
+        print("Only 'sge' and 'slurm' are accepted queuing system options")
+        sys.exit()
+
     return libStart, libEnd, sliceSize, repeatNum, thor, walltime, setupDir, \
-        projName
+        projName, queue
 
 
 def getQueuingSys():
@@ -316,8 +323,8 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
                                          lowerLimit, upperLimit,
                                          libStart, libEnd,
                                          repeatDir, reportLines)
-            elif queue == "pbs":
-                reportLines = pbsSlice(walltime, sliceName, projName, thor,
+            elif queue == "sge":
+                reportLines = sgeSlice(walltime, sliceName, projName, thor,
                                        lowerLimit, upperLimit, repeatDir,
                                        reportLines)
 
@@ -393,10 +400,10 @@ def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
     return reportLines
 
 
-def pbsSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
+def sgeSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
              repeatDir, reportLines):
     """
-    Create a pbs slice given the info provided
+    Create a SGE slice given the info provided
     """
     lines = []
     lines.append("#!/bin/sh")
@@ -416,13 +423,13 @@ def pbsSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
                  " >& " + projName + "_" + str(upperLimit) + ".ou")
 
     # WRITE SLURM LINES TO FILE
-    slurmFile = open(repeatDir + sliceName + ".pbs", "w")
+    slurmFile = open(repeatDir + sliceName + ".sge", "w")
     for line in lines:
         slurmFile.write(line + "\n")
     slurmFile.close()
 
     # Update report
-    reportLines.append("\t SLICE:" + sliceName + ".pbs")
+    reportLines.append("\t SLICE:" + sliceName + ".sge")
 
     return reportLines
 
