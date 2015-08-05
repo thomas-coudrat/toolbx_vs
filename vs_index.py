@@ -30,13 +30,13 @@ def main():
     icm = getPath()
 
     # Extract the arguments
-    sdfFile = parseArgs()
+    sdfFile, suffix = parseArgs()
 
     # Generate the ICM script
-    scriptPath = generateScript(icm, sdfFile)
+    scriptPath = generateScript(icm, sdfFile, suffix)
 
     # Execute the script
-    executeScript(icm, scriptPath, sdfFile)
+    executeScript(icm, scriptPath, sdfFile, suffix)
 
 
 def getPath():
@@ -75,15 +75,28 @@ def parseArgs():
 
     descr = "Create a .inx file of a .sdf file for VS"
     descr_sdf = "Provide a .sdf library to create a .inx file for"
+    descr_suffix = "Provide a suffix that will identify the cluster for " \
+                   "this index is designed"
+
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("sdf", help=descr_sdf)
-    args = parser.parse_args()
+    parser.add_argument("suffix", help=descr_suffix)
+
+    try:
+        args = parser.parse_args()
+    except SystemExit:
+        print("\n***************************************")
+        parser.print_help()
+        print("***************************************\n")
+        sys.exit()
+
     sdfFile = args.sdf
+    suffix = args.suffix
 
-    return sdfFile
+    return sdfFile, suffix
 
 
-def generateScript(icm, sdfFile):
+def generateScript(icm, sdfFile, suffix):
     """
     Generate the ICM script in the current working directory
     Modify its content to apply to the .sdf and .inx files
@@ -102,7 +115,7 @@ quit
     # Modify the script
     workDir = os.getcwd()
     sdfPath = workDir + "/" + sdfFile
-    inxPath = sdfPath.replace(".sdf", ".inx")
+    inxPath = sdfPath.replace(".sdf", "_" + suffix + ".inx")
     scr_string = scr_string.replace("SDF_LIB", sdfPath)
     scr_string = scr_string.replace("INX_FILE", inxPath)
     scr_string = scr_string.replace("ICM_EXEC", icm)
@@ -117,12 +130,13 @@ quit
     return scr_path
 
 
-def executeScript(icm, scriptPath, sdfFile):
+def executeScript(icm, scriptPath, sdfFile, suffix):
     """
     Execute the index.icm script
     """
 
-    print("\nCREATING .INX FOR:" + sdfFile + "\n")
+    print("\nCreating .inx for: \t" + sdfFile)
+    print("Will work on: \t" + suffix + "\n")
 
     # Execute
     try:
