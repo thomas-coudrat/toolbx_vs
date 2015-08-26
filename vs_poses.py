@@ -62,7 +62,7 @@ def main():
                  [[recObName, icmRecObName, recPdbPath]],
                  icmBin,
                  " write pdb ")
-    print
+    print("\n")
 
 
 def parseArgs():
@@ -348,7 +348,7 @@ def readAndWrite(obFileList, pdbFileList, icmBin, writeFormat):
     # Execute temp script
     try:
         check_output(icmBin + " -s ./temp.icm", stderr=STDOUT, shell=True)
-    except CalledProcessError, e:
+    except CalledProcessError as e:
         print(e.output)
         sys.exit()
 
