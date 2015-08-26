@@ -590,6 +590,8 @@ class plotting:
         refering to lists ligand IDs.
         """
 
+        jsonDirPath = os.path.dirname(jsonFilePath)
+
         # Extract information from the json file to a python dictionary
         with open(jsonFilePath, "r") as jsonRead:
             ligand_libraries_paths = json.load(jsonRead)
@@ -601,10 +603,12 @@ class plotting:
         # For each library, open the file and collect ligand IDs
         for lib_name in ligand_libraries_paths.keys():
             ligFilePath = ligand_libraries_paths[lib_name]
-
+            # Using the relative path to the json file, and the relative path
+            # to the sdf file, get access to that sdf file.
+            ligFileRelPath = os.path.join(jsonDirPath, ligFilePath)
             # Read the .sdf file and store ligand ID information
             ligand_IDs = []
-            with open(ligFilePath) as f:
+            with open(ligFileRelPath) as f:
                 for line in f:
                     # Get the line directly after the identifier "<lig_ID>"
                     if "<lig_ID>" in line:
@@ -654,6 +658,8 @@ class plotting:
         efNames = sorted(enrichFactorData.keys())
         efNumber = len(efNames)
 
+        # Get the count of the largest library
+        max_count = 0
         # Create the list of hatches for each ligand type
         # Hatches will be stored in this dictionary
         ligLibHatches = {}
@@ -662,12 +668,17 @@ class plotting:
         # print lig_types
         for i, lig_lib in sorted(enumerate(lig_types.keys())):
             # Create the name as "ligType (lig_count)"
-            lig_lib_name = lig_lib + " (" + str(len(lig_types[lig_lib][0]))+ ")"
+            current_count = len(lig_types[lig_lib][0])
+            lig_lib_name = lig_lib + " (" + str(current_count)+ ")"
             # Add a dictionary value, associate it to a new pattern
             if i <= len(patterns) - 1:
                 ligLibHatches[lig_lib_name] = patterns[i]
             else:
                 ligLibHatches[lig_lib_name] = ""
+
+            # Update max_count to know the size of the largest library
+            if current_count > max_count:
+                max_count = current_count
 
         # Create a scalar map matching the binding pockets to be plotted
         #nonXrayPockets = [p for p in pocketNames if "X-ray" not in p]
@@ -675,7 +686,6 @@ class plotting:
 
         # Go through a sorted list of the pocket-ligType combinations
         allBars = []
-        maxY = 0
         for i, efName in enumerate(sorted(enrichFactorData.keys())):
             # Get the data to be plotted
             efData = enrichFactorData[efName][0]
@@ -717,35 +727,44 @@ class plotting:
                               alpha=alphaVal, color=color, align="center",
                               hatch=hatch)
 
+
             # Calculating and writing percentages above each batTots
             for totalRect, valueRect in zip(barTots, bars):
                 total = totalRect.get_height()
                 x = totalRect.get_x()
                 y = totalRect.get_y()
                 value = valueRect.get_height()
-                percent = str(round(value/total*100, 2)) + " %"
-                #print("Percentage:" + percent)
+
+                # If no ligand of that type was found, avoid division by 0
+                if total != 0:
+                    percent = str(round(value/total*100, 2)) + " %"
+                    #print("Percentage:" + percent)
+                else:
+                    percent = "0 %"
+
                 ax_bar.text(x + 0.075, total + 0.5, percent,
                             fontsize=20, color="black",
                             verticalalignment="bottom",
                             horizontalalignment="right",
                             rotation=90)
 
-            # Keep the max Y total value to set the Y limit
-            maxYcurrent = max(efTotals[0], efTotals[1], efTotals[2])
-            if maxYcurrent > maxY:
-                maxY = maxYcurrent
-
             allBars.append(bars)
 
+        # Figure out what the increment to be used on the Y axis, in order to
+        # have ~10 ticks. Then get the closest multiple of 5 to that number as
+        # the step
+        if max_count >= 10:
+            y_step = int(5 * round(float(max_count/10.0)/5))
+        else:
+            y_step = 1
         # Setting ticks and limits
         ax_bar.set_title(title, fontsize=35, y=1.08)
         ax_bar.set_xticks(ind + (efNumber * width)/2)
-        ax_bar.set_yticks(np.arange(0, maxY*1.20, 5))
+        ax_bar.set_yticks(np.arange(0, max_count*1.20, y_step))
         ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
         ax_bar.tick_params(axis="both", which="major", labelsize=30)
         # Set the upperlimit at 10% more than the maximum value of the graph
-        ax_bar.set_ylim(0, maxY * 1.20)
+        ax_bar.set_ylim(0, max_count * 1.20)
         # Set margins left and right of the bar groups
         ax_bar.margins(x=.1)
 

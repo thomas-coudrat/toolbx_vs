@@ -87,8 +87,8 @@ def main():
     # p.getAUC_NSQ(plotData, perfect)
 
     # Define title and axis names based on mode
-    xAxisName = "% of ranked database (total=" + str(libraryCount) + ")"
-    yAxisName = "% of known ligands found (total=" + str(truePosCount) + ")"
+    #xAxisName = "% of ranked database (total=" + str(libraryCount) + ")"
+    #yAxisName = "% of known ligands found (total=" + str(truePosCount) + ")"
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     # p.plot(title, plotData, libraryCount, truePosCount, xLim, yLim,
