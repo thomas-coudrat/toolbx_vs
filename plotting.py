@@ -476,8 +476,8 @@ class plotting:
             plt.savefig(fileName + ".png", bbox_inches="tight",
                         format="png", dpi=dpiVal)
             # Save pdf version
-            plt.savefig(fileName + ".pdf", bbox_inches="tight",
-                        format="pdf", dpi=dpiVal)
+            #plt.savefig(fileName + ".pdf", bbox_inches="tight",
+            #            format="pdf", dpi=dpiVal)
 
 
     def drawLine(self, ax, ax2, plotDatum, i, zoom, scalarMap,
@@ -813,8 +813,8 @@ class plotting:
             #fig_leg.savefig(legFile + ".png", bbox_inches="tight",
             #                format="png", dpi=dpiVal)
             # Save pdf versions
-            fig_bar.savefig(barFile + ".pdf", bbox_inches="tight",
-                            format="pdf", dpi=dpiVal)
+            #fig_bar.savefig(barFile + ".pdf", bbox_inches="tight",
+            #                format="pdf", dpi=dpiVal)
             #fig_leg.savefig(legFile + ".pdf", bbox_inches="tight",
             #                format="pdf", dpi=dpiVal)
 
