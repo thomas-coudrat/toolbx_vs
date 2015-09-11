@@ -2,7 +2,6 @@
 
 from matplotlib import pyplot as plt
 import matplotlib
-import scipy.integrate
 import math
 import os, sys
 import numpy as np
@@ -313,63 +312,54 @@ class plotting:
                         ligXY = [xPercent, yPercent]
                         refPlot[ligName] = ligXY
 
-            plotData.append((X, Y, vsLegend, refPlot))
+            # Position 4 is initialised to None as it can hold the NSQ_AUC
+            # value in the future (if calculated)
+            plotData.append([X, Y, vsLegend, refPlot, None])
 
         return plotData, xLim, yLim
 
 
-    def getAUC_NSQ(self, rocData, perfect):
+    def getAUC_NSQ(self, rocData):
         """
-        Calculate AUC and NSQ_AUC for each curve, and return a list with those
-        values (corresponds to the order of rocData)
+        Calculate the normalised square root area under the curve (NSQ_AUC) for
+        each ROC curve (Y data). The Xsq are the square root of the X axis
+        values. AUC is calculated using Xsq for the ROC curve (Y), the perfect
+        curve (perf), and the random curve (rand).
         """
 
-        # aucData = []
+        print(col.head + "\n\t*CALCULATING NSQ_AUC*" + col.end)
 
-        print("perfect=", len(perfect))
-        # perfectSq = [math.sqrt(i) for i in perfect]
+        # Get values of first ROC curve in order to calculate random and perfect
+        # curve values
+        maxValY = len(rocData[0][1])
+        maxValX = len(rocData[0][0])
+        X = np.array(rocData[0][0])
+        # Calculate random and perfect curve values
+        perf = np.array([maxValY] * maxValX)
+        rand = X
+        # Get square root of X values
+        Xsq = np.sqrt(X)
+        # Calculate AUCs for random and perfect curves
+        aucRandSq = np.trapz(rand, Xsq) / 10000
+        aucPerfSq = np.trapz(perf, Xsq) / 10000
 
         for rocDatum in rocData:
-            X = rocDatum[0]
-            Y = rocDatum[1]
+            X = np.array(rocDatum[0])
+            Y = np.array(rocDatum[1])
             legend = rocDatum[2]
 
-            Xsq = [math.sqrt(i) for i in X]
-            # Ysq = [math.sqrt(i) for i in Y]
+            # Calculate AUC for the current curve
+            aucSq = np.trapz(Y, Xsq) / 10000
 
-            print("X=", len(X))
-            print("Y=", len(Y))
-            auc = scipy.integrate.trapz(Y, X)
-            aucSq = scipy.integrate.trapz(Y, Xsq)
-            # auc2 = scipy.integrate.simps(Y, X)
+            # Normalised square root AUC: 100 is perfect, 0 is random, negative
+            # values are below random
+            nsq_auc = (100 * (aucSq - aucRandSq) / (aucPerfSq - aucRandSq))
 
-            perf = scipy.integrate.trapz(perfect, X)
-            perfSq = scipy.integrate.trapz(perfect, Xsq)
-            # perf2 = scipy.integrate.simps(perfect, X)
+            # Append the nsq_auc value to the current rocDatum. Position 4
+            # is initialised with to None
+            rocDatum[4] = "{:.3f}".format(round(nsq_auc, 3))
 
-            rand = scipy.integrate.trapz(X, X)
-            randSq = scipy.integrate.trapz(X, Xsq)
-            # rand2 = scipy.integrate.simps(X, X)
-
-            print("**************")
-
-            print(legend)
-            print("auc", auc)        # , auc2
-            print("aucSq", aucSq)
-            print("perfect", perf)   # , perf2
-            print("perfectSq", perfSq)
-            print("rand", rand)      # , rand2
-            print("randSq", randSq)
-
-            nsq_auc = (aucSq - randSq) / (perfSq / randSq)
-            nsq_auc_perf = (perfSq - randSq) / (perfSq / randSq)
-            nsq_auc_rand = (randSq - randSq) / (perfSq / randSq)
-
-            print("NSQ_AUC:", nsq_auc)
-            print("NSQ_AUC - perf:", nsq_auc_perf)
-            print("NSQ_AUC - rand:", nsq_auc_rand)
-
-            print("**************")
+            print(legend + "\tNSQ_AUC: {:.3f}".format(round(nsq_auc, 3)))
 
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
@@ -387,8 +377,6 @@ class plotting:
         # Setting up the figure
         fig = plt.figure(figsize=(13, 12), dpi=dpiVal)
         ax = fig.add_subplot(111)
-
-
 
         # Create the ZOOMED graph, if requested
         if zoom != 0.0:
@@ -491,6 +479,11 @@ class plotting:
 
         plotLegend = plotDatum[2]
         refPlot = plotDatum[3]
+
+        #nsq_auc = plotDatum[4]
+
+        #if nsq_auc != None:
+        #    plotLegend = plotLegend + ", NSQ_AUC=" + nsq_auc
 
         # Set color for crystal structures, and the LDM results have their
         # colors defined by the colormap

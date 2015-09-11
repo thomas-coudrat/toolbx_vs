@@ -70,11 +70,11 @@ def main():
         vsPockets.append(vsPocket)
 
     # Extract the data from the vs percent data (in both enrichment curves and
-    # ROC curves, the truePositive count would be used to draw the perfect curve
+    # ROC curves)
     plotData, xLim, yLim = p.extractPlotData(vsPockets, vsLegends, zoom)
 
-    # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
-    # p.getAUC_NSQ(plotData, perfect)
+    # Calculate NSQ_AUC values for each curve and append data to plotData list
+    p.getAUC_NSQ(plotData)
 
     # Define title and axis names based on mode
     yAxisName = yAxisName + " (total=" + str(truePosCount) + ")"
