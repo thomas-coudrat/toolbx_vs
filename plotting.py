@@ -343,6 +343,8 @@ class plotting:
         aucRandSq = np.trapz(rand, Xsq) / 10000
         aucPerfSq = np.trapz(perf, Xsq) / 10000
 
+        print("NSQ_AUC,Pocket,Library")
+
         for rocDatum in rocData:
             X = np.array(rocDatum[0])
             Y = np.array(rocDatum[1])
@@ -359,7 +361,15 @@ class plotting:
             # is initialised with to None
             rocDatum[4] = "{:.3f}".format(round(nsq_auc, 3))
 
-            print(legend + "\tNSQ_AUC: {:.3f}".format(round(nsq_auc, 3)))
+            leg = legend.split()
+            if len(leg) > 1:
+                pocket = leg[0]
+                lib = leg[1]
+            else:
+                pocket = leg[0]
+                lib = "3D"
+
+            print("{:.3f}".format(round(nsq_auc, 3)) + "," +  pocket + "," + lib)
 
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
@@ -411,17 +421,17 @@ class plotting:
         # along the x axis
         if mode in ("enrich", "type"):
             yPerfect = self.formulaPerfect(xValues, libraryCount, truePosCount)
-            ax.plot(xValues, yPerfect, "--", color="grey",
+            ax.plot(xValues, yPerfect, ":", color="grey",
                     alpha=alphaVal, linewidth=lineWidth)
 
         yRandom = self.formulaRandom(xValues)
-        ax.plot(xValues, yRandom, ":", color="grey",
+        ax.plot(xValues, yRandom, "--", color="grey",
                 alpha=alphaVal, linewidth=lineWidth)
 
         # Plot the RANDOM and PERFECT curves on the zoomed and main graph
         if zoom != 0.0:
             ax2.plot(X, perfect, color="grey")
-            ax2.plot(X, random, "--", color="grey")
+            ax2.plot(X, random, ":", color="grey")
             ax2.tick_params(axis="both", which="major", labelsize=15)
             ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
 
@@ -520,8 +530,8 @@ class plotting:
             ax.axvline(x=xPos, ymax=yPos/100., color=color, alpha=alphaVal,
                        linewidth=lineWidth, linestyle='--')
             # print ligName, xPos, yPos
-            ax.text(xPos, -4, ligName, rotation=-70, alpha=alphaVal,
-                    fontsize=30, color=color, transform=ax.transData)
+            #ax.text(xPos, -4, ligName, rotation=-70, alpha=alphaVal,
+            #        fontsize=30, color=color, transform=ax.transData)
 
         return X, Y
 
