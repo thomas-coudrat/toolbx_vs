@@ -11,15 +11,13 @@ def main():
     Exectute the vs_plot_enrich script
     """
 
-    title, vsLegends, vsPaths, \
-        truePosIDstr, trueNegIDstr, xAxisName, yAxisName, ref, gui = parseArgs()
+    title, vsLegends, vsPaths, truePosIDstr, trueNegIDstr, \
+        xAxisName, yAxisName, ref, gui, log = parseArgs()
 
     # Define mode
     mode = "ROC"
     # Define zoom
     zoom = 0.0
-    # Define log
-    log = False
     # Define scatterData
     scatterData = False
 
@@ -113,6 +111,7 @@ def parseArgs():
         " refinement. Provide ligand name and ID in the following format:" \
         " lig1:328,lig2:535"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
+    descr_log = "Display with X-axis in log scale"
 
     # adding arguments to the parser
     parser = argparse.ArgumentParser(description=descr)
@@ -123,6 +122,7 @@ def parseArgs():
     parser.add_argument("yAxisName", help=descr_yAxisName)
     parser.add_argument("xAxisName", help=descr_xAxisName)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
+    parser.add_argument("-log", action="store_true", help=descr_log)
     parser.add_argument("--ref", help=descr_ref)
 
     # parsing args
@@ -135,6 +135,7 @@ def parseArgs():
     xAxisName = args.xAxisName
     ref = args.ref
     gui = args.gui
+    log = args.log
 
     # Extrac the VS results paths and legends
     vsPaths = []
@@ -146,7 +147,7 @@ def parseArgs():
         i += 2
 
     return title, vsLegends, vsPaths, \
-        truePosIDstr, trueNegIDstr, xAxisName, yAxisName, ref, gui
+        truePosIDstr, trueNegIDstr, xAxisName, yAxisName, ref, gui, log
 
 if __name__ == "__main__":
     main()
