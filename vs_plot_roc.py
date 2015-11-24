@@ -11,8 +11,9 @@ def main():
     Exectute the vs_plot_enrich script
     """
 
-    title, vsLegends, vsPaths, truePosIDstr, trueNegIDstr, \
-        xAxisName, yAxisName, ref, gui, log = parseArgs()
+    title, vsLegends, vsPaths, vsColors, vsLines, \
+        truePosIDstr, trueNegIDstr, xAxisName, yAxisName, \
+        ref, gui, log = parseArgs()
 
     # Define mode
     mode = "ROC"
@@ -22,7 +23,7 @@ def main():
     scatterData = False
 
     # Creating a plotting instance for access to all methods
-    p = plotting.plotting()
+    p = plotting.plotting(title)
 
     # Get the truePosID range in list format
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
@@ -79,9 +80,9 @@ def main():
     xAxisName = xAxisName + " (total=" + str(trueNegCount) + ")"
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
-    p.plot(title, plotData, libraryCount, truePosCount,
-           xLim, yLim, xAxisName, yAxisName, gui, log,
-           zoom, mode, scatterData)
+    p.plotROC(title, plotData, vsColors, vsLines, libraryCount, truePosCount,
+              xLim, yLim, xAxisName, yAxisName, gui, log,
+              zoom, mode)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)
@@ -140,13 +141,17 @@ def parseArgs():
     # Extrac the VS results paths and legends
     vsPaths = []
     vsLegends = []
+    vsColors = []
+    vsLines = []
     i = 0
     while i < len(results):
         vsLegends.append(results[i])
         vsPaths.append(results[i + 1])
-        i += 2
+        vsColors.append(results[i + 2])
+        vsLines.append(results[i + 3])
+        i += 4
 
-    return title, vsLegends, vsPaths, \
+    return title, vsLegends, vsPaths, vsColors, vsLines, \
         truePosIDstr, trueNegIDstr, xAxisName, yAxisName, ref, gui, log
 
 if __name__ == "__main__":

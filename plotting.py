@@ -6,6 +6,7 @@ import math
 import os, sys
 import numpy as np
 import json
+from sklearn.metrics import roc_curve, auc
 
 
 class col:
@@ -26,6 +27,28 @@ class plotting:
     """
     Contains all methods for plotting VS results
     """
+
+    # Defines the path to a log file used to write output. Initialised as False,
+    # it is set as a file path upon initialisation of this class. After that all
+    # subsequent calls to log information use the same file path and append to
+    # that file.
+    log_file = False
+
+    def __init__(self, title):
+        """
+        Initialises the plotting class by storing the title given to the
+        executed script. Also generates a log file to which output is
+        appended during script execution
+        """
+
+        # Name of the log file based on the executed script's title
+        self.log_file = title.replace(" ", "_") + ".log"
+        # Write string to file
+        with open(self.log_file, "w") as f:
+            f.write("**************************")
+            f.write("\n*** LOG FILE for: " + title)
+            f.write("\n**************************")
+
 
     def makeIDlist(self, stringID, blurb, printOut):
         """
@@ -327,23 +350,54 @@ class plotting:
         curve (perf), and the random curve (rand).
         """
 
-        print(col.head + "\n\t*CALCULATING NSQ_AUC*" + col.end)
+        self.log_and_print(col.head + "\n\t*CALCULATING NSQ_AUC*" + col.end)
 
         # Get values of first ROC curve in order to calculate random and perfect
         # curve values
         maxValY = len(rocData[0][1])
         maxValX = len(rocData[0][0])
         X = np.array(rocData[0][0])
+        #print(len(X))
         # Calculate random and perfect curve values
-        perf = np.array([maxValY] * maxValX)
-        rand = X
-        # Get square root of X values
-        Xsq = np.sqrt(X)
-        # Calculate AUCs for random and perfect curves
-        aucRandSq = np.trapz(rand, Xsq) / 10000
-        aucPerfSq = np.trapz(perf, Xsq) / 10000
+        perf = np.array([100.] * len(X))
+        #print(len(perf))
+        #print(perf)
+        #rand = X
+        rand = np.arange(0., 100., 100./len(X))
+        #print(len(rand))
+        # Calculate AUCs for perfect and random curves
+        #aucRand = np.trapz(rand)
+        #aucPerf = np.trapz(perf)
+        aucRand = auc(rand, rand)
+        aucPerf = auc(rand, perf)
+        self.log_and_print("\n")
+        self.log_and_print("Random curve AUC: {:.3f}".format(aucRand))
+        self.log_and_print("Perfect curve AUC: {:.3f}".format(aucPerf))
+        self.log_and_print("\n")
 
-        print("NSQ_AUC,Pocket,Library")
+        #print(rand)
+        # Get square root of X values
+        Xsq = np.sqrt(rand)
+        #print(Xsq)
+
+        # Calculate AUCs for random and perfect curves
+        #aucRandSq = np.trapz(rand) # / 100.
+        #aucPerfSq = np.trapz(perf) # / 100.
+        aucRandSq = auc(Xsq, rand)
+        aucPerfSq = auc(Xsq, perf)
+        # Calculate and print random NSQ_AUC
+        self.log_and_print("Random curve AUC_sq: {:.3f}".format(aucRandSq))
+        self.log_and_print("Perfect curve AUC_sq: {:.3f}".format(aucPerfSq))
+        self.log_and_print("\n")
+
+        # Calculate NSQ_AUCs
+        nsq_auc_rand = (100 * (aucRandSq - aucRandSq) / (aucPerfSq - aucRandSq))
+        self.log_and_print("Random curve NSQ_AUC: {:.3f}".format(round(nsq_auc_rand, 3)))
+        nsq_auc_perf = (100 * (aucPerfSq - aucRandSq) / (aucPerfSq - aucRandSq))
+        self.log_and_print("Perfect curve NSQ_AUC: {:.3f}".format(round(nsq_auc_perf, 3)))
+        self.log_and_print("\n")
+
+        self.log_and_print("AUC,NSQ_AUC,Pocket,Library")
 
         for rocDatum in rocData:
             X = np.array(rocDatum[0])
@@ -351,7 +405,12 @@ class plotting:
             legend = rocDatum[2]
 
             # Calculate AUC for the current curve
-            aucSq = np.trapz(Y, Xsq) / 10000
+            #print(Y, len(Y))
+
+            current_auc = auc(X, Y) / 100
+
+            Xsq = np.sqrt(X)
+            aucSq = auc(Xsq, Y) # / 100.
 
             # Normalised square root AUC: 100 is perfect, 0 is random, negative
             # values are below random
@@ -369,7 +428,12 @@ class plotting:
                 pocket = leg[0]
                 lib = "3D"
 
-            print("{:.3f}".format(round(nsq_auc, 3)) + "," +  pocket + "," + lib)
+            #print("AUC_sq:", aucSq)
+            self.log_and_print("{:.3f},{:.3f},{},{}".format(round(current_auc, 3),
+                                               round(nsq_auc, 3),
+                                               pocket,
+                                               lib))
+
 
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
@@ -478,7 +542,98 @@ class plotting:
             #            format="pdf", dpi=dpiVal)
 
 
-    def drawLine(self, ax, ax2, plotDatum, i, zoom, scalarMap,
+    def plotROC(self, title, plotData, vsColors, vsLines,
+                libraryCount, truePosCount, xLim, yLim, xAxis, yAxis,
+                gui, log, zoom, mode):
+        """
+        Plot the data provided as argument, to draw curves
+        """
+
+        print(col.head + "\n\t*PLOTTING DATA*" + col.end)
+
+        dpiVal = 200
+        lineWidth = 6
+        alphaVal = 1
+
+        # Setting up the figure
+        fig = plt.figure(figsize=(13, 12), dpi=dpiVal)
+        ax = fig.add_subplot(111)
+
+        # Create the ZOOMED graph, if requested
+        if zoom != 0.0:
+            ax2 = plt.axes([.17, .35, .2, .2])
+        else:
+            ax2 = None
+
+        # Drawing data on the figure
+        for i, (plotDatum, color, line) in enumerate(zip(plotData, vsColors, vsLines)):
+            if line == "cont":
+                line = "-"
+            elif line == "hyph":
+                line = "--"
+            X, Y = self.drawLine(ax, ax2, plotDatum, color, line, i, zoom,
+                                 mode, lineWidth, alphaVal)
+
+        # Now plot random and perfect curves, get a range of X values from
+        # 0 to 100, with 0.1 increments. These values are submitted to the
+        # equations to get corresponding Y values
+        xValues = np.arange(0, 100, 0.001)
+
+        yRandom = self.formulaRandom(xValues)
+        ax.plot(xValues, yRandom, linestyle="-", color="black",
+                alpha=alphaVal, linewidth=4)
+
+        # Plot the RANDOM and PERFECT curves on the zoomed and main graph
+        if zoom != 0.0:
+            ax2.plot(X, perfect, color="grey")
+            ax2.plot(X, random, ":", color="grey")
+            ax2.tick_params(axis="both", which="major", labelsize=15)
+            ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
+
+        # Here axis and ticks are improved
+        ax.set_xlabel(xAxis, fontsize=30)
+        ax.set_ylabel(yAxis, fontsize=30)
+
+        ax.minorticks_on()
+        ax.tick_params(axis="both", which="major", labelsize=30)
+        ax.set_title(title, fontsize=35, y=1.08)
+        ax.legend(loc="upper left", prop={'size': 30})
+        ax.axis('tight')
+        # Needed when plotting scatterplots (redundant for plotting lines)
+        plt.ylim(0, 100)
+        plt.xlim(0, 100)
+
+        if log:
+            ax.set_xscale("symlog", linthreshx=0.01)
+            # Quick and dirty fix for the axis
+            ax.set_xticks([0.1, 1, 10, 100])
+            ax.set_xticklabels([0.1, 1, 10, 100])
+
+            # Setting ZOOMED ax2 graph
+            if zoom != 0.0:
+                ax2.set_xscale("log")
+                ax2.set_xlim([0, zoom])
+                ax2.set_ylim([0, yLim])
+                # xLimRound = int(xLim * 100) / 100.0
+                # yLimRound = int(yLim * 100) / 100.0
+                # ax2.set_yticks([0, yLimRound])
+                # ax2.set_xticklabels([])
+                # print xLimRound
+                # plt.setp(ax2, xlim=(0, zoom), ylim=(0, yLim),
+                #         xticks=[0, zoom], yticks=[0, yLimRound])
+        if gui:
+            plt.show()
+        else:
+            fileName = title.replace(" ", "_")
+            # Save png version
+            plt.savefig(fileName + ".png", bbox_inches="tight",
+                        format="png", dpi=dpiVal)
+            # Save pdf version
+            #plt.savefig(fileName + ".pdf", bbox_inches="tight",
+            #            format="pdf", dpi=dpiVal)
+
+
+    def drawLine(self, ax, ax2, plotDatum, colorDatum, lineDatum, i, zoom,
                  mode, lineWidth, alphaVal):
         """
         Draw the line corresponding to the set of data passed in arguments
@@ -502,7 +657,7 @@ class plotting:
         elif i == 1 and "X-ray" in plotLegend:
             color = 'grey'
         else:
-            color = scalarMap.to_rgba(i)
+            color = colorDatum
 
         # Plot this curve: scatter plot if plotting type, curves otherwise
         if mode in ("type"):
@@ -518,7 +673,8 @@ class plotting:
             # X = [0.0] + X
             # Y = [0.0] + Y
             ax.plot(X, Y, label=plotLegend,
-                    linewidth=lineWidth, color=color, alpha=alphaVal)
+                    linewidth=lineWidth, color=color, alpha=alphaVal,
+                    linestyle=lineDatum)
 
         # Plot a blow up of the first X%
         if zoom != 0.0:
@@ -916,6 +1072,21 @@ class plotting:
             scatterData.append((scat_X, scat_Y, lib_name))
 
         return scatterData, enrichFactorData
+
+
+    def log_and_print(self, string):
+        """
+        Receives a string to be printed to stdout, as well as logged in a file.
+        Initialises the log file the first time it's called, then uses a class
+        variable to append to that file
+        """
+
+        # Append the string to the logging file
+        with open(self.log_file, "a") as f:
+            f.write("\n" + string)
+
+        # Print to stdout the string passed as argument
+        print(string)
 
 
 if __name__ == "__main__":
