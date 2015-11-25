@@ -588,7 +588,7 @@ class plotting:
             ax2.plot(X, perfect, color="grey")
             ax2.plot(X, random, ":", color="grey")
             ax2.tick_params(axis="both", which="major", labelsize=15)
-            ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
+            #ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
 
         # Here axis and ticks are improved
         ax.set_xlabel(xAxis, fontsize=30)
@@ -596,8 +596,8 @@ class plotting:
 
         ax.minorticks_on()
         ax.tick_params(axis="both", which="major", labelsize=30)
-        ax.set_title(title, fontsize=35, y=1.08)
-        ax.legend(loc="upper left", prop={'size': 30})
+        #ax.set_title(title, fontsize=35, y=1.08)
+        ax.legend(loc="lower right", prop={'size': 30})
         ax.axis('tight')
         # Needed when plotting scatterplots (redundant for plotting lines)
         plt.ylim(0, 100)
@@ -795,7 +795,8 @@ class plotting:
         return scalarMap
 
 
-    def barPlot(self, title, enrichFactorData, pocketNames, lig_types, gui):
+    def barPlot(self, title, enrichFactorData, pocketNames, vsColors,
+                lig_types, gui):
         """
         Plot a bar graph showing the EF0.1, EF1 and EF10 (enrichment factors)
         values for each binding pocket compared.
@@ -804,7 +805,7 @@ class plotting:
         print(col.head + "\n\t*PLOTTING BAR GRAPH DATA*" + col.end)
 
         dpiVal = 200
-        alphaVal = 0.8
+        alphaVal = 1
 
         # Setting up the barchart figure
         fig_bar = plt.figure(figsize=(30, 12), dpi=dpiVal)
@@ -839,12 +840,9 @@ class plotting:
             if current_count > max_count:
                 max_count = current_count
 
-        # Create a scalar map matching the binding pockets to be plotted
-        #nonXrayPockets = [p for p in pocketNames if "X-ray" not in p]
-        scalMapEF = self.getColorMap("jet", pocketNames)
-
         # Go through a sorted list of the pocket-ligType combinations
         allBars = []
+
         for i, efName in enumerate(sorted(enrichFactorData.keys())):
             # Get the data to be plotted
             efData = enrichFactorData[efName][0]
@@ -853,19 +851,17 @@ class plotting:
             # Choose the bar color: match the pocket
             curr_pocket_name = enrichFactorData[efName][2][0]
             # Loop over pocket names to get the pocket index (use 0 if pocket
-            # nawas not found)
+            # was not found)
             num = 0
             for j, pocketName in enumerate(pocketNames):
                 if curr_pocket_name == pocketName:
                     num = j
-            # X-ray pockets use black and grey, remaining pockets use colors
-            # matching the scalMapEF defined above
-            if num == 0 and "X-ray" in curr_pocket_name:
-                color = 'black'
-            elif num == 1 and "X-ray" in curr_pocket_name:
-                color = 'grey'
+
+            # Get the color using the pocket index
+            if num < len(vsColors):
+                color = vsColors[num]
             else:
-                color = scalMapEF.to_rgba(num)
+                color = "grey"
 
             # Choose bar hatch: match the ligand types
             curr_lib_name = enrichFactorData[efName][2][1]
@@ -917,7 +913,7 @@ class plotting:
         else:
             y_step = 1
         # Setting ticks and limits
-        ax_bar.set_title(title, fontsize=35, y=1.08)
+        #ax_bar.set_title(title, fontsize=35, y=1.08)
         ax_bar.set_xticks(ind + (efNumber * width)/2)
         ax_bar.set_yticks(np.arange(0, max_count*1.20, y_step))
         ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
@@ -936,16 +932,10 @@ class plotting:
         legRects = []
         legNames = []
         # Binding-pockets legend
-        for i, pocketName in enumerate(pocketNames):
-            if i == 0 and "X-ray" in pocketName:
-                color = 'black'
-            elif i == 1 and "X-ray" in pocketName:
-                color = 'grey'
-            else:
-                color = scalMapEF.to_rgba(i)
+        for i, (pocketName, color) in enumerate(zip(pocketNames, vsColors)):
 
             legRects.append(plt.Rectangle((0, 0), 10, 10, facecolor=color,
-                                          alpha=0.7))
+                                          alpha=alphaVal))
             legNames.append(pocketName)
 
         # Ligand-types legend

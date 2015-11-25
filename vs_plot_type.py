@@ -11,7 +11,7 @@ def main():
     Exectute the vs_plot_enrich script
     """
 
-    title, vsLegends, vsPaths, \
+    title, vsLegends, vsPaths, vsColors, \
         libraryIDstr, truePosIDstr, ligLibsJson, \
         ref, gui = parseArgs()
 
@@ -23,7 +23,7 @@ def main():
     log = True
 
     # Creating a plotting instance for access to all methods
-    p = plotting.plotting()
+    p = plotting.plotting(title)
 
     # Get the truePosID range in list format
     libraryIDlist = p.makeIDlist(libraryIDstr, "Library IDs (not displayed): ",
@@ -96,7 +96,7 @@ def main():
 
     # Plot the barplot represeting the enrochment factors (EFs) in known ligands
     # at 0.1 %, 1 % and 10 % of the screened library
-    p.barPlot(title, enrichFactorData, vsLegends, lig_types, gui)
+    p.barPlot(title, enrichFactorData, vsLegends, vsColors, lig_types, gui)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)
@@ -149,13 +149,15 @@ def parseArgs():
     # Extrac the VS results paths and legends
     vsPaths = []
     vsLegends = []
+    vsColors = []
     i = 0
     while i < len(results):
         vsLegends.append(results[i])
         vsPaths.append(results[i + 1])
-        i += 2
+        vsColors.append(results[i + 2])
+        i += 3
 
-    return title, vsLegends, vsPaths, \
+    return title, vsLegends, vsPaths, vsColors, \
         libraryIDstr, truePosIDstr, ligLibsJson, \
         ref, gui
 
