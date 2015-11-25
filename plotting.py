@@ -418,7 +418,7 @@ class plotting:
 
             # Append the nsq_auc value to the current rocDatum. Position 4
             # is initialised with to None
-            rocDatum[4] = "{:.3f}".format(round(nsq_auc, 3))
+            rocDatum[4] = "{:.1f}".format(round(nsq_auc, 3))
 
             leg = legend.split()
             if len(leg) > 1:
@@ -433,7 +433,6 @@ class plotting:
                                                round(nsq_auc, 3),
                                                pocket,
                                                lib))
-
 
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
@@ -633,7 +632,7 @@ class plotting:
             #            format="pdf", dpi=dpiVal)
 
 
-    def drawLine(self, ax, ax2, plotDatum, colorDatum, lineDatum, i, zoom,
+    def drawLine(self, ax, ax2, plotDatum, color, lineDatum, i, zoom,
                  mode, lineWidth, alphaVal):
         """
         Draw the line corresponding to the set of data passed in arguments
@@ -645,11 +644,14 @@ class plotting:
         plotLegend = plotDatum[2]
         refPlot = plotDatum[3]
 
-        #nsq_auc = plotDatum[4]
+        # If NSQ_AUC value is found, then add it to the legend
+        nsq_auc = plotDatum[4]
+        if nsq_auc != None:
+            plotLegend = plotLegend + ":
 
-        #if nsq_auc != None:
-        #    plotLegend = plotLegend + ", NSQ_AUC=" + nsq_auc
+            " + nsq_auc
 
+        """
         # Set color for crystal structures, and the LDM results have their
         # colors defined by the colormap
         if i == 0 and "X-ray" in plotLegend:
@@ -658,6 +660,7 @@ class plotting:
             color = 'grey'
         else:
             color = colorDatum
+        """
 
         # Plot this curve: scatter plot if plotting type, curves otherwise
         if mode in ("type"):
