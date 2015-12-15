@@ -570,6 +570,8 @@ class plotting:
                 line = "-"
             elif line == "hyph":
                 line = "--"
+            elif line == "dots":
+                line = ":"
             X, Y = self.drawLine(ax, ax2, plotDatum, color, line, i, zoom,
                                  mode, lineWidth, alphaVal)
 
@@ -596,7 +598,7 @@ class plotting:
         ax.minorticks_on()
         ax.tick_params(axis="both", which="major", labelsize=30)
         #ax.set_title(title, fontsize=35, y=1.08)
-        ax.legend(loc="lower right", prop={'size': 30})
+        ax.legend(loc="best", prop={'size': 30})
         ax.axis('tight')
         # Needed when plotting scatterplots (redundant for plotting lines)
         plt.ylim(0, 100)
@@ -647,9 +649,7 @@ class plotting:
         # If NSQ_AUC value is found, then add it to the legend
         nsq_auc = plotDatum[4]
         if nsq_auc != None:
-            plotLegend = plotLegend + ":
-
-            " + nsq_auc
+            plotLegend = plotLegend + ": " + nsq_auc
 
         """
         # Set color for crystal structures, and the LDM results have their
