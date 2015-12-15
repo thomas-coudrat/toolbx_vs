@@ -42,7 +42,7 @@ def main():
     # Submit all those scripts (using the proper queueing system)
     submitQueueScripts(queuePaths, cwd, queue)
 
-    print
+    print("")
 
 
 def parsing():
@@ -77,7 +77,7 @@ def confirmSubmit(queuePaths):
     on what is about to be submitted
     """
 
-    print "\nYou are about to submit " + str(len(queuePaths)) + " jobs."
+    print("\nYou are about to submit " + str(len(queuePaths)) + " jobs.")
 
     answer = raw_input("Do you want to proceed? (yes/no) ")
 
