@@ -26,10 +26,10 @@ def main():
     icm = getPath()
 
     # Get the arguments
-    obPath, inxPath, dbType, mapMode, pocket = parseArgs()
+    obPath, inxPath, dbType, mapMode, pocket, residues = parseArgs()
 
     # Generate script (will return the script relevant to the mode chosen)
-    script = generateScript(mapMode, obPath, pocket, icm)
+    script = generateScript(mapMode, obPath, pocket, icm, residues)
 
     # Run the .icm script
     runScript(icm, script)
@@ -69,11 +69,15 @@ def parseArgs():
                     "bound ligand (on object containing ligand). Deletes " \
                     "ligand." \
                     "'pocket' searches for binding pocket using " \
-                    "ICMpocketFinder (on object not containing ligand)."
+                    "ICMpocketFinder (on object not containing ligand)." \
+                    "'residues' selects a list of residues submitted through " \
+                    "a text file"
     descr_dbType = "Database type: '3D' for 3D chiral compounds or '2Drac' " \
                    " for 2D racemic compounds, to be sampled"
     descr_pocket = "Define the pocket number to use (determined by " \
                    "ICMpocket finder). Default is pocket #1."
+    descr_residues = "Provide a file containing the list of residues numbers" \
+                     " to be used for map creation. Format: 1,2,3:10,20"
 
     # Parse arguments
     parser = argparse.ArgumentParser(description=descr)
@@ -82,6 +86,7 @@ def parseArgs():
     parser.add_argument("dbType", help=descr_dbType)
     parser.add_argument("mapMode", help=descr_mapMode)
     parser.add_argument("--pocket", help=descr_pocket)
+    parser.add_argument("--resPath", help=descr_residues)
     args = parser.parse_args()
 
     # Store arguments
@@ -90,20 +95,34 @@ def parseArgs():
     dbType = args.dbType
     mapMode = args.mapMode
     pocket = args.pocket
+    resPath = args.resPath
 
     # Deal with arguments
     if not pocket:
         pocket = "1"
 
-    if mapMode not in ("ligand", "pocket"):
-        print ("Either use option 'pocket' or 'ligand' for map mode creation")
+    if mapMode not in ("ligand", "pocket", "residues"):
+        print ("Either use option 'pocket', 'ligand' or 'residues' for map mode creation")
         sys.exit()
 
     if dbType not in ("3D", "2Drac"):
         print("For the ligand database type, use either '3D' or '2Drac'")
         sys.exit()
 
-    return obPath, inxPath, dbType, mapMode, pocket
+    if mapMode == "residues" and resPath == False:
+        print("Option 'residues' requires the user to provide a residues list using --residues flag")
+        sys.exit()
+
+    # Read in the residue list
+    if mapMode == "residues":
+        with open(resPath) as f:
+            lines = f.readlines()
+            residues = "".join(lines)
+    # otherwise initialise residues to empty string
+    else:
+        residues = ""
+
+    return obPath, inxPath, dbType, mapMode, pocket, residues
 
 
 def getPath():
@@ -134,7 +153,7 @@ def getPath():
     return icm
 
 
-def generateScript(mapMode, obPath, pocket, icm):
+def generateScript(mapMode, obPath, pocket, icm, residues):
     """
     The scripts are generated here, and their content is modified to fit the
     tasks they are supposed to carry out
@@ -184,6 +203,26 @@ currentDockProj.data[1] = "VS_PROJ"
 quit
 """
 
+    # resList-script base
+    resList_string = """#!ICM_EXEC
+
+call "_startup"
+
+openFile "VS_PROJ.ob"
+
+# Select residues from the given list
+as_graph = a_VS_PROJ./RESIDUE_LIST
+
+# Setup docking project
+currentDockProj.data[8] = "yes"
+tempsel = as_graph
+dock2SetupReceptor "VS_PROJ" a_ tempsel no "none"
+dock5CalcMaps "VS_PROJ" 0.5 4.0 no
+currentDockProj.data[1] = "VS_PROJ"
+
+quit
+"""
+
     # Modify the required script and return its path
     projName = obPath.replace(".ob", "")
     if mapMode == "ligand":
@@ -195,6 +234,11 @@ quit
         scr_string = scr_string.replace("ICM_EXEC", icm)
         scr_string = scr_string.replace("VS_PROJ", projName)
         scr_string = scr_string.replace("POCKET_NUM", pocket)
+    elif mapMode == "residues":
+        scr_string = resList_string
+        scr_string = scr_string.replace("ICM_EXEC", icm)
+        scr_string = scr_string.replace("VS_PROJ", projName)
+        scr_string = scr_string.replace("RESIDUE_LIST", residues)
 
     # Write the selected script to a file
     workDir = os.getcwd()
