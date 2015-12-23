@@ -50,6 +50,9 @@ def main():
     # Figure out the queuing system
     #queue = getQueuingSys()
 
+    # Get the path from the Json file
+    icm = getPath()
+
     # Store all the report lines in this file, will be used for printout
     # and to write to file
     reportLines = []
@@ -144,31 +147,33 @@ def parsing():
         projName, queue
 
 
-def getQueuingSys():
+def getPath():
     """
-    Figure out which queuing system to use depending on the platform this script
-    is executed on
+    Read in the json file containing the ICM executable paths for each machine
+    Return the ICM executable corresponding to the hostname of the machine being
+    used currently
     """
 
     # This Json file stores the ICM executable locations for each platform
-    queuesJson = os.path.dirname(os.path.realpath(__file__)) + "../queue_sys.json"
+    icmExecJson = os.path.dirname(os.path.realpath(__file__)) + "../icm_exec.json"
 
     # Read content of .json file
-    with open(queuesJson, "r") as jsonFile:
-        queues = json.load(jsonFile)
+    with open(icmExecJson, "r") as jsonFile:
+        icmExec = json.load(jsonFile)
 
     # Get the hostname to know which computer this is executed on
     hostname = socket.gethostname()
 
     # Assign the ICM executable path corresponding to the hostname, if it is not
     # defined then stop the execution
-    if hostname in queues.keys():
-        queue = queues[hostname]
+    if hostname in icmExec.keys():
+        icm = icmExec[hostname]
     else:
-        print("The queuing system could not be assigned", hostname)
+        print("The ICM executable is not defined for this machine, please edit\
+            the icm_exec.json file")
         sys.exit()
 
-    return queue
+    return icm
 
 
 def cleanRepeatDir(repeatDir):
@@ -371,7 +376,7 @@ def slurmSrun(projName, libStart, libEnd,  walltime, repeatDir, repeat, sliceCou
 
 
 def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
-               libStart, libEnd, repeatDir, reportLines):
+               libStart, libEnd, repeatDir, reportLines, icm):
     """
     Create a slurm slice and write to a file with the info provided
     """
@@ -379,7 +384,7 @@ def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
     lines = []
     lines.append("#!/bin/bash")
     lines.append("")
-    lines.append("ICMHOME=/vlsci/VR0024/tcoudrat/bin/icm-3.7-3b")
+    lines.append("ICMHOME=" + icm)
     lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
                  " thorough=" + thor +
                  " from=" + str(lowerLimit) +
@@ -401,7 +406,7 @@ def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
 
 
 def sgeSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
-             repeatDir, reportLines):
+             repeatDir, reportLines, icm):
     """
     Create a SGE slice given the info provided
     """
@@ -415,7 +420,7 @@ def sgeSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
     lines.append("#$ -cwd")
     lines.append("#$ -N " + str(sliceName))
     lines.append("")
-    lines.append("ICMHOME=/nfs/home/hpcpharm/tcoudrat/bin/icm-3.7-3b/")
+    lines.append("ICMHOME=" + icm)
     lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
                  " thorough=" + thor +
                  " from=" + str(lowerLimit) +
