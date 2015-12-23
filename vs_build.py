@@ -87,7 +87,7 @@ def main():
 
     # Create the .slurm slices
     reportLines = createSlices(libStart, libEnd, sliceSize, walltime, thor,
-                               projName, repeatNum, queue, reportLines)
+                               projName, repeatNum, queue, reportLines, icm)
 
     reportLines.append("\n")
 
@@ -282,7 +282,7 @@ def createRepeats(repeatNum, setupDir, reportLines):
 
 
 def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
-                 repeatNum, queue, reportLines):
+                 repeatNum, queue, reportLines, icm):
     """
     Create the .slurm slices to split the VS job into portions for submission
     to the cluster
@@ -327,11 +327,11 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
                 reportLines = slurmSlice(sliceCount, projName, thor,
                                          lowerLimit, upperLimit,
                                          libStart, libEnd,
-                                         repeatDir, reportLines)
+                                         repeatDir, reportLines, icm)
             elif queue == "sge":
                 reportLines = sgeSlice(walltime, sliceName, projName, thor,
                                        lowerLimit, upperLimit, repeatDir,
-                                       reportLines)
+                                       reportLines, icm)
 
             # Update upperLimit and sliceCount
             lowerLimit += sliceSize
