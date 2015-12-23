@@ -95,7 +95,7 @@ def getQueuingSys():
     """
 
     # This Json file stores the ICM executable locations for each platform
-    queuesJson = os.path.dirname(os.path.realpath(__file__)) + "../queue_sys.json"
+    queuesJson = os.path.dirname(os.path.realpath(__file__)) + "/../queue_sys.json"
 
     # Read content of .json file
     with open(queuesJson, "r") as jsonFile:
