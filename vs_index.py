@@ -103,7 +103,7 @@ def generateScript(icm, sdfFile, suffix):
     """
 
     # Script base
-    scr_string = """#!ICM_EXEC
+    scr_string = """#!ICM_EXEC/icm64
 call "_startup"
 
 # Create the .inx file, that indexes this database
@@ -140,7 +140,7 @@ def executeScript(icm, scriptPath, sdfFile, suffix):
 
     # Execute
     try:
-        check_output(icm + " -s " + scriptPath, stderr=STDOUT, shell=True)
+        check_output(icm + "/icm64 -s " + scriptPath, stderr=STDOUT, shell=True)
     except CalledProcessError as e:
         print("\n Error executing the ICM script")
         print(e.output)
