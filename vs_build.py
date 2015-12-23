@@ -155,7 +155,7 @@ def getPath():
     """
 
     # This Json file stores the ICM executable locations for each platform
-    jsonFile = os.path.dirname(os.path.realpath(__file__)) + "/../icm_exec.json"
+    icmExecJson = os.path.dirname(os.path.realpath(__file__)) + "/../icm_exec.json"
 
     # Read content of .json file
     with open(icmExecJson, "r") as jsonFile:
