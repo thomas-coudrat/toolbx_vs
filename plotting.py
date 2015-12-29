@@ -426,7 +426,7 @@ class plotting:
                 lib = leg[1]
             else:
                 pocket = leg[0]
-                lib = "3D"
+                lib = "2D-rac"
 
             #print("AUC_sq:", aucSq)
             self.log_and_print("{:.3f},{:.3f},{},{}".format(round(current_auc, 3),
