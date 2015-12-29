@@ -31,7 +31,7 @@ def main():
 
     # Get the arguments and paths
     resultsPath, X, ligIDs = parseArgs()
-    icmBin = getPath()
+    icm = getPath()
 
     # Fix paths
     cwd = os.getcwd()
@@ -51,7 +51,7 @@ def main():
     repeatsRes = posesPerRepeat(resDataSel)
 
     # Load those poses and save them in the /poses directory
-    loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin)
+    loadAnswersWritePoses(repeatsRes, vsPath, projName, icm)
 
     # Now load and write the receptor (binding pocket)
     recObName = projName + "_rec"
@@ -60,7 +60,7 @@ def main():
     icmRecObName = "a_" + recObName + "."
     readAndWrite([recObPath],
                  [[recObName, icmRecObName, recPdbPath]],
-                 icmBin,
+                 icm,
                  " write pdb ")
     print("\n")
 
@@ -239,7 +239,7 @@ def posesPerRepeat(resData):
     return repeatsRes
 
 
-def loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin):
+def loadAnswersWritePoses(repeatsRes, vsPath, projName, icm):
     """
     Walk through repeat directories, and load each
     """
@@ -274,7 +274,7 @@ def loadAnswersWritePoses(repeatsRes, vsPath, projName, icmBin):
 
             pdbFileList.append([selectionName, icmName, pdbFilePath])
 
-        readAndWrite(obFileList, pdbFileList, icmBin, " write mol2 ")
+        readAndWrite(obFileList, pdbFileList, icm, " write mol2 ")
 
 
 def getAnswersList(repPath, ligsInfo):
@@ -318,7 +318,7 @@ def getAnswersList(repPath, ligsInfo):
     return list(set([lig[1] for lig in ligsInfo]))
 
 
-def readAndWrite(obFileList, pdbFileList, icmBin, writeFormat):
+def readAndWrite(obFileList, pdbFileList, icm, writeFormat):
     """
     Get the information of which *.ob files to read, and which *.pdb files from
     the loaded molecules to write.
@@ -347,7 +347,7 @@ def readAndWrite(obFileList, pdbFileList, icmBin, writeFormat):
 
     # Execute temp script
     try:
-        check_output(icmBin + " -s ./temp.icm", stderr=STDOUT, shell=True)
+        check_output(icm + "/icm64 -s ./temp.icm", stderr=STDOUT, shell=True)
     except CalledProcessError as e:
         print(e.output)
         sys.exit()

@@ -160,7 +160,7 @@ def generateScript(mapMode, obPath, pocket, icm, residues):
     """
 
     # Ligand-script base
-    scrLig_string = """#!ICM_EXEC
+    scrLig_string = """#!ICM_EXEC/icm64
 
 call "_startup"
 
@@ -182,7 +182,7 @@ quit
 """
 
     # Pocket-script base
-    scrPok_string = """#!ICM_EXEC
+    scrPok_string = """#!ICM_EXEC/icm64
 
 call "_startup"
 
@@ -204,7 +204,7 @@ quit
 """
 
     # resList-script base
-    resList_string = """#!ICM_EXEC
+    resList_string = """#!ICM_EXEC/icm64
 
 call "_startup"
 
@@ -256,7 +256,7 @@ def runScript(icm, script):
 
     # Execute
     try:
-        check_output(icm + " -s " + script, stderr=STDOUT, shell=True)
+        check_output(icm + "/icm64 -s " + script, stderr=STDOUT, shell=True)
     except CalledProcessError as e:
         print(e.output)
         sys.exit()
