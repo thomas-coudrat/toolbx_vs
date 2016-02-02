@@ -12,7 +12,7 @@ def main():
     """
 
     title, vsLegends, vsPaths, vsColors, \
-        libraryIDstr, truePosIDstr, ligLibsJson, \
+        truePosIDstr, trueNegIDstr, ligLibsJson, \
         ref, gui = parseArgs()
 
     # Define mode
@@ -26,10 +26,11 @@ def main():
     p = plotting.plotting(title)
 
     # Get the truePosID range in list format
-    libraryIDlist = p.makeIDlist(libraryIDstr, "Library IDs (not displayed): ",
-                                 False)
-    truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
-    trueNegIDlist = p.makeIDlist("0-0", "True negative ID list: ", False)
+    truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ",
+                                 printOut=True)
+    trueNegIDlist = p.makeIDlist(trueNegIDstr, "True negative ID list: ",
+                                 printOut=True)
+    libraryIDlist = truePosIDlist + trueNegIDlist
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -54,9 +55,9 @@ def main():
     truePosCount = p.updatedLigCounts(ligIDintersectSet,
                                       truePosIDlist,
                                       "true positives")
-    #trueNegCount = p.updatedLigCounts(ligIDintersectSet,
-    #                                  trueNegIDlist,
-    #                                  "true negatives")
+    trueNegCount = p.updatedLigCounts(ligIDintersectSet,
+                                      trueNegIDlist,
+                                      "true negatives")
     libraryCount = p.updatedLigCounts(ligIDintersectSet,
                                       libraryIDlist,
                                       "whole library")
@@ -66,11 +67,10 @@ def main():
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
         vsDir = os.path.dirname(vsPath)
         vsPocket = p.writePercFile(vsIntersect, vsDir, mode, refDict,
-                                   "library", libraryIDstr,
-                                   libraryIDlist, libraryCount,
+                                   "true_neg", trueNegIDstr,
+                                   trueNegIDlist, trueNegCount,
                                    "true_pos", truePosIDstr,
                                    truePosIDlist, truePosCount)
-
         vsPockets.append(vsPocket)
 
     # Extract the data from the vs percent data (in both enrichment curves and
@@ -116,8 +116,9 @@ def parseArgs():
     descr_results = "Provide resultDataFiles.csv and 'legend titles' for" \
         " each curve: 'legend1!' data1.csv 'legend2?' data2.csv" \
         " 'legend4!!' data4.csv"
-    descr_libraryIDstr = "Provide the ID range of the full library screened"
     descr_truePosIDstr = "Provide the IDs of true positive ligands" \
+        " lib (format: 1-514,6001,6700-6702)"
+    descr_trueNegIDstr = "Provide the IDs of true negative ligands" \
         " lib (format: 1-514,6001,6700-6702)"
     descr_ligLibs = "JSON file containing a dictionary structure of ligand" \
         " library names (keys) pointing to library paths in .sdf"
@@ -130,8 +131,8 @@ def parseArgs():
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("title", help=descr_title)
     parser.add_argument("results", help=descr_results, nargs="+")
-    parser.add_argument("libraryIDstr", help=descr_libraryIDstr)
     parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
+    parser.add_argument("trueNegIDstr", help=descr_trueNegIDstr)
     parser.add_argument("ligLibs", help=descr_ligLibs)
     parser.add_argument("--ref", help=descr_ref)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
@@ -140,8 +141,8 @@ def parseArgs():
     args = parser.parse_args()
     title = args.title
     results = args.results
-    libraryIDstr = args.libraryIDstr
     truePosIDstr = args.truePosIDstr
+    trueNegIDstr = args.trueNegIDstr
     ligLibsJson = args.ligLibs
     ref = args.ref
     gui = args.gui
@@ -158,7 +159,7 @@ def parseArgs():
         i += 3
 
     return title, vsLegends, vsPaths, vsColors, \
-        libraryIDstr, truePosIDstr, ligLibsJson, \
+        truePosIDstr, trueNegIDstr, ligLibsJson, \
         ref, gui
 
 if __name__ == "__main__":

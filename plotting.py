@@ -877,30 +877,27 @@ class plotting:
                 hatch = ""
 
             # Plotting totals in white bars
-            barTots = ax_bar.bar(ind + i*(width), efTotals, width,
-                                 alpha=alphaVal, color="white", align="center")
+            #barTots = ax_bar.bar(ind + i*(width), efTotals, width,
+            #                     alpha=alphaVal, color="white", align="center",
+            #                     linewidth=0)
 
             # Plotting bar (with matching color and hatch)
             bars = ax_bar.bar(ind + i*(width), efData, width,
                               alpha=alphaVal, color=color, align="center",
                               hatch=hatch)
 
-
-            # Calculating and writing percentages above each batTots
-            for totalRect, valueRect in zip(barTots, bars):
-                total = totalRect.get_height()
-                x = totalRect.get_x()
-                y = totalRect.get_y()
-                value = valueRect.get_height()
-
+            # Calculating the percent value for of each recovered co
+            # Adding the percent text on top of each bar
+            for j, (value, total, bar) in enumerate(zip(efData, efTotals, bars)):
                 # If no ligand of that type was found, avoid division by 0
                 if total != 0:
                     percent = str(round(value/total*100, 2)) + " %"
-                    #print("Percentage:" + percent)
                 else:
                     percent = "0 %"
-
-                ax_bar.text(x + 0.075, total + 0.5, percent,
+                # ind + i*width + j*width +
+                x_position = bar.get_x()
+                ax_bar.text(x_position + 0.075,
+                            value + 0.5, percent,
                             fontsize=20, color="black",
                             verticalalignment="bottom",
                             horizontalalignment="right",
@@ -985,9 +982,11 @@ class plotting:
 
         # Calculate the ligand count at each enrichment factor (0.1, 1, and
         # 10 %). This is evaluated to plot values against totals at each EF.
-        totalLibTenthPercent = int(0.001 * libraryCount)
-        totalLibOnePercent = int(0.01 * libraryCount)
-        totalLibTenPercent = int(0.1 * libraryCount)
+        # THIS IS NOT USED ANYMORE. Since the switch to mutually exclsive
+        # truePos vs. trueNeg VS results to calculate EFs.
+        #totalLibTenthPercent = int(0.001 * libraryCount)
+        #totalLibOnePercent = int(0.01 * libraryCount)
+        #totalLibTenPercent = int(0.1 * libraryCount)
 
         # Read each binding pocket VS data file
         for percentPath, vsLegend in zip(percentPaths, vsLegends):
@@ -1025,11 +1024,11 @@ class plotting:
                         libNameNum = lib_name + " (" + str(ligCount) + ")"
                         efName = vsLegend + " - " + libNameNum
                         if efName not in enrichFactorData.keys():
-                            efTenth = min(ligCount, totalLibTenthPercent)
-                            efOne = min(ligCount, totalLibOnePercent)
-                            efTen = min(ligCount, totalLibTenPercent)
+                            #efTenth = min(ligCount, totalLibTenthPercent)
+                            #efOne = min(ligCount, totalLibOnePercent)
+                            #efTen = min(ligCount, totalLibTenPercent)
                             enrichFactorData[efName] = [[0,0,0],
-                                                        [efTenth,efOne,efTen],
+                                                        [ligCount,ligCount,ligCount],
                                                         [vsLegend, libNameNum]]
 
                         # If the current ligand ID is in that list, then store
