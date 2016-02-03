@@ -12,7 +12,7 @@ def main():
     """
 
     title, vsLegends, vsPaths, vsColors, vsLines, \
-        truePosIDstr, trueNegIDstr, xAxisName, yAxisName, \
+        truePosIDstr, falsePosIDstr, xAxisName, yAxisName, \
         ref, gui, log = parseArgs()
 
     # Define mode
@@ -27,8 +27,8 @@ def main():
 
     # Get the truePosID range in list format
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
-    trueNegIDlist = p.makeIDlist(trueNegIDstr, "True negative ID list: ", True)
-    libraryIDlist = truePosIDlist + trueNegIDlist
+    falsePosIDlist = p.makeIDlist(falsePosIDstr, "True negative ID list: ", True)
+    libraryIDlist = truePosIDlist + falsePosIDlist
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -46,11 +46,11 @@ def main():
     truePosCount = p.updatedLigCounts(ligIDintersectSet,
                                       truePosIDlist,
                                       "true positives")
-    trueNegCount = p.updatedLigCounts(ligIDintersectSet,
-                                      trueNegIDlist,
+    falsePosCount = p.updatedLigCounts(ligIDintersectSet,
+                                      falsePosIDlist,
                                       "true negatives")
     # This value is actually not used, but it complies with the plot() function
-    # libraryCount = truePosCount + trueNegCount
+    # libraryCount = truePosCount + falsePosCount
     libraryCount = p.updatedLigCounts(ligIDintersectSet,
                                        libraryIDlist,
                                        "whole library")
@@ -61,8 +61,8 @@ def main():
         vsDir = os.path.dirname(vsPath)
 
         vsPocket = p.writePercFile(vsIntersect, vsDir, mode, refDict,
-                                   "true_neg", trueNegIDstr,
-                                   trueNegIDlist, trueNegCount,
+                                   "true_neg", falsePosIDstr,
+                                   falsePosIDlist, falsePosCount,
                                    "true_pos", truePosIDstr,
                                    truePosIDlist, truePosCount)
 
@@ -77,7 +77,7 @@ def main():
 
     # Define title and axis names based on mode
     yAxisName = yAxisName + " (total=" + str(truePosCount) + ")"
-    xAxisName = xAxisName + " (total=" + str(trueNegCount) + ")"
+    xAxisName = xAxisName + " (total=" + str(falsePosCount) + ")"
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plotROC(title, plotData, vsColors, vsLines, libraryCount, truePosCount,
@@ -104,7 +104,7 @@ def parseArgs():
         " 'legend4!!' data4.csv"
     descr_truePosIDstr = "Provide the IDs of true positive ligands" \
         " lib (format: 1-514,6001,6700-6702)"
-    descr_trueNegIDstr = "Provide the IDs of true negative ligands" \
+    descr_falsePosIDstr = "Provide the IDs of true negative ligands" \
         " lib (format: 1-514,6001,6700-6702)"
     descr_yAxisName = "Name of the Y-axis in the ROC curve"
     descr_xAxisName = "Name of the X-axis in the ROC curve"
@@ -119,7 +119,7 @@ def parseArgs():
     parser.add_argument("title", help=descr_title)
     parser.add_argument("results", help=descr_results, nargs="+")
     parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
-    parser.add_argument("trueNegIDstr", help=descr_trueNegIDstr)
+    parser.add_argument("falsePosIDstr", help=descr_falsePosIDstr)
     parser.add_argument("yAxisName", help=descr_yAxisName)
     parser.add_argument("xAxisName", help=descr_xAxisName)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
@@ -131,7 +131,7 @@ def parseArgs():
     title = args.title
     results = args.results
     truePosIDstr = args.truePosIDstr
-    trueNegIDstr = args.trueNegIDstr
+    falsePosIDstr = args.falsePosIDstr
     yAxisName = args.yAxisName
     xAxisName = args.xAxisName
     ref = args.ref
@@ -152,7 +152,7 @@ def parseArgs():
         i += 4
 
     return title, vsLegends, vsPaths, vsColors, vsLines, \
-        truePosIDstr, trueNegIDstr, xAxisName, yAxisName, ref, gui, log
+        truePosIDstr, falsePosIDstr, xAxisName, yAxisName, ref, gui, log
 
 if __name__ == "__main__":
     main()

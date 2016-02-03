@@ -119,7 +119,7 @@ class plotting:
         """
         Read in the results provided in .csv format, and figure out the
         intersect between each of those results set based on the ligIDs.
-        Also check that the truePositive and trueNegative sets (if provided)
+        Also check that the truePositive and falsePositive sets (if provided)
         are fully present in the intersect set: send a WARNING if they are not
         Then return the results set containing only the intersect results for
         each set.
@@ -983,7 +983,7 @@ class plotting:
         # Calculate the ligand count at each enrichment factor (0.1, 1, and
         # 10 %). This is evaluated to plot values against totals at each EF.
         # THIS IS NOT USED ANYMORE. Since the switch to mutually exclsive
-        # truePos vs. trueNeg VS results to calculate EFs.
+        # truePos vs. falsePos VS results to calculate EFs.
         #totalLibTenthPercent = int(0.001 * libraryCount)
         #totalLibOnePercent = int(0.01 * libraryCount)
         #totalLibTenPercent = int(0.1 * libraryCount)

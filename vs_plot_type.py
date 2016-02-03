@@ -12,7 +12,7 @@ def main():
     """
 
     title, vsLegends, vsPaths, vsColors, \
-        truePosIDstr, trueNegIDstr, ligLibsJson, \
+        truePosIDstr, falsePosIDstr, ligLibsJson, \
         ref, gui = parseArgs()
 
     # Define mode
@@ -28,9 +28,9 @@ def main():
     # Get the truePosID range in list format
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ",
                                  printOut=True)
-    trueNegIDlist = p.makeIDlist(trueNegIDstr, "True negative ID list: ",
+    falsePosIDlist = p.makeIDlist(falsePosIDstr, "True negative ID list: ",
                                  printOut=True)
-    libraryIDlist = truePosIDlist + trueNegIDlist
+    libraryIDlist = truePosIDlist + falsePosIDlist
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -55,8 +55,8 @@ def main():
     truePosCount = p.updatedLigCounts(ligIDintersectSet,
                                       truePosIDlist,
                                       "true positives")
-    trueNegCount = p.updatedLigCounts(ligIDintersectSet,
-                                      trueNegIDlist,
+    falsePosCount = p.updatedLigCounts(ligIDintersectSet,
+                                      falsePosIDlist,
                                       "true negatives")
     libraryCount = p.updatedLigCounts(ligIDintersectSet,
                                       libraryIDlist,
@@ -67,8 +67,8 @@ def main():
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
         vsDir = os.path.dirname(vsPath)
         vsPocket = p.writePercFile(vsIntersect, vsDir, mode, refDict,
-                                   "true_neg", trueNegIDstr,
-                                   trueNegIDlist, trueNegCount,
+                                   "true_neg", falsePosIDstr,
+                                   falsePosIDlist, falsePosCount,
                                    "true_pos", truePosIDstr,
                                    truePosIDlist, truePosCount)
         vsPockets.append(vsPocket)
@@ -118,7 +118,7 @@ def parseArgs():
         " 'legend4!!' data4.csv"
     descr_truePosIDstr = "Provide the IDs of true positive ligands" \
         " lib (format: 1-514,6001,6700-6702)"
-    descr_trueNegIDstr = "Provide the IDs of true negative ligands" \
+    descr_falsePosIDstr = "Provide the IDs of true negative ligands" \
         " lib (format: 1-514,6001,6700-6702)"
     descr_ligLibs = "JSON file containing a dictionary structure of ligand" \
         " library names (keys) pointing to library paths in .sdf"
@@ -132,7 +132,7 @@ def parseArgs():
     parser.add_argument("title", help=descr_title)
     parser.add_argument("results", help=descr_results, nargs="+")
     parser.add_argument("truePosIDstr", help=descr_truePosIDstr)
-    parser.add_argument("trueNegIDstr", help=descr_trueNegIDstr)
+    parser.add_argument("falsePosIDstr", help=descr_falsePosIDstr)
     parser.add_argument("ligLibs", help=descr_ligLibs)
     parser.add_argument("--ref", help=descr_ref)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
@@ -142,7 +142,7 @@ def parseArgs():
     title = args.title
     results = args.results
     truePosIDstr = args.truePosIDstr
-    trueNegIDstr = args.trueNegIDstr
+    falsePosIDstr = args.falsePosIDstr
     ligLibsJson = args.ligLibs
     ref = args.ref
     gui = args.gui
@@ -159,7 +159,7 @@ def parseArgs():
         i += 3
 
     return title, vsLegends, vsPaths, vsColors, \
-        truePosIDstr, trueNegIDstr, ligLibsJson, \
+        truePosIDstr, falsePosIDstr, ligLibsJson, \
         ref, gui
 
 if __name__ == "__main__":
