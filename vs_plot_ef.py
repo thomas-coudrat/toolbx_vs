@@ -16,21 +16,30 @@ def main():
         ref, gui = parseArgs()
 
     # Define mode
-    mode = "type"
+    mode = "EF"
     # Define zoom
     zoom = 0.0
     # Define log
     log = True
+    # Define ef_cutoffs
+    ef_cutoffs = [2, 5, 10]
 
     # Creating a plotting instance for access to all methods
     p = plotting.plotting(title)
 
+    # Create a library ID string, combining true positive and true negative
+    # strings
+    libraryIDstr = truePosIDstr + "," + falsePosIDstr
+
     # Get the truePosID range in list format
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ",
                                  printOut=True)
-    falsePosIDlist = p.makeIDlist(falsePosIDstr, "True negative ID list: ",
+    falsePosIDlist = p.makeIDlist(falsePosIDstr, "False positive ID list: ",
                                  printOut=True)
     libraryIDlist = truePosIDlist + falsePosIDlist
+
+    #print(len(truePosIDlist), len(falsePosIDlist), len(libraryIDlist))
+
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -57,18 +66,18 @@ def main():
                                       "true positives")
     falsePosCount = p.updatedLigCounts(ligIDintersectSet,
                                       falsePosIDlist,
-                                      "true negatives")
+                                      "false positives")
     libraryCount = p.updatedLigCounts(ligIDintersectSet,
                                       libraryIDlist,
-                                      "whole library")
+                                      "full library")
 
     # Calculate % of total curves for each of these (write file + return data)
     vsPockets = []
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
         vsDir = os.path.dirname(vsPath)
         vsPocket = p.writePercFile(vsIntersect, vsDir, mode, refDict,
-                                   "true_neg", falsePosIDstr,
-                                   falsePosIDlist, falsePosCount,
+                                   "full_lib", libraryIDstr,
+                                   libraryIDlist, libraryCount,
                                    "true_pos", truePosIDstr,
                                    truePosIDlist, truePosCount)
         vsPockets.append(vsPocket)
@@ -78,10 +87,15 @@ def main():
     plotData, xLim, yLim = p.extractPlotData(vsPockets, vsLegends, zoom)
 
     # Extract data related to ligand type (plotting and barplot data)
-    scatterData, enrichFactorData = p.extractLigTypeData(vsPockets,
-                                                         vsLegends,
-                                                         lig_types,
-                                                         libraryCount)
+    enrichFactorData = p.extractLigTypeData(vsPockets,
+                                            vsLegends,
+                                            lig_types,
+                                            libraryCount,
+                                            ef_cutoffs)
+
+    #import pprint
+    #pprint.pprint(enrichFactorData)
+    #pprint.pprint(lig_types)
 
     # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
     # p.getAUC_NSQ(plotData, perfect)
@@ -96,7 +110,8 @@ def main():
 
     # Plot the barplot represeting the enrochment factors (EFs) in known ligands
     # at 0.1 %, 1 % and 10 % of the screened library
-    p.barPlot(title, enrichFactorData, vsLegends, vsColors, lig_types, gui)
+    p.barPlot(title, enrichFactorData, ef_cutoffs,
+              vsLegends, vsColors, lig_types, gui)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)

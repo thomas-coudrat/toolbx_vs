@@ -217,8 +217,9 @@ class plotting:
                       yAxisName, yAxisIDstr, yAxisIDlist, yCount):
         """
         Given this VS result, and information about the ID of known actives
-        in the library, write in a file the information to plot an enrichment
-        curve
+        in the library, write in a file the information to plot a ROC/enrichment
+        curve (depending on what is supplied as xAxisIDlist, falsePositives or
+        full library)
         """
 
         print(col.head + "\n\t*WRITING ENRICHMENT DATA*" + col.end)
@@ -267,19 +268,19 @@ class plotting:
             else:
                 percLine = percLine + "\n"
 
-            # Saving behaviour of enrichment vs. ROC curve vs. type scatter
+            # Saving behaviour of enrichment vs. ROC curve vs. EF scatter
             # All points are saved for an enrichment curve,
-            # whereas only Y and X increments are saved in a ROC curve.
-            # The "type" scatter collects only Y increments plus the last
-            # ligand of the VS (even if it's not a Y increment)
-            if mode in ("type"):
+            # whereas only Y and X increments are saved in a ROC curve and EF.
+            """
+            if mode in ("EF"):
                 # Check again for presence of the current ligID in the y
                 # axis list. If present then write line, otherwise don't
                 if ligID in yAxisIDlist or len(vsIntersect) == i + 1:
                     percentDataFile.write(percLine)
-            elif mode in ("enrich"):
+            """
+            if mode in ("enrich"):
                 percentDataFile.write(percLine)
-            elif mode in ("ROC"):
+            elif mode in ("ROC", "EF"):
                 if ligID in yAxisIDlist or ligID in xAxisIDlist:
                     percentDataFile.write(percLine)
 
@@ -798,8 +799,8 @@ class plotting:
         return scalarMap
 
 
-    def barPlot(self, title, enrichFactorData, pocketNames, vsColors,
-                lig_types, gui):
+    def barPlot(self, title, enrichFactorData, ef_cutoffs,
+                pocketNames, vsColors, lig_types, gui):
         """
         Plot a bar graph showing the EF0.1, EF1 and EF10 (enrichment factors)
         values for each binding pocket compared.
@@ -809,6 +810,11 @@ class plotting:
 
         dpiVal = 200
         alphaVal = 1
+        # Values of EF_a, EF_b and EF_c
+        EF_a = ef_cutoffs[0]
+        EF_b = ef_cutoffs[1]
+        EF_c = ef_cutoffs[2]
+
 
         # Setting up the barchart figure
         fig_bar = plt.figure(figsize=(30, 12), dpi=dpiVal)
@@ -822,12 +828,13 @@ class plotting:
         efNumber = len(efNames)
 
         # Get the count of the largest library
-        max_count = 0
+        #max_count = 0
         # Create the list of hatches for each ligand type
         # Hatches will be stored in this dictionary
         ligLibHatches = {}
         # Finite set of patterns to be associated with ligand types
-        patterns = ('/', '.', 'x', '\\', '|', '-', "\\\\", 'o', '*', 'O')
+        patterns = ('/', '*', 'x', 'O', '|', '-', "\\\\", '\\', '.', 'o')
+
         # print lig_types
         for i, lig_lib in sorted(enumerate(lig_types.keys())):
             # Create the name as "ligType (lig_count)"
@@ -840,19 +847,20 @@ class plotting:
                 ligLibHatches[lig_lib_name] = ""
 
             # Update max_count to know the size of the largest library
-            if current_count > max_count:
-                max_count = current_count
+            #if current_count > max_count:
+            #    max_count = current_count
 
         # Go through a sorted list of the pocket-ligType combinations
         allBars = []
-
+        # Store largest EF value
+        max_ef_val = 0
         for i, efName in enumerate(sorted(enrichFactorData.keys())):
             # Get the data to be plotted
             efData = enrichFactorData[efName][0]
-            efTotals = enrichFactorData[efName][1]
+            #efTotals = enrichFactorData[efName][1]
 
             # Choose the bar color: match the pocket
-            curr_pocket_name = enrichFactorData[efName][2][0]
+            curr_pocket_name = enrichFactorData[efName][4][0]
             # Loop over pocket names to get the pocket index (use 0 if pocket
             # was not found)
             num = 0
@@ -867,7 +875,7 @@ class plotting:
                 color = "grey"
 
             # Choose bar hatch: match the ligand types
-            curr_lib_name = enrichFactorData[efName][2][1]
+            curr_lib_name = enrichFactorData[efName][4][1]
             # print lib_name
             # print ligLibHatches.keys()
             if curr_lib_name in ligLibHatches.keys():
@@ -882,44 +890,44 @@ class plotting:
             #                     linewidth=0)
 
             # Plotting bar (with matching color and hatch)
+
             bars = ax_bar.bar(ind + i*(width), efData, width,
                               alpha=alphaVal, color=color, align="center",
                               hatch=hatch)
 
-            # Calculating the percent value for of each recovered co
-            # Adding the percent text on top of each bar
-            for j, (value, total, bar) in enumerate(zip(efData, efTotals, bars)):
-                # If no ligand of that type was found, avoid division by 0
-                if total != 0:
-                    percent = str(round(value/total*100, 2)) + " %"
-                else:
-                    percent = "0 %"
-                # ind + i*width + j*width +
-                x_position = bar.get_x()
-                ax_bar.text(x_position + 0.075,
-                            value + 0.5, percent,
-                            fontsize=20, color="black",
-                            verticalalignment="bottom",
-                            horizontalalignment="right",
-                            rotation=90)
+            # Keep the largest value to update figure size
+            for ef_val in efData:
+                if max_ef_val < ef_val:
+                    max_ef_val = ef_val
+
+            # Display values above bars, only if there was at least one bar
+            # above 0
+            if max_ef_val != 0:
+                for j, (value, bar) in enumerate(zip(efData, bars)):
+                    # If no ligand of that type was found, avoid division by 0
+                    # ind + i*width + j*width +
+                    x_position = bar.get_x()
+                    ax_bar.text(x_position + 0.073,
+                                value + 0.5, "{0:.1f}".format(value),
+                                fontsize=20, color="black",
+                                verticalalignment="bottom",
+                                horizontalalignment="right",
+                                rotation=90)
 
             allBars.append(bars)
 
-        # Figure out what the increment to be used on the Y axis, in order to
-        # have ~10 ticks. Then get the closest multiple of 5 to that number as
-        # the step
-        if max_count >= 10:
-            y_step = int(5 * round(float(max_count/10.0)/5))
-        else:
-            y_step = 1
         # Setting ticks and limits
         #ax_bar.set_title(title, fontsize=35, y=1.08)
         ax_bar.set_xticks(ind + (efNumber * width)/2)
-        ax_bar.set_yticks(np.arange(0, max_count*1.20, y_step))
-        ax_bar.set_xticklabels( ('EF 0.1 %', 'EF 1 %', 'EF 10 %') )
+        ax_bar.set_xticklabels(('EF' + str(EF_a),
+                                'EF' + str(EF_b),
+                                'EF' + str(EF_c)))
         ax_bar.tick_params(axis="both", which="major", labelsize=30)
-        # Set the upperlimit at 10% more than the maximum value of the graph
-        ax_bar.set_ylim(0, max_count * 1.20)
+        # Set the upperlimit at 20% more than the maximum value of the graph
+        if max_ef_val != 0:
+            ax_bar.set_ylim(0, max_ef_val * 1.20)
+        else:
+            ax_bar.set_ylim(bottom=0)
         # Set margins left and right of the bar groups
         ax_bar.margins(x=.1)
 
@@ -947,8 +955,8 @@ class plotting:
         # Create the custom figure legend
         #plt.figlegend(legRects, legNames, prop={'size': 30},
         #              loc="center")
-        ax_bar.legend(legRects, legNames,
-                      loc="upper left", prop={"size": 30})
+        ax_bar.legend(legRects, legNames,# ncol=2,
+                      loc="best", prop={"size": 30})
 
         # Display or save barchart and legend
         if gui:
@@ -969,7 +977,7 @@ class plotting:
 
 
     def extractLigTypeData(self, percentPaths, vsLegends,
-                           lig_types, libraryCount):
+                           lig_types, libraryCount, ef_cutoffs):
         """
         Extract enrichment factor data from each binding pocket VS data file
         File format
@@ -977,19 +985,21 @@ class plotting:
 
         print(col.head + "\n\t*GETTING LIGAND TYPE DATA*" + col.end)
 
+        # Values of EF_a, EF_b and EF_c
+        EF_a = ef_cutoffs[0]
+        EF_b = ef_cutoffs[1]
+        EF_c = ef_cutoffs[2]
+
         # Dictionary containing enrichment factor information
         enrichFactorData = {}
 
-        # Calculate the ligand count at each enrichment factor (0.1, 1, and
-        # 10 %). This is evaluated to plot values against totals at each EF.
-        # THIS IS NOT USED ANYMORE. Since the switch to mutually exclsive
-        # truePos vs. falsePos VS results to calculate EFs.
-        #totalLibTenthPercent = int(0.001 * libraryCount)
-        #totalLibOnePercent = int(0.01 * libraryCount)
-        #totalLibTenPercent = int(0.1 * libraryCount)
-
         # Read each binding pocket VS data file
         for percentPath, vsLegend in zip(percentPaths, vsLegends):
+
+            # Flags used for EF
+            EF_a_notReached = True
+            EF_b_notReached = True
+            EF_c_notReached = True
 
             print("\nOpening:", vsLegend, "from path:", percentPath)
 
@@ -999,71 +1009,113 @@ class plotting:
                     # Get the data from the file
                     ll = line.split(",")
                     ligID = int(ll[0])
+                    X = int(ll[1])
                     xPercent = float(ll[3])
                     yPercent = float(ll[4])
 
                     # Read each ligand type ligand ID data
-                    for lib_name in sorted(lig_types.keys()):
-                        #print(lib_name)
+                    for i, lib_name in enumerate(sorted(lig_types.keys())):
 
                         # Collect the list of ligand IDs that correspond to that
                         # type
                         lib_IDs = lig_types[lib_name][0]
                         # Count number of ligands in that library
                         ligCount = len(lib_IDs)
+                        # Get number of ligand libraries
+                        libTypesCount = len(lig_types)
 
-                        # Create the enrichmentFactorData data structure
-                        # Dictionary with keys combining bindingPocket name and
-                        # ligLibrary name. Point to two lists, each initialised
-                        # to 0,0,0. For each list, values at [0], [1], [2]
-                        # correspond to EF0.1, EF1 and EF10 respectively.
-                        # The first list stores values at each EF level, the
-                        # second list stores total hypothetical values at each
-                        # EF (total ligand library numbers normalised to EF 0.1,
-                        # 1 and 10).
+                        # Initialise enrichFactorData, dictionary with keys
+                        # combining bindingPocket name and ligLibrary name.
+                        # It stores in position 0 and 1 two lists of three
+                        # elements. Each of these elements correspond to
+                        # EF_a, EF_b and EF_c, respectively. Here X is defined
+                        # above, the commonly used cutoffs are 2, 5 and 10.
+                        # Description of what is in the dictionary:
+                        # [0] is initiated to False, and will contain the EF
+                        # (enrichment factor) values which are calculated after
+                        # this loop, and used for plotting the barchart.
+                        # [1] contains the true positive ligand counters at
+                        # X % of the screened database (TPx)
+                        # [2] contains the number of ligands from the library
+                        # at X % of screened database (Nx)
+                        # [3] contains the total count of ligand
+                        # of that type in the library of that, it is used
+                        # to calculate the EF.
+                        # [4] is a list storing the
+                        # strings for legend plotting, binding pocket name
+                        # and ligand library name.
                         libNameNum = lib_name + " (" + str(ligCount) + ")"
                         efName = vsLegend + " - " + libNameNum
                         if efName not in enrichFactorData.keys():
-                            #efTenth = min(ligCount, totalLibTenthPercent)
-                            #efOne = min(ligCount, totalLibOnePercent)
-                            #efTen = min(ligCount, totalLibTenPercent)
-                            enrichFactorData[efName] = [[0,0,0],
-                                                        [ligCount,ligCount,ligCount],
+                            enrichFactorData[efName] = [False,
+                                                        [0,0,0],
+                                                        [0,0,0],
+                                                        ligCount,
                                                         [vsLegend, libNameNum]]
 
+                        # Populate the library counts at EF a, b and c.
                         # If the current ligand ID is in that list, then store
                         # its X and Y data in the lig_types dictionary
-                        if ligID in lib_IDs:
-                            #print("Ligand found!")
-                            # Store the X value
-                            lig_types[lib_name][1].append(xPercent)
-                            # Store the Y value
-                            lig_types[lib_name][2].append(yPercent)
+                        if xPercent - EF_a <= 0 and EF_a_notReached:
+                            # update library ligand count
+                            enrichFactorData[efName][2][0] = X
+                            # update ligand type count
+                            if ligID in lib_IDs:
+                                enrichFactorData[efName][1][0] += 1
+                            # update found flag
+                            if int(xPercent) == EF_a and i + 1 == libTypesCount:
+                                EF_a_notReached = False
 
-                            # Populate the enrichment factor data (EF0.1, EF1
-                            # and EF10) if the current line corresponds to a
-                            # known ligand found in the current ligand type list
-                            if xPercent <= 0.1:
-                                enrichFactorData[efName][0][0] += 1
-                                #print("\tEF0.1", xPercent, yPercent,
-                                #      enrichFactorData[efName][0][0])
-                            if xPercent <= 1:
-                                enrichFactorData[efName][0][1] += 1
-                                #print("\tEF1", xPercent, yPercent,
-                                #      enrichFactorData[efName][0][1])
-                            if xPercent <= 10:
-                                enrichFactorData[efName][0][2] += 1
-                                #print("\tEF10", xPercent, yPercent,
-                                #      enrichFactorData[efName][0][2])
-                    #print("\n")
+                        if xPercent - EF_b <= 0 and EF_b_notReached:
+                            # update library ligand count
+                            enrichFactorData[efName][2][1] = X
+                            # update ligand type count
+                            if ligID in lib_IDs:
+                                enrichFactorData[efName][1][1] += 1
+                            # update found flag
+                            if int(xPercent) == EF_b and i + 1 == libTypesCount:
+                                EF_b_notReached = False
 
-        scatterData = []
-        for lib_name in lig_types.keys():
-            scat_X = lig_types[lib_name][1]
-            scat_Y = lig_types[lib_name][2]
-            scatterData.append((scat_X, scat_Y, lib_name))
+                        if xPercent - EF_c <= 0 and EF_c_notReached:
+                            # update library ligand count
+                            enrichFactorData[efName][2][2] = X
+                            # update ligand type count
+                            if ligID in lib_IDs:
+                                enrichFactorData[efName][1][2] += 1
+                            # update found flag
+                            if int(xPercent) == EF_c and i + 1 == libTypesCount:
+                                EF_c_notReached = False
 
-        return scatterData, enrichFactorData
+        # Calculate EF values now that ligand type counts at 0.1, 1 and 10
+        # have been gathered. The equation for EF used is the following:
+        # EF = (TPx / Nx) / (TP / N) where TPx is the count of true positives
+        # at x % of the screened library, Nx is the count of ligands at x %,
+        # and TP is the total true positives in the full library, and N is the
+        # count of ligands in the library.
+        for efName in sorted(enrichFactorData.keys()):
+
+            # Get the total ligand count for this ligand type, on that
+            # binding pocket
+            ligCount = enrichFactorData[efName][3]
+
+            # Calculating TP / N
+            ligTypeTotalPerc = float(ligCount) / float(libraryCount)
+
+            # Get the true positive and library count at X (0.1, 1 and 10)
+            ligCountsX = enrichFactorData[efName][1]
+            libraryCountsX = enrichFactorData[efName][2]
+
+            efValues = []
+            for ligCountX, libraryCountX in zip(ligCountsX, libraryCountsX):
+                # Calculating the numerator of EF equation: TPx / Nx
+                ligTypeXPerc = float(ligCountX) / float(libraryCountX)
+                # Calculate EF and append to efValues list
+                efValues.append(ligTypeXPerc / ligTypeTotalPerc)
+
+            # Adding the new efValues list to the dictionary
+            enrichFactorData[efName][0] = efValues
+
+        return enrichFactorData
 
 
     def log_and_print(self, string):
