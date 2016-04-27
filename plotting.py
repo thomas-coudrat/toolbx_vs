@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 
 from matplotlib import pyplot as plt
-import matplotlib
+import matplotlib as mpl
 import math
 import os, sys
 import numpy as np
 import json
 from sklearn.metrics import roc_curve, auc
 
+# Get matplotlib to save SVG text as text, not paths
+mpl.rcParams['svg.fonttype'] = 'none'
 
 class col:
     """
@@ -535,8 +537,8 @@ class plotting:
         else:
             fileName = title.replace(" ", "_")
             # Save png version
-            plt.savefig(fileName + ".png", bbox_inches="tight",
-                        format="png", dpi=dpiVal)
+            plt.savefig(fileName + ".svg", bbox_inches="tight",
+                        format="svg", dpi=dpiVal)
             # Save pdf version
             #plt.savefig(fileName + ".pdf", bbox_inches="tight",
             #            format="pdf", dpi=dpiVal)
@@ -628,8 +630,8 @@ class plotting:
         else:
             fileName = title.replace(" ", "_")
             # Save png version
-            plt.savefig(fileName + ".png", bbox_inches="tight",
-                        format="png", dpi=dpiVal)
+            plt.savefig(fileName + ".svg", bbox_inches="tight",
+                        format="svg", dpi=dpiVal)
             # Save pdf version
             #plt.savefig(fileName + ".pdf", bbox_inches="tight",
             #            format="pdf", dpi=dpiVal)
@@ -792,8 +794,8 @@ class plotting:
 
         # Setting up color scheme
         cm = plt.get_cmap(color_range)
-        cNorm = matplotlib.colors.Normalize(vmin=0, vmax=len(data))
-        scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
+        cNorm = mpl.colors.Normalize(vmin=0, vmax=len(data))
+        scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cm)
         # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(plotData))])
 
         return scalarMap
@@ -965,8 +967,8 @@ class plotting:
             barFile = title.replace(" ", "_")
             #legFile = title.replace(" ", "_") + "_barLeg"
             # Save png versions
-            fig_bar.savefig(barFile + ".png", bbox_inches="tight",
-                            format="png", dpi=dpiVal)
+            fig_bar.savefig(barFile + ".svg", bbox_inches="tight",
+                            format="svg", dpi=dpiVal)
             #fig_leg.savefig(legFile + ".png", bbox_inches="tight",
             #                format="png", dpi=dpiVal)
             # Save pdf versions

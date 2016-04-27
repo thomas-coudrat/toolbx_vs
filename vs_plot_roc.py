@@ -8,7 +8,7 @@ import plotting
 
 def main():
     """
-    Exectute the vs_plot_enrich script
+    Exectute the vs_plot_roc script
     """
 
     title, vsLegends, vsPaths, vsColors, vsLines, \
