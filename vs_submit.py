@@ -27,9 +27,6 @@ def main():
     # Return the queuing system chosen
     vsDir, queue = parsing()
 
-    # Get the queuing system on this cluster
-    #queue = getQueuingSys()
-
     # Get the current working directory
     cwd = os.getcwd()
 
@@ -86,33 +83,6 @@ def confirmSubmit(queuePaths):
     else:
         print("Quit...\n")
         sys.exit()
-
-
-def getQueuingSys():
-    """
-    Figure out which queuing system to use depending on the platform this script
-    is executed on
-    """
-
-    # This Json file stores the ICM executable locations for each platform
-    queuesJson = os.path.dirname(os.path.realpath(__file__)) + "/../queue_sys.json"
-
-    # Read content of .json file
-    with open(queuesJson, "r") as jsonFile:
-        queues = json.load(jsonFile)
-
-    # Get the hostname to know which computer this is executed on
-    hostname = socket.gethostname()
-
-    # Assign the ICM executable path corresponding to the hostname, if it is not
-    # defined then stop the execution
-    if hostname in queues.keys():
-        queue = queues[hostname]
-    else:
-        print("The queuing system could not be assigned", hostname)
-        sys.exit()
-
-    return queue
 
 
 def getQueueScripts(vsDir, queue):
