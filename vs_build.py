@@ -149,29 +149,18 @@ def parsing():
 
 def getPath():
     """
-    Read in the json file containing the ICM executable paths for each machine
-    Return the ICM executable corresponding to the hostname of the machine being
-    used currently
+    Get the ICM executable from the ICMHOME environment variable
     """
 
-    # This Json file stores the ICM executable locations for each platform
-    icmExecJson = os.path.dirname(os.path.realpath(__file__)) + "/../icm_exec.json"
+    # Get environment variable. It returns None if not defined on the system.
+    icmHome = os.environ.get('ICMHOME')
 
-    # Read content of .json file
-    with open(icmExecJson, "r") as jsonFile:
-        icmExec = json.load(jsonFile)
-
-    # Get the hostname to know which computer this is executed on
-    hostname = socket.gethostname()
-
-    # Assign the ICM executable path corresponding to the hostname, if it is not
-    # defined then stop the execution
-    if hostname in icmExec.keys():
-        icm = icmExec[hostname]
-    else:
-        print("The ICM executable is not defined for this machine, please edit\
-            the icm_exec.json file")
+    # Return path to executable if the environment variable was found
+    if icmHome == None:
+        "The ICMHOME environment variable must be set for your system. Exiting."
         sys.exit()
+    else:
+        icm = icmHome + "/icm64"
 
     return icm
 

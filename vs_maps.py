@@ -127,28 +127,18 @@ def parseArgs():
 
 def getPath():
     """
-    Devide which platform this is executed on, and select the proper script
-    paths
+    Get the ICM executable from the ICMHOME environment variable
     """
 
-    # This Json file stores the ICM executable locations for each platform
-    icmExecJson = os.path.dirname(os.path.realpath(__file__)) + "/../icm_exec.json"
+    # Get environment variable. It returns None if not defined on the system.
+    icmHome = os.environ.get('ICMHOME')
 
-    # Read content of .json file
-    with open(icmExecJson, "r") as jsonFile:
-        icmExec = json.load(jsonFile)
-
-    # Get the hostname to know which computer this is executed on
-    hostname = socket.gethostname()
-
-    # Assign the ICM executable path corresponding to the hostname, if it is not
-    # defined then stop the execution
-    if hostname in icmExec.keys():
-        icm = icmExec[hostname]
-    else:
-        print("The ICM executable is not defined for this machine, please edit\
-              the icm_exec.json file")
+    # Return path to executable if the environment variable was found
+    if icmHome == None:
+        "The ICMHOME environment variable must be set for your system. Exiting."
         sys.exit()
+    else:
+        icm = icmHome + "/icm64"
 
     return icm
 
@@ -160,7 +150,7 @@ def generateScript(mapMode, obPath, pocket, icm, residues):
     """
 
     # Ligand-script base
-    scrLig_string = """#!ICM_EXEC/icm64
+    scrLig_string = """#!ICM_EXEC
 
 call "_startup"
 
@@ -182,7 +172,7 @@ quit
 """
 
     # Pocket-script base
-    scrPok_string = """#!ICM_EXEC/icm64
+    scrPok_string = """#!ICM_EXEC
 
 call "_startup"
 
@@ -204,7 +194,7 @@ quit
 """
 
     # resList-script base
-    resList_string = """#!ICM_EXEC/icm64
+    resList_string = """#!ICM_EXEC
 
 call "_startup"
 
@@ -256,7 +246,7 @@ def runScript(icm, script):
 
     # Execute
     try:
-        check_output(icm + "/icm64 -s " + script, stderr=STDOUT, shell=True)
+        check_output(icm + " -s " + script, stderr=STDOUT, shell=True)
     except CalledProcessError as e:
         print(e.output)
         sys.exit()
