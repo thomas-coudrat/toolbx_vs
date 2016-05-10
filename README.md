@@ -80,7 +80,8 @@ vs_plot_type.py 'My VS experiment' 'Receptor' 'my_vs_experiment/results_receptor
 Managing a VS on a cluster is easier with toolbx_vs than with ICM's interface.
 This set of tools were created for VS experiments performed by Thomas Coudrat
 during his PhD. Features were added as needed for the study. The scripts don't
-provide all functionalities available by ICM docking software.
+provide access to all VS functionalities available from the ICM docking
+software.
 
 ## Contributions
 Feel free to create an issue or submit a pull request. You can also contact me
@@ -96,4 +97,4 @@ Feel free to create an issue or submit a pull request. You can also contact me
     * Requires software license
 
 ## License
-MIT
+This project is licensed under the MIT license
