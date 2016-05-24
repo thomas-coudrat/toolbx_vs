@@ -51,7 +51,7 @@ def main():
     #queue = getQueuingSys()
 
     # Get the path from the Json file
-    icm = getPath()
+    icmHome = getPath()
 
     # Store all the report lines in this file, will be used for printout
     # and to write to file
@@ -87,7 +87,7 @@ def main():
 
     # Create the .slurm slices
     reportLines = createSlices(libStart, libEnd, sliceSize, walltime, thor,
-                               projName, repeatNum, queue, reportLines, icm)
+                               projName, repeatNum, queue, reportLines, icmHome)
 
     reportLines.append("\n")
 
@@ -160,9 +160,7 @@ def getPath():
         "The ICMHOME environment variable must be set for your system. Exiting."
         sys.exit()
     else:
-        icm = icmHome + "/icm64"
-
-    return icm
+        return icmHome
 
 
 def cleanRepeatDir(repeatDir):
@@ -271,7 +269,7 @@ def createRepeats(repeatNum, setupDir, reportLines):
 
 
 def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
-                 repeatNum, queue, reportLines, icm):
+                 repeatNum, queue, reportLines, icmHome):
     """
     Create the .slurm slices to split the VS job into portions for submission
     to the cluster
@@ -316,11 +314,11 @@ def createSlices(libStart, libEnd, sliceSize, walltime, thor, projName,
                 reportLines = slurmSlice(sliceCount, projName, thor,
                                          lowerLimit, upperLimit,
                                          libStart, libEnd,
-                                         repeatDir, reportLines, icm)
+                                         repeatDir, reportLines, icmHome)
             elif queue == "sge":
                 reportLines = sgeSlice(walltime, sliceName, projName, thor,
                                        lowerLimit, upperLimit, repeatDir,
-                                       reportLines, icm)
+                                       reportLines, icmHome)
 
             # Update upperLimit and sliceCount
             lowerLimit += sliceSize
@@ -365,7 +363,7 @@ def slurmSrun(projName, libStart, libEnd,  walltime, repeatDir, repeat, sliceCou
 
 
 def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
-               libStart, libEnd, repeatDir, reportLines, icm):
+               libStart, libEnd, repeatDir, reportLines, icmHome):
     """
     Create a slurm slice and write to a file with the info provided
     """
@@ -373,7 +371,7 @@ def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
     lines = []
     lines.append("#!/bin/bash")
     lines.append("")
-    lines.append("ICMHOME=" + icm)
+    lines.append("ICMHOME=" + icmHome)
     lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
                  " thorough=" + thor +
                  " from=" + str(lowerLimit) +
@@ -395,7 +393,7 @@ def slurmSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
 
 
 def sgeSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
-             repeatDir, reportLines, icm):
+             repeatDir, reportLines, icmHome):
     """
     Create a SGE slice given the info provided
     """
@@ -409,7 +407,7 @@ def sgeSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
     lines.append("#$ -cwd")
     lines.append("#$ -N " + str(sliceName))
     lines.append("")
-    lines.append("ICMHOME=" + icm)
+    lines.append("ICMHOME=" + icmHome)
     lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
                  " thorough=" + thor +
                  " from=" + str(lowerLimit) +
