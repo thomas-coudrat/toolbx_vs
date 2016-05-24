@@ -567,16 +567,25 @@ class plotting:
         else:
             ax2 = None
 
+        # If all lines are two be drawn continuous, then vertical lines that
+        # identify the ligand should all be hyphenated. Otherwise, follow line
+        # styles of the VS curve.
+        if all(x == "cont" for x in vsLines):
+            ligVerticStyleFollow = False
+        else:
+            ligVerticStyleFollow = True
+
         # Drawing data on the figure
         for i, (plotDatum, color, line) in enumerate(zip(plotData, vsColors, vsLines)):
             if line == "cont":
-                line = "-"
+                lineStyle = "-"
             elif line == "hyph":
-                line = "--"
+                lineStyle = "--"
             elif line == "dots":
-                line = ":"
-            X, Y = self.drawLine(ax, ax2, plotDatum, color, line, i, zoom,
-                                 mode, lineWidth, alphaVal)
+                lineStyle = ":"
+            X, Y = self.drawLine(ax, ax2, plotDatum, color, lineStyle, i,
+                                 zoom, mode, lineWidth, alphaVal,
+                                 ligVerticStyleFollow)
 
         # Now plot random and perfect curves, get a range of X values from
         # 0 to 100, with 0.1 increments. These values are submitted to the
@@ -637,8 +646,8 @@ class plotting:
             #            format="pdf", dpi=dpiVal)
 
 
-    def drawLine(self, ax, ax2, plotDatum, color, lineDatum, i, zoom,
-                 mode, lineWidth, alphaVal):
+    def drawLine(self, ax, ax2, plotDatum, color, lineStyle, i, zoom,
+                 mode, lineWidth, alphaVal, ligVerticStyleFollow):
         """
         Draw the line corresponding to the set of data passed in arguments
         """
@@ -680,18 +689,25 @@ class plotting:
             # Y = [0.0] + Y
             ax.plot(X, Y, label=plotLegend,
                     linewidth=lineWidth, color=color, alpha=alphaVal,
-                    linestyle=lineDatum)
+                    linestyle=lineStyle)
 
         # Plot a blow up of the first X%
         if zoom != 0.0:
             ax2.plot(X, Y, color=color)
 
+        # Decide whether to have vertical lines the same style as VS curves
+        # or all hyphenated
+        if ligVerticStyleFollow:
+            pass
+        else:
+            lineStyle = "--"
+
         # Plot a vertical line for each refinement ligand
         for ligName in refPlot.keys():
             xPos, yPos = refPlot[ligName]
             ax.axvline(x=xPos, ymax=yPos/100., color=color, alpha=alphaVal,
-                       linewidth=lineWidth, linestyle='--')
-            # print ligName, xPos, yPos
+                       linewidth=lineWidth, linestyle=lineStyle)
+            # print(ligName, xPos, yPos)
             #ax.text(xPos, -4, ligName, rotation=-70, alpha=alphaVal,
             #        fontsize=30, color=color, transform=ax.transData)
 
