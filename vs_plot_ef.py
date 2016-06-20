@@ -97,21 +97,10 @@ def main():
     #pprint.pprint(enrichFactorData)
     #pprint.pprint(lig_types)
 
-    # FIX AND COMPUTE ON ONE CURVE AT A TIME, on percent vs data?
-    # p.getAUC_NSQ(plotData, perfect)
-
-    # Define title and axis names based on mode
-    #xAxisName = "% of ranked database (total=" + str(libraryCount) + ")"
-    #yAxisName = "% of known ligands found (total=" + str(truePosCount) + ")"
-
-    # Plot the data calculated by writePercFile, and read in by extracPlotData
-    # p.plot(title, plotData, libraryCount, truePosCount, xLim, yLim,
-    #        xAxisName, yAxisName, gui, log, zoom, mode, scatterData)
-
     # Plot the barplot represeting the enrochment factors (EFs) in known ligands
     # at 0.1 %, 1 % and 10 % of the screened library
-    p.barPlot(title, enrichFactorData, ef_cutoffs,
-              vsLegends, vsColors, lig_types, gui)
+    p.barPlot(title, enrichFactorData, vsLegends, ef_cutoffs,
+              vsColors, lig_types, gui)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)

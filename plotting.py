@@ -536,12 +536,10 @@ class plotting:
             plt.show()
         else:
             fileName = title.replace(" ", "_")
+            # Save svg version
+            plt.savefig(fileName + ".svg", bbox_inches="tight", dpi=dpiVal)
             # Save png version
-            plt.savefig(fileName + ".svg", bbox_inches="tight",
-                        format="svg", dpi=dpiVal)
-            # Save pdf version
-            #plt.savefig(fileName + ".pdf", bbox_inches="tight",
-            #            format="pdf", dpi=dpiVal)
+            plt.savefig(fileName + ".png", bbox_inches="tight", dpi=dpiVal)
 
 
     def plotROC(self, title, plotData, vsColors, vsLines,
@@ -610,7 +608,8 @@ class plotting:
         ax.minorticks_on()
         ax.tick_params(axis="both", which="major", labelsize=30)
         #ax.set_title(title, fontsize=35, y=1.08)
-        ax.legend(loc="best", prop={'size': 30})
+        ax.legend(loc="best", prop={'size': 30},
+                  borderpad=0.1, labelspacing=0.3, handletextpad=0.4)
         ax.axis('tight')
         # Needed when plotting scatterplots (redundant for plotting lines)
         plt.ylim(0, 100)
@@ -638,12 +637,10 @@ class plotting:
             plt.show()
         else:
             fileName = title.replace(" ", "_")
+            # Save svg version
+            plt.savefig(fileName + ".svg", bbox_inches="tight", dpi=dpiVal)
             # Save png version
-            plt.savefig(fileName + ".svg", bbox_inches="tight",
-                        format="svg", dpi=dpiVal)
-            # Save pdf version
-            #plt.savefig(fileName + ".pdf", bbox_inches="tight",
-            #            format="pdf", dpi=dpiVal)
+            plt.savefig(fileName + ".png", bbox_inches="tight", dpi=dpiVal)
 
 
     def drawLine(self, ax, ax2, plotDatum, color, lineStyle, i, zoom,
@@ -817,8 +814,8 @@ class plotting:
         return scalarMap
 
 
-    def barPlot(self, title, enrichFactorData, ef_cutoffs,
-                pocketNames, vsColors, lig_types, gui):
+    def barPlot(self, title, enrichFactorData, pocketNames, ef_cutoffs,
+                vsColors, lig_types, gui):
         """
         Plot a bar graph showing the EF0.1, EF1 and EF10 (enrichment factors)
         values for each binding pocket compared.
@@ -826,13 +823,14 @@ class plotting:
         """
         print(col.head + "\n\t*PLOTTING BAR GRAPH DATA*" + col.end)
 
+        # Default graphic values
         dpiVal = 200
         alphaVal = 1
+
         # Values of EF_a, EF_b and EF_c
         EF_a = ef_cutoffs[0]
         EF_b = ef_cutoffs[1]
         EF_c = ef_cutoffs[2]
-
 
         # Setting up the barchart figure
         fig_bar = plt.figure(figsize=(30, 12), dpi=dpiVal)
@@ -842,8 +840,13 @@ class plotting:
         groups = 3
         ind = np.arange(groups*2, step=2)
         width = 0.07
-        efNames = sorted(enrichFactorData.keys())
-        efNumber = len(efNames)
+        efNumber = len(enrichFactorData.keys())
+        # Create a list of pockets and ligand library that matches the order
+        # submitted in arguments
+        efPockets = []
+        for pocket in pocketNames:
+            for lib in sorted(lig_types.keys()):
+                efPockets.append([pocket, lib])
 
         # Get the count of the largest library
         #max_count = 0
@@ -854,16 +857,15 @@ class plotting:
         patterns = ('/', '*', 'x', 'O', '|', '-', "\\\\", '\\', '.', 'o')
 
         # print lig_types
-        for i, lig_lib in sorted(enumerate(lig_types.keys())):
+        for i, lig_lib in enumerate(sorted(lig_types.keys())):
             # Create the name as "ligType (lig_count)"
-            current_count = len(lig_types[lig_lib][0])
-            lig_lib_name = lig_lib + " (" + str(current_count)+ ")"
+            #current_count = len(lig_types[lig_lib][0])
+            #lig_lib_name = lig_lib + " (" + str(current_count)+ ")"
             # Add a dictionary value, associate it to a new pattern
             if i <= len(patterns) - 1:
-                ligLibHatches[lig_lib_name] = patterns[i]
+                ligLibHatches[lig_lib] = patterns[i]
             else:
-                ligLibHatches[lig_lib_name] = ""
-
+                ligLibHatches[lig_lib] = ""
             # Update max_count to know the size of the largest library
             #if current_count > max_count:
             #    max_count = current_count
@@ -872,67 +874,68 @@ class plotting:
         allBars = []
         # Store largest EF value
         max_ef_val = 0
-        for i, efName in enumerate(sorted(enrichFactorData.keys())):
-            # Get the data to be plotted
-            efData = enrichFactorData[efName][0]
-            #efTotals = enrichFactorData[efName][1]
+        # Loop over binding pocket/ligand library combinations in the order
+        # defined by the user in arguments
+        for i, efName in enumerate(efPockets):
+            for efKey in enrichFactorData.keys():
+                if enrichFactorData[efKey][4] == efName:
+                    # Get the data to be plotted
+                    efData = enrichFactorData[efKey][0]
 
-            # Choose the bar color: match the pocket
-            curr_pocket_name = enrichFactorData[efName][4][0]
-            # Loop over pocket names to get the pocket index (use 0 if pocket
-            # was not found)
-            num = 0
-            for j, pocketName in enumerate(pocketNames):
-                if curr_pocket_name == pocketName:
-                    num = j
+                    # Choose the bar color: match the pocket
+                    curr_pocket_name = enrichFactorData[efKey][4][0]
+                    # Loop over pocket names to get the pocket index (use 0 if pocket
+                    # was not found)
+                    num = 0
+                    for j, pocketName in enumerate(pocketNames):
+                        if curr_pocket_name == pocketName:
+                            num = j
 
-            # Get the color using the pocket index
-            if num < len(vsColors):
-                color = vsColors[num]
-            else:
-                color = "grey"
+                    # Get the color using the pocket index
+                    if num < len(vsColors):
+                        color = vsColors[num]
+                    else:
+                        color = "grey"
 
-            # Choose bar hatch: match the ligand types
-            curr_lib_name = enrichFactorData[efName][4][1]
-            # print lib_name
-            # print ligLibHatches.keys()
-            if curr_lib_name in ligLibHatches.keys():
-                hatch = ligLibHatches[curr_lib_name]
-                # print lib_name
-            else:
-                hatch = ""
+                    # Choose bar hatch: match the ligand types
+                    curr_lib_name = enrichFactorData[efKey][4][1]
+                    # print lib_name
+                    # print ligLibHatches.keys()
+                    if curr_lib_name in ligLibHatches.keys():
+                        hatch = ligLibHatches[curr_lib_name]
+                        # print lib_name
+                    else:
+                        hatch = ""
 
-            # Plotting totals in white bars
-            #barTots = ax_bar.bar(ind + i*(width), efTotals, width,
-            #                     alpha=alphaVal, color="white", align="center",
-            #                     linewidth=0)
+                    # Plotting totals in white bars
+                    #barTots = ax_bar.bar(ind + i*(width), efTotals, width,
+                    #                     alpha=alphaVal, color="white", align="center",
+                    #                     linewidth=0)
 
-            # Plotting bar (with matching color and hatch)
+                    # Plotting bar (with matching color and hatch)
+                    bars = ax_bar.bar(ind + i*(width), efData, width,
+                                      alpha=alphaVal, color=color, align="center",
+                                      hatch=hatch)
 
-            bars = ax_bar.bar(ind + i*(width), efData, width,
-                              alpha=alphaVal, color=color, align="center",
-                              hatch=hatch)
+                    # Keep the largest value to update figure size
+                    for ef_val in efData:
+                        if max_ef_val < ef_val:
+                            max_ef_val = ef_val
 
-            # Keep the largest value to update figure size
-            for ef_val in efData:
-                if max_ef_val < ef_val:
-                    max_ef_val = ef_val
-
-            # Display values above bars, only if there was at least one bar
-            # above 0
-            if max_ef_val != 0:
-                for j, (value, bar) in enumerate(zip(efData, bars)):
-                    # If no ligand of that type was found, avoid division by 0
-                    # ind + i*width + j*width +
-                    x_position = bar.get_x()
-                    ax_bar.text(x_position + 0.073,
-                                value + 0.5, "{0:.1f}".format(value),
-                                fontsize=20, color="black",
-                                verticalalignment="bottom",
-                                horizontalalignment="right",
-                                rotation=90)
-
-            allBars.append(bars)
+                    # Display values above bars, only if there was at least one bar
+                    # above 0
+                    if max_ef_val != 0:
+                        for j, (value, bar) in enumerate(zip(efData, bars)):
+                            # If no ligand of that type was found, avoid division by 0
+                            # ind + i*width + j*width +
+                            x_position = bar.get_x()
+                            ax_bar.text(x_position + 0.073,
+                                        value + 0.5, "{0:.1f}".format(value),
+                                        fontsize=20, color="black",
+                                        verticalalignment="bottom",
+                                        horizontalalignment="right",
+                                        rotation=90)
+                    allBars.append(bars)
 
         # Setting ticks and limits
         #ax_bar.set_title(title, fontsize=35, y=1.08)
@@ -940,7 +943,11 @@ class plotting:
         ax_bar.set_xticklabels(('EF' + str(EF_a),
                                 'EF' + str(EF_b),
                                 'EF' + str(EF_c)))
-        ax_bar.tick_params(axis="both", which="major", labelsize=30)
+        ax_bar.tick_params(axis="both", which="both",
+                           top="off", right="off",
+                           labelsize=30)
+        ax_bar.spines['right'].set_visible(False)
+        ax_bar.spines['top'].set_visible(False)
         # Set the upperlimit at 20% more than the maximum value of the graph
         if max_ef_val != 0:
             ax_bar.set_ylim(0, max_ef_val * 1.20)
@@ -959,7 +966,6 @@ class plotting:
         legNames = []
         # Binding-pockets legend
         for i, (pocketName, color) in enumerate(zip(pocketNames, vsColors)):
-
             legRects.append(plt.Rectangle((0, 0), 10, 10, facecolor=color,
                                           alpha=alphaVal))
             legNames.append(pocketName)
@@ -973,8 +979,8 @@ class plotting:
         # Create the custom figure legend
         #plt.figlegend(legRects, legNames, prop={'size': 30},
         #              loc="center")
-        ax_bar.legend(legRects, legNames,# ncol=2,
-                      loc="best", prop={"size": 30})
+        ax_bar.legend(legRects, legNames,# ncol=2,"
+                      loc="best", prop={"size": 30}, frameon=False)
 
         # Display or save barchart and legend
         if gui:
@@ -982,14 +988,13 @@ class plotting:
         else:
             barFile = title.replace(" ", "_")
             #legFile = title.replace(" ", "_") + "_barLeg"
-            # Save png versions
-            fig_bar.savefig(barFile + ".svg", bbox_inches="tight",
-                            format="svg", dpi=dpiVal)
+            # Save pdf version
+            #fig_bar.savefig(barFile + ".pdf", bbox_inches="tight", dpi=dpiVal)
             #fig_leg.savefig(legFile + ".png", bbox_inches="tight",
             #                format="png", dpi=dpiVal)
-            # Save pdf versions
-            #fig_bar.savefig(barFile + ".pdf", bbox_inches="tight",
-            #                format="pdf", dpi=dpiVal)
+            # Save PNG version. Neither SVG nor PDF backends produce the right
+            # figure.
+            fig_bar.savefig(barFile + ".png", bbox_inches="tight", dpi=dpiVal)
             #fig_leg.savefig(legFile + ".pdf", bbox_inches="tight",
             #                format="pdf", dpi=dpiVal)
 
@@ -1062,14 +1067,14 @@ class plotting:
                         # [4] is a list storing the
                         # strings for legend plotting, binding pocket name
                         # and ligand library name.
-                        libNameNum = lib_name + " (" + str(ligCount) + ")"
-                        efName = vsLegend + " - " + libNameNum
+                        #libNameNum = lib_name + " (" + str(ligCount) + ")"
+                        efName = vsLegend + " - " + lib_name
                         if efName not in enrichFactorData.keys():
                             enrichFactorData[efName] = [False,
                                                         [0,0,0],
                                                         [0,0,0],
                                                         ligCount,
-                                                        [vsLegend, libNameNum]]
+                                                        [vsLegend, lib_name]]
 
                         # Populate the library counts at EF a, b and c.
                         # If the current ligand ID is in that list, then store
