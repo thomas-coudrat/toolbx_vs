@@ -27,7 +27,7 @@ def main():
 
     # Get the truePosID range in list format
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
-    falsePosIDlist = p.makeIDlist(falsePosIDstr, "True negative ID list: ", True)
+    falsePosIDlist = p.makeIDlist(falsePosIDstr, "False positive ID list: ", True)
     libraryIDlist = truePosIDlist + falsePosIDlist
 
     # Generate a dictionary containing the refinement ligands, if any
@@ -48,7 +48,7 @@ def main():
                                       "true positives")
     falsePosCount = p.updatedLigCounts(ligIDintersectSet,
                                       falsePosIDlist,
-                                      "true negatives")
+                                      "false positives")
     # This value is actually not used, but it complies with the plot() function
     # libraryCount = truePosCount + falsePosCount
     libraryCount = p.updatedLigCounts(ligIDintersectSet,
