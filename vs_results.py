@@ -26,6 +26,9 @@ def main():
 
     # Get the project name out of the vsDir
     projName = os.path.basename(os.path.normpath(vsDir))
+    # Fix project name if script was called within its directory
+    if projName == ".":
+        projName = os.path.basename(os.getcwd())
 
     # Create the dictionary storing ligand info
     # based on ligandID: for each ligandID key there
@@ -34,16 +37,32 @@ def main():
     ligDict = {}
 
     # Goes through repeat directories to gather the score data
-    totalRepeatNum = collectScoreData(vsDir, ligDict)
+    # Returns ligDict (VS results) total number of repeats
+    ligDict, totalRepeatNum = collectScoreData(vsDir, ligDict)
 
     # Getting rid of the ligands that were not docking in all repeats attempted
-    removeFailed(ligDict, totalRepeatNum, minRep)
+    ligDict = removeFailed(ligDict, totalRepeatNum, minRep)
 
     # Sort each ligand docking amongst repeats
-    sortRepeats(ligDict)
+    ligDict = sortRepeats(ligDict)
 
     # Write the results in a .csv file
-    writeResultFile(ligDict, projName, vsDir, allRep)
+    writeResultFiles(ligDict, projName, vsDir)
+
+    # Write out individual results files for each repeat, if requested
+    if allRep:
+        # For each repeat,
+        for repeat in range(1, totalRepeatNum + 1):
+            # Initialise a results text file
+            repFileName = "repeat{}_results_{}.csv".format(repeat, projName)
+            print("\t" + repFileName)
+            repFile = open(vsDir + "/" + repFileName, "w")
+            repFile.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf" +
+                          ",dEel,dEhp,Score,mfScore,Name,Run#\n")
+
+            # Then, extract ligDict data corresponding to that repeat, sort,
+            # and write to text file
+            writeRepeatFile(repFile, repeat, ligDict)
 
 
 def parseArguments():
@@ -109,7 +128,7 @@ def collectScoreData(vsDir, ligDict):
             # We take only the lines that contain "SCORE>"
             if "SCORES>" in line:
                 ligDockedNum += 1
-                parseScoreLine(ligDict, line, repeatNum)
+                ligDict = parseScoreLine(ligDict, line, repeatNum)
 
         print("\t" + ouFilePath + "\t" + str(ligDockedNum) + " ligands")
 
@@ -117,7 +136,7 @@ def collectScoreData(vsDir, ligDict):
         if maxRepeatNum < int(repeatNum):
             maxRepeatNum = int(repeatNum)
 
-    return maxRepeatNum
+    return ligDict, maxRepeatNum
 
 
 def parseScoreLine(ligDict, line, repeatNum):
@@ -171,6 +190,8 @@ def parseScoreLine(ligDict, line, repeatNum):
     else:
         ligDict[ligID].append(ligInfo)
 
+    return ligDict
+
 
 def removeFailed(ligDict, totalRepeatNum, minRepeatNum):
     """
@@ -223,6 +244,8 @@ def removeFailed(ligDict, totalRepeatNum, minRepeatNum):
 
     print("\tTotal ligands docked:" + str(len(ligDict.keys())))
 
+    return ligDict
+
 
 def sortRepeats(ligDict):
     """
@@ -239,16 +262,13 @@ def sortRepeats(ligDict):
         repeatsLigInfo = sorted(repeatsLigInfo, key=lambda lig: lig[9])
         ligDict[key] = repeatsLigInfo
 
+    return ligDict
 
-def writeResultFile(ligDict, projName, vsDir, allRep):
+
+def writeResultFiles(ligDict, projName, vsDir):
     """
     Write out the results of this VS
     """
-
-    # Get project name
-    if projName == ".":
-        projName = os.path.basename(os.getcwd())
-
     # Write the ligand info
     keys = ligDict.keys()
     vsResult = []
@@ -270,30 +290,38 @@ def writeResultFile(ligDict, projName, vsDir, allRep):
     fileResult.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf" +
                      ",dEel,dEhp,Score,mfScore,Name,Run#\n")
 
-    # Create all results file, if flag was used
-    if allRep:
-        print("\tall_results_" + projName + ".csv")
-        fileResultAll = open(vsDir + "/all_results_" + projName + ".csv", "w")
-        fileResultAll.write("No,Nat,Nva,dEhb,dEgrid,dEin,dEsurf" +
-                            ",dEel,dEhp,Score,mfScore,Name,Run#\n")
-
     # Loop over the sorted results, and write to the result(s) file(s)
     for ligInfo in vsResult:
         # Write single repeat result (the best repeat)
         writeResultLine(ligInfo, fileResult)
 
-        if allRep:
-            # Write top repeat result
-            writeResultLine(ligInfo, fileResultAll)
-            # And all other results
-            key = ligInfo[0]
-            ligRepeats = ligDict[key]
-            for ligInfoRep in ligRepeats[1:]:
-                writeResultLine(ligInfoRep, fileResultAll)
-
     fileResult.close()
-    if allRep:
-        fileResultAll.close()
+
+def writeRepeatFile(repFile, repeat, ligDict):
+    """
+    Get a repeat result file and repeat number. Extract VS data corresponding
+    to that repeat from ligDict, sort the results according to score, and
+    write those to the corresponding repeat results text file.
+    """
+    # Store VS repeat results in a list
+    repeatResults = []
+
+    # Get the repeat results from the ligDict, looping over ligand ID
+    for ligID in ligDict.keys():
+        # For each ligID, loop over all repeats
+        for repeatLigInfo in ligDict[ligID]:
+            # If this is the repeat that matches the one we want (last item)
+            if repeat == int(repeatLigInfo[-1]):
+                # Append to the list
+                repeatResults.append(repeatLigInfo)
+
+    # Sort the repeat VS result list, based on score
+    repeatResults = sorted(repeatResults, key=lambda lig: lig[9])
+
+    # Write results to file
+    for repeatResultsLine in repeatResults:
+        writeResultLine(repeatResultsLine, repFile)
+    repFile.close()
 
 
 def writeResultLine(ligInfo, fileResult):
