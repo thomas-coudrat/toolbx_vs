@@ -214,7 +214,7 @@ class plotting:
         return ligCount
 
 
-    def writePercFile(self, vsIntersect, vsDir, mode, refDict,
+    def writePercFile(self, vsIntersect, vsPath, mode, refDict,
                       xAxisName, xAxisIDstr, xAxisIDlist, xCount,
                       yAxisName, yAxisIDstr, yAxisIDlist, yCount):
         """
@@ -229,10 +229,13 @@ class plotting:
         m = mode + "_"
         x = xAxisName + xAxisIDstr + "_"
         y = yAxisName + yAxisIDstr + "_"
-        fname = os.path.basename(vsDir)
+        vsDataName = os.path.basename(vsPath)
+        vsDir = os.path.dirname(vsPath)
+
+        print(vsPath, vsDir, vsDataName, "CHECK")
 
         # Create filename
-        percentPath = vsDir + "/" + m + x + y + fname + ".csv"
+        percentPath = vsDir + "/" + m + x + y + vsDataName
         print("\n" + percentPath)
         percentDataFile = open(percentPath, "w")
 

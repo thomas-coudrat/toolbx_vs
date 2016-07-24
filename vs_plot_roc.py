@@ -58,9 +58,7 @@ def main():
     # Calculate % of total curves for each of these (write file + return data)
     vsPockets = []
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
-        vsDir = os.path.dirname(vsPath)
-
-        vsPocket = p.writePercFile(vsIntersect, vsDir, mode, refDict,
+        vsPocket = p.writePercFile(vsIntersect, vsPath, mode, refDict,
                                    "true_neg", falsePosIDstr,
                                    falsePosIDlist, falsePosCount,
                                    "true_pos", truePosIDstr,
