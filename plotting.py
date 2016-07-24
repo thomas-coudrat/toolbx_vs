@@ -232,8 +232,6 @@ class plotting:
         vsDataName = os.path.basename(vsPath)
         vsDir = os.path.dirname(vsPath)
 
-        print(vsPath, vsDir, vsDataName, "CHECK")
-
         # Create filename
         percentPath = vsDir + "/" + m + x + y + vsDataName
         print("\n" + percentPath)
@@ -403,7 +401,7 @@ class plotting:
         self.log_and_print("Perfect curve NSQ_AUC: {:.3f}".format(round(nsq_auc_perf, 3)))
         self.log_and_print("\n")
 
-        self.log_and_print("AUC,NSQ_AUC,Pocket,Library")
+        self.log_and_print("Pocket,NSQ_AUC")
 
         for rocDatum in rocData:
             X = np.array(rocDatum[0])
@@ -435,10 +433,7 @@ class plotting:
                 lib = "2D-rac"
 
             #print("AUC_sq:", aucSq)
-            self.log_and_print("{:.3f},{:.3f},{},{}".format(round(current_auc, 3),
-                                               round(nsq_auc, 3),
-                                               pocket,
-                                               lib))
+            self.log_and_print("{},{}".format(pocket, nsq_auc))
 
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
