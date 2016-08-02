@@ -73,7 +73,8 @@ def parseArgs():
     descr = "Extract docking poses from a VS in .pdb format"
     descr_resultsPath = "Results file of the VS in .csv format"
     descr_X = "Extract the top X poses"
-    descr_ligIDs = "Optional ligIDs docking poses to be extracted"
+    descr_ligIDs = "Optional ligIDs docking poses to be extracted. Format " \
+        "e.g. 1-10,133,217-301"
 
     # Define arguments
     parser = argparse.ArgumentParser(description=descr)
