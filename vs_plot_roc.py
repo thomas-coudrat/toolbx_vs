@@ -13,7 +13,7 @@ def main():
 
     title, vsLegends, vsPaths, vsColors, vsLines, \
         truePosIDstr, falsePosIDstr, xAxisName, yAxisName, \
-        ref, gui, log = parseArgs()
+        ref, gui, log, showAUC = parseArgs()
 
     # Define mode
     mode = "ROC"
@@ -80,7 +80,7 @@ def main():
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plotROC(title, plotData, vsColors, vsLines, libraryCount, truePosCount,
               xLim, yLim, xAxisName, yAxisName, gui, log,
-              zoom, mode)
+              zoom, mode, showAUC)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)
@@ -111,6 +111,7 @@ def parseArgs():
         " lig1:328,lig2:535"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
     descr_log = "Display with X-axis in log scale"
+    descr_showAUC = "Use this flag to display calculated NSQ-AUC in the inset"
 
     # adding arguments to the parser
     parser = argparse.ArgumentParser(description=descr)
@@ -123,6 +124,7 @@ def parseArgs():
     parser.add_argument("-gui", action="store_true", help=descr_gui)
     parser.add_argument("-log", action="store_true", help=descr_log)
     parser.add_argument("--ref", help=descr_ref)
+    parser.add_argument("-showAUC", action="store_true", help=descr_showAUC)
 
     # parsing args
     args = parser.parse_args()
@@ -135,6 +137,7 @@ def parseArgs():
     ref = args.ref
     gui = args.gui
     log = args.log
+    showAUC = args.showAUC
 
     # Extrac the VS results paths and legends
     vsPaths = []
@@ -150,7 +153,8 @@ def parseArgs():
         i += 4
 
     return title, vsLegends, vsPaths, vsColors, vsLines, \
-        truePosIDstr, falsePosIDstr, xAxisName, yAxisName, ref, gui, log
+        truePosIDstr, falsePosIDstr, xAxisName, yAxisName, \
+        ref, gui, log, showAUC
 
 if __name__ == "__main__":
     main()

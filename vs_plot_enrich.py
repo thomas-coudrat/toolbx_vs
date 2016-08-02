@@ -12,7 +12,7 @@ def main():
     """
 
     title, vsLegends, vsPaths, \
-        libraryIDstr, truePosIDstr, ref, zoom, gui = parseArgs()
+        libraryIDstr, truePosIDstr, ref, zoom, gui, showAUC = parseArgs()
 
     # Define mode
     mode = "enrich"
@@ -85,7 +85,8 @@ def main():
 
     # Plot the data calculated by writePercFile, and read in by extracPlotData
     p.plot(title, plotData, libraryCount, truePosCount, xLim, yLim,
-           xAxisName, yAxisName, gui, log, zoom, mode, scatterData=False)
+           xAxisName, yAxisName, gui, log, zoom,
+           mode, showAUC, scatterData=False)
 
     # Write the command used to execute this script into a txt file
     p.writeCommand(title)
@@ -113,6 +114,7 @@ def parseArgs():
         " lig1:328,lig2:535"
     descr_zoom = "X-axis percentage to be displayed in the zoomed subplot"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
+    descr_showAUC = "Use this flag to display calculated NSQ-AUC in the inset"
 
 
     # adding arguments to the parser
@@ -124,6 +126,7 @@ def parseArgs():
     parser.add_argument("--ref", help=descr_ref)
     parser.add_argument("--zoom", help=descr_zoom)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
+    parser.add_argument("-showAUC", action="store_true", help=descr_showAUC)
 
     # parsing args
     args = parser.parse_args()
@@ -134,6 +137,7 @@ def parseArgs():
     ref = args.ref
     zoom = args.zoom
     gui = args.gui
+    showAUC = args.showAUC
 
     # Extrac the VS results paths and legends
     vsPaths = []
@@ -145,7 +149,7 @@ def parseArgs():
         i += 2
 
     return title, vsLegends, vsPaths, \
-        libraryIDstr, truePosIDstr, ref, zoom, gui
+        libraryIDstr, truePosIDstr, ref, zoom, gui, showAUC
 
 if __name__ == "__main__":
     main()

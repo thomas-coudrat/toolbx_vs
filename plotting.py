@@ -437,7 +437,7 @@ class plotting:
 
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
-             xAxis, yAxis, gui, log, zoom, mode, scatterData=False):
+             xAxis, yAxis, gui, log, zoom, mode, showAUC, scatterData=False):
         """
         Plot the data provided as argument, to draw curves
         """
@@ -465,7 +465,8 @@ class plotting:
         # Drawing data on the figure
         for i, plotDatum in enumerate(plotData):
             X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom,
-                                 scalMapPlot, mode, lineWidth, alphaVal)
+                                 scalMapPlot, mode, lineWidth,
+                                 alphaVal, showAUC)
 
         # Plot the scatter data if it was provided (only for plot_type)
         if scatterData:
@@ -542,7 +543,7 @@ class plotting:
 
     def plotROC(self, title, plotData, vsColors, vsLines,
                 libraryCount, truePosCount, xLim, yLim, xAxis, yAxis,
-                gui, log, zoom, mode):
+                gui, log, zoom, mode, showAUC):
         """
         Plot the data provided as argument, to draw curves
         """
@@ -581,7 +582,7 @@ class plotting:
                 lineStyle = ":"
             X, Y = self.drawLine(ax, ax2, plotDatum, color, lineStyle, i,
                                  zoom, mode, lineWidth, alphaVal,
-                                 ligVerticStyleFollow)
+                                 ligVerticStyleFollow, showAUC)
 
         # Now plot random and perfect curves, get a range of X values from
         # 0 to 100, with 0.1 increments. These values are submitted to the
@@ -642,7 +643,8 @@ class plotting:
 
 
     def drawLine(self, ax, ax2, plotDatum, color, lineStyle, i, zoom,
-                 mode, lineWidth, alphaVal, ligVerticStyleFollow):
+                 mode, lineWidth, alphaVal,
+                 ligVerticStyleFollow, showAUC):
         """
         Draw the line corresponding to the set of data passed in arguments
         """
@@ -655,7 +657,9 @@ class plotting:
 
         # If NSQ_AUC value is found, then add it to the legend
         nsq_auc = plotDatum[4]
-        if nsq_auc != None:
+        # If showAUC is True, then add the calculated NSQ_AUC value to the
+        # legend. Otherwise, show the legend as is.
+        if nsq_auc != None and showAUC:
             plotLegend = plotLegend + ": " + nsq_auc
 
         """
