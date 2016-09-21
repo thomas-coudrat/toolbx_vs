@@ -230,10 +230,10 @@ class plotting:
         x = xAxisName + xAxisIDstr + "_"
         y = yAxisName + yAxisIDstr + "_"
         vsDataName = os.path.basename(vsPath)
-        vsDir = os.path.dirname(vsPath)
+        #vsDir = os.path.dirname(vsPath)
 
         # Create filename
-        percentPath = vsDir + "/" + m + x + y + vsDataName
+        percentPath = vsPath + "/" + m + x + y + vsDataName
         print("\n" + percentPath)
         percentDataFile = open(percentPath, "w")
 
@@ -709,7 +709,6 @@ class plotting:
             # print(ligName, xPos, yPos)
             #ax.text(xPos, -4, ligName, rotation=-70, alpha=alphaVal,
             #        fontsize=30, color=color, transform=ax.transData)
-
         return X, Y
 
 
@@ -797,6 +796,8 @@ class plotting:
 
             # Storing the information collected: adding empty lists which
             # will be used later to store X and Y plotting information
+            lig_count = str(len(ligand_IDs))
+            lib_name = lib_name + " (" + lig_count + ")"
             lig_libraries_content[lib_name] = (ligand_IDs, [], [])
 
         return lig_libraries_content
@@ -862,7 +863,7 @@ class plotting:
         for i, lig_lib in enumerate(sorted(lig_types.keys())):
             # Create the name as "ligType (lig_count)"
             #current_count = len(lig_types[lig_lib][0])
-            #lig_lib_name = lig_lib + " (" + str(current_count)+ ")"
+            #lig_lib = lig_lib + " (" + str(current_count)+ ")"
             # Add a dictionary value, associate it to a new pattern
             if i <= len(patterns) - 1:
                 ligLibHatches[lig_lib] = patterns[i]
@@ -883,6 +884,10 @@ class plotting:
                 if enrichFactorData[efKey][4] == efName:
                     # Get the data to be plotted
                     efData = enrichFactorData[efKey][0]
+                    # Get ligand count to be written above each bar
+                    ligCountData = enrichFactorData[efKey][1]
+                    # Get total count for that ligand library
+                    libTotalCount = enrichFactorData[efKey][3]
 
                     # Choose the bar color: match the pocket
                     curr_pocket_name = enrichFactorData[efKey][4][0]
@@ -927,12 +932,12 @@ class plotting:
                     # Display values above bars, only if there was at least one bar
                     # above 0
                     if max_ef_val != 0:
-                        for j, (value, bar) in enumerate(zip(efData, bars)):
+                        for j, (value, ligCount, bar) in enumerate(zip(efData, ligCountData, bars)):
                             # If no ligand of that type was found, avoid division by 0
                             # ind + i*width + j*width +
                             x_position = bar.get_x()
                             ax_bar.text(x_position + 0.073,
-                                        value + 0.5, "{0:.1f}".format(value),
+                                        value + 0.5, "{}/{}".format(ligCount, libTotalCount),
                                         fontsize=20, color="black",
                                         verticalalignment="bottom",
                                         horizontalalignment="right",
@@ -1052,9 +1057,10 @@ class plotting:
                         # Initialise enrichFactorData, dictionary with keys
                         # combining bindingPocket name and ligLibrary name.
                         # It stores in position 0 and 1 two lists of three
-                        # elements. Each of these elements correspond to
-                        # EF_a, EF_b and EF_c, respectively. Here X is defined
-                        # above, the commonly used cutoffs are 2, 5 and 10.
+                        # elements. Each of these elements correspond to cutoffs
+                        # EF_a, EF_b and EF_c, respectively. The commonly used
+                        # cutoffs are 2, 5 and 10 (defined in vs_plot_ef.py).
+                        # These cutoffs are refered below as X %.
                         # Description of what is in the dictionary:
                         # [0] is initiated to False, and will contain the EF
                         # (enrichment factor) values which are calculated after
@@ -1064,11 +1070,11 @@ class plotting:
                         # [2] contains the number of ligands from the library
                         # at X % of screened database (Nx)
                         # [3] contains the total count of ligand
-                        # of that type in the library of that, it is used
-                        # to calculate the EF.
+                        # of that library, it is used to calculate the EF.
                         # [4] is a list storing the
                         # strings for legend plotting, binding pocket name
                         # and ligand library name.
+
                         #libNameNum = lib_name + " (" + str(ligCount) + ")"
                         efName = vsLegend + " - " + lib_name
                         if efName not in enrichFactorData.keys():

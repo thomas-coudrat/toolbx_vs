@@ -84,7 +84,7 @@ def main():
 
     # Extract the data from the vs percent data (in both enrichment curves and
     # ROC curves, the truePositive count would be used to draw the perfect curve
-    plotData, xLim, yLim = p.extractPlotData(vsPockets, vsLegends, zoom)
+    #plotData, xLim, yLim = p.extractPlotData(vsPockets, vsLegends, zoom)
 
     # Extract data related to ligand type (plotting and barplot data)
     enrichFactorData = p.extractLigTypeData(vsPockets,
@@ -98,7 +98,7 @@ def main():
     #pprint.pprint(lig_types)
 
     # Plot the barplot represeting the enrochment factors (EFs) in known ligands
-    # at 0.1 %, 1 % and 10 % of the screened library
+    # at ef_cutoffs of the screened library
     p.barPlot(title, enrichFactorData, vsLegends, ef_cutoffs,
               vsColors, lig_types, gui)
 
