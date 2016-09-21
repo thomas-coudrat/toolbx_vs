@@ -841,7 +841,9 @@ class plotting:
 
         # Default values
         groups = 3
-        ind = np.arange(groups*2, step=2)
+        ind = np.arange(groups*2, step=2.4)
+        #print(ind)
+        #ind = np.array([0, 2.2, 4.4])
         width = 0.07
         efNumber = len(enrichFactorData.keys())
         # Create a list of pockets and ligand library that matches the order
@@ -888,7 +890,7 @@ class plotting:
                     ligCountData = enrichFactorData[efKey][1]
                     # Get total count for that ligand library
                     libTotalCount = enrichFactorData[efKey][3]
-
+                    
                     # Choose the bar color: match the pocket
                     curr_pocket_name = enrichFactorData[efKey][4][0]
                     # Loop over pocket names to get the pocket index (use 0 if pocket
@@ -925,31 +927,42 @@ class plotting:
                                       hatch=hatch)
 
                     # Keep the largest value to update figure size
-                    for ef_val in efData:
-                        if max_ef_val < ef_val:
-                            max_ef_val = ef_val
+                    #for ef_val in efData:
+                    #    if max_ef_val < ef_val:
+                    #        max_ef_val = ef_val
 
                     # Display values above bars, only if there was at least one bar
                     # above 0
-                    if max_ef_val != 0:
-                        for j, (value, ligCount, bar) in enumerate(zip(efData, ligCountData, bars)):
-                            # If no ligand of that type was found, avoid division by 0
-                            # ind + i*width + j*width +
-                            x_position = bar.get_x()
-                            ax_bar.text(x_position + 0.073,
-                                        value + 0.5, "{}/{}".format(ligCount, libTotalCount),
-                                        fontsize=20, color="black",
-                                        verticalalignment="bottom",
-                                        horizontalalignment="right",
-                                        rotation=90)
+                    #if max_ef_val != 0:
+                    for j, (value, ligCount, bar) in enumerate(zip(efData, ligCountData, bars)):
+                        # If no ligand of that type was found, avoid division by 0
+                        # ind + i*width + j*width +
+                        x_position = bar.get_x()
+                        # Write information on ligands found over total
+                        # above bar
+                        ax_bar.text(x_position + 0.073,
+                                    value + 0.5, "{}/{}".format(ligCount, libTotalCount),
+                                    fontsize=17, color="black",
+                                    verticalalignment="bottom",
+                                    horizontalalignment="right",
+                                    rotation=90)
+                        # Write information about ligand library below bar
+                        ax_bar.text(x_position + 0.065, -2,
+                                    efName[1].split()[0],
+                                    fontsize=17, color=color,
+                                    fontweight="bold",
+                                    verticalalignment="bottom",
+                                    horizontalalignment="right")
                     allBars.append(bars)
 
         # Setting ticks and limits
         #ax_bar.set_title(title, fontsize=35, y=1.08)
-        ax_bar.set_xticks(ind + (efNumber * width)/2)
-        ax_bar.set_xticklabels(('EF' + str(EF_a),
-                                'EF' + str(EF_b),
-                                'EF' + str(EF_c)))
+        # Defining the text and positions for enrichment factor (EF) labels
+        ticksLabels = ('EF' + str(EF_a), 'EF' + str(EF_b), 'EF' + str(EF_c))
+        ticksXpos = ind + (efNumber * width)/2
+        ticksYpos = np.array([-4] * 3)
+        ax_bar.set_xticks(ticksXpos)
+        ax_bar.set_xticklabels(labels=ticksLabels, y=-0.04)
         ax_bar.tick_params(axis="both", which="both",
                            top="off", right="off",
                            labelsize=30)
