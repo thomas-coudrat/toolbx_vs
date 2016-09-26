@@ -230,10 +230,10 @@ class plotting:
         x = xAxisName + xAxisIDstr + "_"
         y = yAxisName + yAxisIDstr + "_"
         vsDataName = os.path.basename(vsPath)
-        #vsDir = os.path.dirname(vsPath)
+        vsDir = os.path.dirname(vsPath)
 
         # Create filename
-        percentPath = vsPath + "/" + m + x + y + vsDataName
+        percentPath = vsDir + "/" + m + x + y + vsDataName
         print("\n" + percentPath)
         percentDataFile = open(percentPath, "w")
 
@@ -890,7 +890,6 @@ class plotting:
                     ligCountData = enrichFactorData[efKey][1]
                     # Get total count for that ligand library
                     libTotalCount = enrichFactorData[efKey][3]
-                    
                     # Choose the bar color: match the pocket
                     curr_pocket_name = enrichFactorData[efKey][4][0]
                     # Loop over pocket names to get the pocket index (use 0 if pocket
