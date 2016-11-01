@@ -22,7 +22,7 @@ def main():
     # Define log
     log = True
     # Define ef_cutoffs
-    ef_cutoffs = [2, 5, 10]
+    ef_cutoffs = [1, 5, 10]
 
     # Creating a plotting instance for access to all methods
     p = plotting.plotting(title)
@@ -39,7 +39,6 @@ def main():
     libraryIDlist = truePosIDlist + falsePosIDlist
 
     #print(len(truePosIDlist), len(falsePosIDlist), len(libraryIDlist))
-
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -74,8 +73,7 @@ def main():
     # Calculate % of total curves for each of these (write file + return data)
     vsPockets = []
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
-        vsDir = os.path.dirname(vsPath)
-        vsPocket = p.writePercFile(vsIntersect, vsDir, mode, refDict,
+        vsPocket = p.writePercFile(vsIntersect, vsPath, mode, refDict,
                                    "full_lib", libraryIDstr,
                                    libraryIDlist, libraryCount,
                                    "true_pos", truePosIDstr,

@@ -878,7 +878,7 @@ class plotting:
         # Go through a sorted list of the pocket-ligType combinations
         allBars = []
         # Store largest EF value
-        max_ef_val = 0
+        #max_ef_val = 0
         # Loop over binding pocket/ligand library combinations in the order
         # defined by the user in arguments
         for i, efName in enumerate(efPockets):
@@ -939,19 +939,23 @@ class plotting:
                         x_position = bar.get_x()
                         # Write information on ligands found over total
                         # above bar
-                        ax_bar.text(x_position + 0.073,
-                                    value + 0.5, "{}/{}".format(ligCount, libTotalCount),
+                        ax_bar.text(x=x_position + 0.073,
+                                    y=value + 0.5,
+                                    s="{}/{}".format(ligCount, libTotalCount),
                                     fontsize=17, color="black",
                                     verticalalignment="bottom",
                                     horizontalalignment="right",
                                     rotation=90)
                         # Write information about ligand library below bar
-                        ax_bar.text(x_position + 0.065, -2,
-                                    efName[1].split()[0],
-                                    fontsize=17, color=color,
-                                    fontweight="bold",
-                                    verticalalignment="bottom",
-                                    horizontalalignment="right")
+                        # Blended transform: x in data untis, y in axes fraction
+                        transf = ax_bar.get_xaxis_transform()
+                        ax_bar.annotate(s=efName[1].split()[0],
+                                        horizontalalignment="right",
+                                        fontsize=17,
+                                        xy=(x_position + 0.065, -0.025),
+                                        color=color,
+                                        fontweight="bold",
+                                        xycoords=transf)
                     allBars.append(bars)
 
         # Setting ticks and limits
@@ -968,10 +972,10 @@ class plotting:
         ax_bar.spines['right'].set_visible(False)
         ax_bar.spines['top'].set_visible(False)
         # Set the upperlimit at 20% more than the maximum value of the graph
-        if max_ef_val != 0:
-            ax_bar.set_ylim(0, max_ef_val * 1.20)
-        else:
-            ax_bar.set_ylim(bottom=0)
+        #if max_ef_val != 0:
+        #    ax_bar.set_ylim(0, max_ef_val * 1.20)
+        #else:
+        #    ax_bar.set_ylim(bottom=0)
         # Set margins left and right of the bar groups
         ax_bar.margins(x=.1)
 
