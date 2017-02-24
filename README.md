@@ -1,6 +1,6 @@
 ## Synopsis
 
-**toolbx_vs** is a set of tools that help setup, run, monitor and analyse
+**toolbx_vs** is a set of tools that help setup, run, monitor and analyze
 virtual screens (VS) on a cluster.
 
 ## Examples
@@ -44,11 +44,11 @@ vs_build.py 200 1000 100 3 10. 0-24:00:00 vs_setup slurm
 Run the VS that was setup above by submitting the name of the directory where
 it was built, and specifying the scheduling system (SLURM in this case).
 ```
-vs_execute.py my_vs_experiment/ slurm
+vs_submit.py my_vs_experiment/ slurm
 ```
 
 **Print report on virtual screen progress**
-Print a report of the process of the VS on the cluster
+Print a report of the process of the VS on the cluster. Run in a VS directory.
 ```
 vs_report.py
 ```
@@ -70,18 +70,23 @@ vs_plot_roc.py 'My VS experiment' 'Receptor' 'my_vs_experiment/results_receptor.
 ```
 
 **Plot enrichment factor bargraph**
-Plot a enrichment factors for defined set of ligand chemotypes in
-"ligand_chemotypes.json".
+Plot a enrichment factor for defined sets of ligands in "ligand_types.json".
 ```
-vs_plot_type.py 'My VS experiment' 'Receptor' 'my_vs_experiment/results_receptor.csv' 'red' '200-600' '601-1000' ligand_chemotypes.json
+vs_plot_ef.py 'My VS experiment' 'Receptor' 'my_vs_experiment/results_receptor.csv' 'red' '200-600' '601-1000' ligand_types.json
+```
+
+**Extract docked poses**
+Extract docked poses from the VS results for analysis. This extracts the top 10
+poses and poses for ligands with IDs 315 and 2017.
+```
+vs_poses.py 'my_vs_experiment/results_receptor.csv' 10 --ligIDs 315,2017
 ```
 
 ## Motivation
-Managing a VS on a cluster is easier with toolbx_vs than with ICM's interface.
-This set of tools were created for VS experiments performed by Thomas Coudrat
-during his PhD. Features were added as needed for the study. The scripts don't
-provide access to all VS functionalities available from the ICM docking
-software.
+This set of tools simplifies the management of a VS on an HPC cluster with ICM.
+These were created for VS experiments performed by Thomas Coudrat during his
+PhD. Features were added as needed for the study. The scripts don't provide
+access to all VS functionalities available from the ICM docking software.
 
 ## Contributions
 Feel free to create an issue or submit a pull request. You can also contact me
@@ -89,9 +94,6 @@ Feel free to create an issue or submit a pull request. You can also contact me
 
 ## Installation
 * Install Anaconda for Python 3.5
-* Install OpenEye OEChem toolkit (OpenEye-python3-ubuntu-12.04-x64-2014.10.2)
-    * set path: export PYTHONPATH="path/to/OpenEye-python3-ubuntu-12.04-x64-2014.10.2"
-    * Requires software license
 * Install ICM 3.8-4
     * set environment variable: export ICMHOME="path/to/icmDirectory"
     * Requires software license

@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 
-# ------------------------------------------------------------
+# This creates maps for a VS from a .ob object containing
+# the target protein only. The .inx index file pointing
+# to the library to be used must also be provided.
+# It uses an .icm script to create the ICM docking maps.
 #
-#   This creates maps for a VS from a .ob object containing
-#   the target protein only. The .inx index file pointing
-#   to the library to be used must also be present in the
-#   directory.
-#   It uses an .icm script to create the ICM docking maps
-#
-#   Thomas Coudrat, February 2014
-#
-# ------------------------------------------------------------
+# https://github.com/thomas-coudrat/toolbx_vs
+# Thomas Coudrat <thomas.coudrat@gmail.com>
 
 import os
 import sys
@@ -19,8 +15,10 @@ import socket
 from subprocess import check_output, STDOUT, CalledProcessError
 import json
 
-
 def main():
+    """
+    Run script
+    """
 
     # Get the paths to the scripts to be executed
     icm = getPath()

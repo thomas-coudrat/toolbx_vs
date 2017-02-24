@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 
-# ------------------------------------------------
+# Extracts the results from all .ou files contained
+# in the repeats of the current VS directory
+# Regroups the repeats together and extracts either only
+# the best score for each ligand, or all repeats.
 #
-#   Extracts the results from all .ou files contained
-#   in the repeats of the current VS directory
-#   Regroups the repeats together and extracts either only
-#   the best score for each ligand, or all repeats.
-#
-#   Thomas Coudrat, February 2014
-#
-# -------------------------------------------------
+# https://github.com/thomas-coudrat/toolbx_vs
+# Thomas Coudrat <thomas.coudrat@gmail.com>
 
 import glob
 import os
@@ -18,7 +15,7 @@ import argparse
 
 def main():
     """
-    Execute VS results script
+    Run script
     """
 
     # Get arguments

@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 
+# Plot a enrichment factors in a bargraph for defined sets of ligands.
+#
+# https://github.com/thomas-coudrat/toolbx_vs
+# Thomas Coudrat <thomas.coudrat@gmail.com>
+
 import argparse
 import sys
 import os
 import plotting
 
-
 def main():
     """
-    Exectute the vs_plot_enrich script
+    Run script
     """
 
     title, vsLegends, vsPaths, vsColors, \

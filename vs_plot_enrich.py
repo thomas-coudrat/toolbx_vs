@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+
+# Plot an enrichment curve
+#
+# DEPRECIATED
+#
+# https://github.com/thomas-coudrat/toolbx_vs
+# Thomas Coudrat <thomas.coudrat@gmail.com>
+
 import argparse
 import sys
 import os
@@ -20,15 +28,15 @@ def main():
     log = True
 
     # Creating a plotting instance for access to all methods
-    p = plotting.plotting()
+    p = plotting.plotting(title)
 
     # Get the truePosID range in list format
-    libraryIDlist = p.makeIDlist(libraryIDstr,
-                                 "Library IDs (not displayed)",
-                                 printOut=False)
     truePosIDlist = p.makeIDlist(truePosIDstr,
                                  "True positive ID list",
                                  printOut=True)
+    libraryIDlist = p.makeIDlist(libraryIDstr,
+                                 "Library IDs (not displayed)",
+                                 printOut=False)
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -63,8 +71,8 @@ def main():
     # Calculate % of total curves for each of these (write file + return data)
     vsPockets = []
     for vsPath, vsIntersect in zip(vsPaths, vsIntersects):
-        vsDir = os.path.dirname(vsPath)
-        vsPocket = p.writePercFile(vsIntersect, vsDir, mode, refDict,
+        #vsDir = os.path.dirname(vsPath)
+        vsPocket = p.writePercFile(vsIntersect, vsPath, mode, refDict,
                                    "library", libraryIDstr,
                                    libraryIDlist, libraryCount,
                                    "true_pos", truePosIDstr,
@@ -115,7 +123,6 @@ def parseArgs():
     descr_zoom = "X-axis percentage to be displayed in the zoomed subplot"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
     descr_showAUC = "Use this flag to display calculated NSQ-AUC in the inset"
-
 
     # adding arguments to the parser
     parser = argparse.ArgumentParser(description=descr)

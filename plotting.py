@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+# Classes used for plotting of ROC curves and bargraphs of VS results
+#
+# https://github.com/thomas-coudrat/toolbx_vs
+# Thomas Coudrat <thomas.coudrat@gmail.com>
+
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 import math
@@ -464,9 +469,13 @@ class plotting:
 
         # Drawing data on the figure
         for i, plotDatum in enumerate(plotData):
-            X, Y = self.drawLine(ax, ax2, plotDatum, i, zoom,
-                                 scalMapPlot, mode, lineWidth,
-                                 alphaVal, showAUC)
+            X, Y = self.drawLine(ax, ax2, plotDatum, "black",
+                                 "-", i, zoom, mode, lineWidth,
+                                 alphaVal, False, showAUC)
+
+        #                         ax, ax2, plotDatum, color, lineStyle, i,
+        #                         zoom, mode, lineWidth, alphaVal,
+        #                         ligVerticStyleFollow, showAUC)
 
         # Plot the scatter data if it was provided (only for plot_type)
         if scatterData:

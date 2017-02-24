@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 
+# Plot ROC curves describing the true positives vs. false positive rate.
+
+# https://github.com/thomas-coudrat/toolbx_vs
+# Thomas Coudrat <thomas.coudrat@gmail.com>
+
 import argparse
 import sys
 import os
 import plotting
 
-
 def main():
     """
-    Exectute the vs_plot_roc script
+    Run script
     """
 
     title, vsLegends, vsPaths, vsColors, vsLines, \
@@ -98,8 +102,8 @@ def parseArgs():
         " Enrichment curves"
     descr_title = "Provide a title for the graph, also used as filename"
     descr_results = "Provide resultDataFiles.csv and 'legend titles' for" \
-        " each curve: 'legend1!' data1.csv 'legend2?' data2.csv" \
-        " 'legend4!!' data4.csv"
+        " each curve: 'legend1!' data1.csv 'blue' 'cont'" \
+        " 'legend2?' data2.csv 'red' 'hyph'"
     descr_truePosIDstr = "Provide the IDs of true positive ligands" \
         " lib (format: 1-514,6001,6700-6702)"
     descr_falsePosIDstr = "Provide the IDs of true negative ligands" \

@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 
-#-------------------------------------------------------------
+# Run in a VS repeat directory, checks all .ou files and
+# compiles the number of occurence of the 'SCORE' word in
+# order to inform about the status of that repeat
 #
-#   Run in a VS repeat directory, checks all .ou files and
-#   compiles the number of occurence of the 'SCORE' word in
-#   order to inform about the status of that repeat
-#
-#   Thomas Coudrat, February 2014
-#
-#-------------------------------------------------------------
+# https://github.com/thomas-coudrat/toolbx_vs
+# Thomas Coudrat <thomas.coudrat@gmail.com>
 
 import glob
 import os
 import argparse
 
-
 def main():
+    """
+    Run script
+    """
 
     # Setting up variables
     workDir = os.getcwd()

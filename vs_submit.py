@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 
-# ----------------------------------------------------
+# Execute within a VS directory, will crawl through
+# all its subdirs and submit all .slurm or .sge
+# files found there, while pausing for 1 second
+# between each submission
 #
-#   Execute within a VS directory, will crawl through
-#   all its subdirs and submit all .slurm or .sge
-#   files found there, while pausing for 1 second
-#   between each submission
-#
-#   Thomas Coudrat, February 2014
-#
-# ----------------------------------------------------
+# https://github.com/thomas-coudrat/toolbx_vs
+# Thomas Coudrat <thomas.coudrat@gmail.com>
 
 import os
 import time
@@ -18,10 +15,9 @@ import sys
 import socket
 import json
 
-
 def main():
     """
-    Run the VS submission script
+    Run script
     """
 
     # Return the queuing system chosen

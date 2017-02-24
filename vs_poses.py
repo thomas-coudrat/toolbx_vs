@@ -1,17 +1,12 @@
 #!/usr/bin/env python
 
+# Uses the results.csv previously generated to locate the top X docking poses
+# following a VS. Loads them using ICM and saves the poses wanted to a single
+# .pdb file. Also saves the receptor to that .pdb file. That file can then be
+# opened using ICM or an other molecular viewer.
 
-###############################################################################
-#
-#   Uses the results.csv previously generated to locate the top X docking poses
-#   following a VS. Loads them using ICM and saves the poses wanted to a single
-#   .pdb file. Also saves the receptor to that .pdb file. That file can then be
-#   opened using ICM or an other molecular viewer.
-#
-#   Thomas Coudrat, July 2014
-#
-###############################################################################
-
+# https://github.com/thomas-coudrat/toolbx_vs
+# Thomas Coudrat <thomas.coudrat@gmail.com>
 
 import csv
 import sys
@@ -26,7 +21,7 @@ import json
 
 def main():
     """
-    Run the scripts
+    Run script
     """
 
     # Get the arguments and paths
