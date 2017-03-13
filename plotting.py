@@ -827,7 +827,7 @@ class plotting:
 
 
     def barPlot(self, title, enrichFactorData, pocketNames, ef_cutoffs,
-                vsColors, lig_types, gui):
+                vsColors, lig_types, gui, labelBars):
         """
         Plot a bar graph showing the EF0.1, EF1 and EF10 (enrichment factors)
         values for each binding pocket compared.
@@ -946,15 +946,16 @@ class plotting:
                         # If no ligand of that type was found, avoid division by 0
                         # ind + i*width + j*width +
                         x_position = bar.get_x()
-                        # Write information on ligands found over total
-                        # above bar
-                        ax_bar.text(x=x_position + 0.073,
-                                    y=value + 0.5,
-                                    s="{}/{}".format(ligCount, libTotalCount),
-                                    fontsize=17, color="black",
-                                    verticalalignment="bottom",
-                                    horizontalalignment="right",
-                                    rotation=90)
+                        if labelBars:
+                            # Write information on ligands found over total
+                            # above bar
+                            ax_bar.text(x=x_position + 0.073,
+                                        y=value + 0.5,
+                                        s="{}/{}".format(ligCount, libTotalCount),
+                                        fontsize=17, color="black",
+                                        verticalalignment="bottom",
+                                        horizontalalignment="right",
+                                        rotation=90)
                         # Write information about ligand library below bar
                         # Blended transform: x in data untis, y in axes fraction
                         transf = ax_bar.get_xaxis_transform()
@@ -980,6 +981,7 @@ class plotting:
                            labelsize=30)
         ax_bar.spines['right'].set_visible(False)
         ax_bar.spines['top'].set_visible(False)
+        ax_bar.set_ylabel(r"EF$_x$ (%)", fontsize=30)
         # Set the upperlimit at 20% more than the maximum value of the graph
         #if max_ef_val != 0:
         #    ax_bar.set_ylim(0, max_ef_val * 1.20)

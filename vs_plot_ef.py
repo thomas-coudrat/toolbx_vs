@@ -17,7 +17,7 @@ def main():
 
     title, vsLegends, vsPaths, vsColors, \
         truePosIDstr, falsePosIDstr, ligLibsJson, \
-        ref, gui = parseArgs()
+        ref, gui, labelBars, customEFs = parseArgs()
 
     # Define mode
     mode = "EF"
@@ -26,7 +26,7 @@ def main():
     # Define log
     log = True
     # Define ef_cutoffs
-    ef_cutoffs = [1, 5, 10]
+    ef_cutoffs = define_ef_cutoffs(customEFs)
 
     # Creating a plotting instance for access to all methods
     p = plotting.plotting(title)
@@ -102,12 +102,39 @@ def main():
     # Plot the barplot represeting the enrochment factors (EFs) in known ligands
     # at ef_cutoffs of the screened library
     p.barPlot(title, enrichFactorData, vsLegends, ef_cutoffs,
-              vsColors, lig_types, gui)
+              vsColors, lig_types, gui, labelBars)
 
     # Write the command used to execute this script into a log file
     p.writeCommand(title)
 
     print("\n")
+
+
+def define_ef_cutoffs(customEFs_string):
+    """
+    Define EF cutoff values. Either default or custom user submitted values.
+    """
+
+    default_efs = [1, 5, 10]
+    custom_efs = []
+
+    if customEFs_string:
+        ef_list = customEFs_string.split(",")
+        if len(ef_list) == 3:
+            for ef_val in ef_list:
+                try:
+                    custom_efs.append(int(ef_val))
+                except ValueError:
+                    print("Custom EF values need to be integers")
+        else:
+            print("Submit a set of three comma separated custom EF values e.g. 1,2,3")
+            print("You submitted: {}".format(customEFs_string))
+            sys.exit()
+        ef_cutoffs = custom_efs
+    else:
+        ef_cutoffs = default_efs
+
+    return ef_cutoffs
 
 
 def parseArgs():
@@ -132,6 +159,9 @@ def parseArgs():
         " refinement. Provide ligand name and ID in the following format:" \
         " lig1:328,lig2:535"
     descr_gui = "Use this flag to display plot: saves to .png by the default"
+    descr_labelBars = "Use this flag to add labels at the top of each bar"
+    descr_customEFs = "Define custom EF cutoffs. Submit three numbers " \
+        "separated by commas e.g. '1,2,5'. Default is 1,5,10"
 
     # adding arguments to the parser
     parser = argparse.ArgumentParser(description=descr)
@@ -142,6 +172,8 @@ def parseArgs():
     parser.add_argument("ligLibs", help=descr_ligLibs)
     parser.add_argument("--ref", help=descr_ref)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
+    parser.add_argument("-labelBars", action="store_true", help=descr_labelBars)
+    parser.add_argument("--customEFs", help=descr_customEFs)
 
     # parsing args
     args = parser.parse_args()
@@ -152,6 +184,8 @@ def parseArgs():
     ligLibsJson = args.ligLibs
     ref = args.ref
     gui = args.gui
+    labelBars = args.labelBars
+    customEFs = args.customEFs
 
     # Extrac the VS results paths and legends
     vsPaths = []
@@ -166,7 +200,7 @@ def parseArgs():
 
     return title, vsLegends, vsPaths, vsColors, \
         truePosIDstr, falsePosIDstr, ligLibsJson, \
-        ref, gui
+        ref, gui, labelBars, customEFs
 
 if __name__ == "__main__":
     main()
