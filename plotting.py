@@ -397,10 +397,10 @@ class plotting:
         # aucPerf = np.trapz(perf)
         aucRand = auc(rand, rand)
         aucPerf = auc(rand, perf)
-        self.log_and_print("\n")
-        self.log_and_print("Random curve AUC: {:.3f}".format(aucRand))
-        self.log_and_print("Perfect curve AUC: {:.3f}".format(aucPerf))
-        self.log_and_print("\n")
+        # self.log_and_print("\n")
+        # self.log_and_print("Random curve AUC: {:.3f}".format(aucRand))
+        # self.log_and_print("Perfect curve AUC: {:.3f}".format(aucPerf))
+        # self.log_and_print("\n")
 
         # print(rand)
         # Get square root of X values
@@ -413,22 +413,22 @@ class plotting:
         aucRandSq = auc(Xsq, rand)
         aucPerfSq = auc(Xsq, perf)
         # Calculate and print random NSQ_AUC
-        self.log_and_print("Random curve AUC_sq: {:.3f}".format(aucRandSq))
-        self.log_and_print("Perfect curve AUC_sq: {:.3f}".format(aucPerfSq))
-        self.log_and_print("\n")
+        # self.log_and_print("Random curve AUC_sq: {:.3f}".format(aucRandSq))
+        # self.log_and_print("Perfect curve AUC_sq: {:.3f}".format(aucPerfSq))
+        # self.log_and_print("\n")
 
         # Calculate NSQ_AUCs
         nsqauc_rand = (100 * (aucRandSq - aucRandSq) /
                        (aucPerfSq - aucRandSq))
         randStr = "Random curve NSQ_AUC: {:.3f}".format(round(nsqauc_rand, 3))
-        self.log_and_print(randStr)
+        # self.log_and_print(randStr)
         nsqauc_perf = (100 * (aucPerfSq - aucRandSq) /
                        (aucPerfSq - aucRandSq))
         perfStr = "Perfect curve NSQ_AUC: {:.3f}".format(round(nsqauc_perf, 3))
-        self.log_and_print(perfStr)
-        self.log_and_print("\n")
+        # self.log_and_print(perfStr)
+        # self.log_and_print("\n")
 
-        self.log_and_print("Pocket,NSQ_AUC")
+        self.log_and_print("\nPocket,NSQ_AUC,AUC")
 
         for rocDatum in rocData:
             X = np.array(rocDatum[0])
@@ -460,7 +460,7 @@ class plotting:
                 lib = "2D-rac"
 
             # print("AUC_sq:", aucSq)
-            self.log_and_print("{},{}".format(pocket, nsq_auc))
+            self.log_and_print("{},{},{}".format(pocket, nsq_auc, current_auc))
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
              xAxis, yAxis, gui, log, zoom, mode, showAUC, scatterData=False):
@@ -739,8 +739,8 @@ class plotting:
             ax.axvline(x=xPos, ymax=yPos/100., color=color, alpha=alphaVal,
                        linewidth=lineWidth, linestyle=lineStyle)
 
-            print("Reference lig:", ligName, color,
-                  xPos, 5, 70 + rot_multipl * 7)
+            # print("Reference lig:", ligName, color,
+            #       xPos, 5, 70 + rot_multipl * 7)
 
             # Print the ligand name at its X coordinate, along the X axis
             # Ligands that share the same X coordinate are offset by a

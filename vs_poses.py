@@ -132,8 +132,8 @@ def getPath():
     icmHome = os.environ.get('ICMHOME')
 
     # Return path to executable if the environment variable was found
-    if icmHome == None:
-        "The ICMHOME environment variable must be set for your system. Exiting."
+    if icmHome is None:
+        print("ICMHOME env. var. must be set for your system. Exiting.")
         sys.exit()
     else:
         icm = icmHome + "/icm64"
@@ -171,9 +171,9 @@ def selectResults(resDataAll, X, ligIDs):
     resDataTop = [row for row in resDataAll[0:X]]
 
     # If the ligID flag was used, select by ligIDs, the ligID is in row[1]
-    # and return a combined list: if a selected ligID is within the top X, there
-    # will be a duplicate. However when processed the .pdb docking pose will be
-    # written then overwritten, resulting in the result expected
+    # and return a combined list: if a selected ligID is within the top X,
+    # there will be a duplicate. However when processed the .pdb docking pose
+    # will be written then overwritten, resulting in the result expected
     if ligIDs:
         resDataID = [row for row in resDataAll if row[1] in ligIDs]
         return resDataTop + resDataID
@@ -203,8 +203,8 @@ def printResults(resData):
 
 def posesPerRepeat(resData):
     """
-    Create a list for each repeat directory with the ordered list of ligIDs that
-    should be extracted to be part of the results
+    Create a list for each repeat directory with the ordered list of ligIDs
+    that should be extracted to be part of the results
     """
 
     # Store the ligand data into a dictionary where the keys are repeat numbers
