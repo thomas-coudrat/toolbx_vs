@@ -10,6 +10,7 @@ import sys
 import os
 import plotting
 
+
 def main():
     """
     Run script
@@ -30,8 +31,12 @@ def main():
     p = plotting.plotting(title)
 
     # Get the truePosID range in list format
-    truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ", True)
-    falsePosIDlist = p.makeIDlist(falsePosIDstr, "False positive ID list: ", True)
+    truePosIDlist = p.makeIDlist(truePosIDstr,
+                                 "True positive ID list: ",
+                                 True)
+    falsePosIDlist = p.makeIDlist(falsePosIDstr,
+                                  "False positive ID list: ",
+                                  True)
     libraryIDlist = truePosIDlist + falsePosIDlist
 
     # Generate a dictionary containing the refinement ligands, if any
@@ -43,7 +48,8 @@ def main():
 
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
-    vsIntersects, ligIDintersectSet = p.intersectResults(vsPaths, libraryIDlist)
+    vsIntersects, ligIDintersectSet = p.intersectResults(vsPaths,
+                                                         libraryIDlist)
 
     # Get updated true positive, true negative and library counts given the
     # intersect results
@@ -51,13 +57,13 @@ def main():
                                       truePosIDlist,
                                       "true positives")
     falsePosCount = p.updatedLigCounts(ligIDintersectSet,
-                                      falsePosIDlist,
-                                      "false positives")
+                                       falsePosIDlist,
+                                       "false positives")
     # This value is actually not used, but it complies with the plot() function
     # libraryCount = truePosCount + falsePosCount
     libraryCount = p.updatedLigCounts(ligIDintersectSet,
-                                       libraryIDlist,
-                                       "whole library")
+                                      libraryIDlist,
+                                      "whole library")
 
     # Calculate % of total curves for each of these (write file + return data)
     vsPockets = []
@@ -159,6 +165,7 @@ def parseArgs():
     return title, vsLegends, vsPaths, vsColors, vsLines, \
         truePosIDstr, falsePosIDstr, xAxisName, yAxisName, \
         ref, gui, log, showAUC
+
 
 if __name__ == "__main__":
     main()

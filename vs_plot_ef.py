@@ -10,6 +10,7 @@ import sys
 import os
 import plotting
 
+
 def main():
     """
     Run script
@@ -39,10 +40,10 @@ def main():
     truePosIDlist = p.makeIDlist(truePosIDstr, "True positive ID list: ",
                                  printOut=True)
     falsePosIDlist = p.makeIDlist(falsePosIDstr, "False positive ID list: ",
-                                 printOut=True)
+                                  printOut=True)
     libraryIDlist = truePosIDlist + falsePosIDlist
 
-    #print(len(truePosIDlist), len(falsePosIDlist), len(libraryIDlist))
+    # print(len(truePosIDlist), len(falsePosIDlist), len(libraryIDlist))
 
     # Generate a dictionary containing the refinement ligands, if any
     # refinement ligand was submitted
@@ -60,7 +61,8 @@ def main():
 
     # Read the results of each VS and keep only the ligIDs that are common
     # to all of them
-    vsIntersects, ligIDintersectSet = p.intersectResults(vsPaths, libraryIDlist)
+    vsIntersects, ligIDintersectSet = p.intersectResults(vsPaths,
+                                                         libraryIDlist)
 
     # Get updated true positive, true negative and library counts given the
     # intersect results
@@ -68,8 +70,8 @@ def main():
                                       truePosIDlist,
                                       "true positives")
     falsePosCount = p.updatedLigCounts(ligIDintersectSet,
-                                      falsePosIDlist,
-                                      "false positives")
+                                       falsePosIDlist,
+                                       "false positives")
     libraryCount = p.updatedLigCounts(ligIDintersectSet,
                                       libraryIDlist,
                                       "full library")
@@ -85,8 +87,8 @@ def main():
         vsPockets.append(vsPocket)
 
     # Extract the data from the vs percent data (in both enrichment curves and
-    # ROC curves, the truePositive count would be used to draw the perfect curve
-    #plotData, xLim, yLim = p.extractPlotData(vsPockets, vsLegends, zoom)
+    # ROC curves, the truePositive count would be used to draw a perfect curve
+    # plotData, xLim, yLim = p.extractPlotData(vsPockets, vsLegends, zoom)
 
     # Extract data related to ligand type (plotting and barplot data)
     enrichFactorData = p.extractLigTypeData(vsPockets,
@@ -95,12 +97,12 @@ def main():
                                             libraryCount,
                                             ef_cutoffs)
 
-    #import pprint
-    #pprint.pprint(enrichFactorData)
-    #pprint.pprint(lig_types)
+    # import pprint
+    # pprint.pprint(enrichFactorData)
+    # pprint.pprint(lig_types)
 
-    # Plot the barplot represeting the enrochment factors (EFs) in known ligands
-    # at ef_cutoffs of the screened library
+    # Plot the barplot represeting the enrochment factors (EFs) in known
+    # ligands at ef_cutoffs of the screened library
     p.barPlot(title, enrichFactorData, vsLegends, ef_cutoffs,
               vsColors, lig_types, gui, labelBars)
 
@@ -127,7 +129,8 @@ def define_ef_cutoffs(customEFs_string):
                 except ValueError:
                     print("Custom EF values need to be integers")
         else:
-            print("Submit a set of three comma separated custom EF values e.g. 1,2,3")
+            print("Submit a set of three comma separated custom EF"
+                  "values e.g. 1,2,3")
             print("You submitted: {}".format(customEFs_string))
             sys.exit()
         ef_cutoffs = custom_efs
@@ -172,7 +175,8 @@ def parseArgs():
     parser.add_argument("ligLibs", help=descr_ligLibs)
     parser.add_argument("--ref", help=descr_ref)
     parser.add_argument("-gui", action="store_true", help=descr_gui)
-    parser.add_argument("-labelBars", action="store_true", help=descr_labelBars)
+    parser.add_argument("-labelBars", action="store_true",
+                        help=descr_labelBars)
     parser.add_argument("--customEFs", help=descr_customEFs)
 
     # parsing args

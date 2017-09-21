@@ -8,13 +8,16 @@
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 import math
-import os, sys
+import os
+import sys
 import numpy as np
 import json
 from sklearn.metrics import roc_curve, auc
+import random
 
 # Get matplotlib to save SVG text as text, not paths
 mpl.rcParams['svg.fonttype'] = 'none'
+
 
 class col:
     """
@@ -35,10 +38,10 @@ class plotting:
     Contains all methods for plotting VS results
     """
 
-    # Defines the path to a log file used to write output. Initialised as False,
-    # it is set as a file path upon initialisation of this class. After that all
-    # subsequent calls to log information use the same file path and append to
-    # that file.
+    # Defines the path to a log file used to write output. Initialised as False
+    # it is set as a file path upon initialisation of this class. After that
+    # all subsequent calls to log information use the same file path and append
+    # to that file.
     log_file = False
 
     def __init__(self, title):
@@ -55,7 +58,6 @@ class plotting:
             f.write("**************************")
             f.write("\n*** LOG FILE for: " + title)
             f.write("\n**************************")
-
 
     def makeIDlist(self, stringID, blurb, printOut):
         """
@@ -97,7 +99,6 @@ class plotting:
 
         return rangeID
 
-
     def makeRefDict(self, refStr):
         """
         Get a string describing refinement ligands and their ID, and generate a
@@ -120,7 +121,6 @@ class plotting:
         print("\nReference ligand list: " + str(refDict))
 
         return refDict
-
 
     def intersectResults(self, vsPaths, libraryIDlist):
         """
@@ -159,11 +159,13 @@ class plotting:
         # Get the intersection set
         ligIDintersectSet = set.intersection(*allLigIDs)
 
-        # Loop over vsResults and keep only the ones present in the intersection
-        # Also identify which binding pocket does not have which docked ligand
-        # information
+        # Loop over vsResults and keep only the ones present in the
+        # intersection. Also identify which binding pocket does not have which
+        # docked ligand information
         vsIntersects = []
-        for resultPath, vsResult, ligIDs in zip(vsPaths, allVsResults, allLigIDs):
+        for resultPath, vsResult, ligIDs in zip(vsPaths,
+                                                allVsResults,
+                                                allLigIDs):
             vsResultIntersect = []
             for ligInfo in vsResult:
                 ligID = int(ligInfo[0])
@@ -187,13 +189,11 @@ class plotting:
                       " missing the following ligands:" + col.end + "\t" +
                       str(notDockedLigIDlist))
 
-
-        print("\nNumber of intersecting docked ligands: " + \
+        print("\nNumber of intersecting docked ligands: " +
               str(len(ligIDintersectSet)))
 
         # Return the intersect VS data and intersect ligand ID set
         return vsIntersects, ligIDintersectSet
-
 
     def updatedLigCounts(self, ligIDintersectSet, ligIDlist, lig_type):
         """
@@ -211,22 +211,21 @@ class plotting:
         missingLigs = sorted(list(ligIDset - intersectLig_IDs))
         if len(missingLigs) > 0:
             print(col.red + "\nWARNING: " + col.end +
-                "missing IDs " + lig_type + " : " + str(missingLigs))
+                  "missing IDs " + lig_type + " : " + str(missingLigs))
         ligCount = len(intersectLig_IDs)
 
         print("\nUpdated " + lig_type + ": " + str(ligCount))
 
         return ligCount
 
-
     def writePercFile(self, vsIntersect, vsPath, mode, refDict,
                       xAxisName, xAxisIDstr, xAxisIDlist, xCount,
                       yAxisName, yAxisIDstr, yAxisIDlist, yCount):
         """
         Given this VS result, and information about the ID of known actives
-        in the library, write in a file the information to plot a ROC/enrichment
-        curve (depending on what is supplied as xAxisIDlist, falsePositives or
-        full library)
+        in the library, write in a file the information to plot a
+        ROC/enrichment curve (depending on what is supplied as xAxisIDlist,
+        falsePositives or full library)
         """
 
         print(col.head + "\n\t*WRITING ENRICHMENT DATA*" + col.end)
@@ -296,7 +295,6 @@ class plotting:
 
         return percentPath
 
-
     def extractPlotData(self, vsPockets, vsLegends, zoom):
         """
         Read the % result data files, return the data for plotting
@@ -311,6 +309,11 @@ class plotting:
         xLim = 0.0
         yLim = 0.0
         plotData = []
+
+        # List of X coordinates for reference ligands in this dataset. This is
+        # used to display ligands recovered at the same X coordinate at
+        # different angles on the figure and thus avoid overlap
+        ref_coords = []
 
         for vsPocket, vsLegend in zip(vsPockets, vsLegends):
 
@@ -341,15 +344,30 @@ class plotting:
                     # Collect the X position of the refinement ligand(s)
                     if len(ll) == 6:
                         ligName = ll[5].strip()
-                        ligXY = [xPercent, yPercent]
-                        refPlot[ligName] = ligXY
+                        # Store the reference ligand's coordinates in a tuple
+                        ligXY = (xPercent, yPercent)
+
+                        # Reference ligand information includes coordinates
+                        # and a boolean that identifies if there is more than
+                        # one reference ligand on the figure that share there
+                        # same coordinates
+
+                        # Count the number of reference ligands already
+                        # sharing that X coordinate, and store that number
+                        # This number will be used as a multiplier to change
+                        # the display parameters of the ligand name on the
+                        # figure
+                        refPlot[ligName] = (ligXY,
+                                            ref_coords.count(xPercent))
+
+                        # Update the reference ligand X coordinate list
+                        ref_coords.append(xPercent)
 
             # Position 4 is initialised to None as it can hold the NSQ_AUC
             # value in the future (if calculated)
             plotData.append([X, Y, vsLegend, refPlot, None])
 
         return plotData, xLim, yLim
-
 
     def getAUC_NSQ(self, rocData):
         """
@@ -361,22 +379,22 @@ class plotting:
 
         self.log_and_print(col.head + "\n\t*CALCULATING NSQ_AUC*" + col.end)
 
-        # Get values of first ROC curve in order to calculate random and perfect
-        # curve values
+        # Get values of first ROC curve in order to calculate random and
+        # perfect curve values
         maxValY = len(rocData[0][1])
         maxValX = len(rocData[0][0])
         X = np.array(rocData[0][0])
-        #print(len(X))
+        # print(len(X))
         # Calculate random and perfect curve values
         perf = np.array([100.] * len(X))
-        #print(len(perf))
-        #print(perf)
-        #rand = X
+        # print(len(perf))
+        # print(perf)
+        # rand = X
         rand = np.arange(0., 100., 100./len(X))
-        #print(len(rand))
+        # print(len(rand))
         # Calculate AUCs for perfect and random curves
-        #aucRand = np.trapz(rand)
-        #aucPerf = np.trapz(perf)
+        # aucRand = np.trapz(rand)
+        # aucPerf = np.trapz(perf)
         aucRand = auc(rand, rand)
         aucPerf = auc(rand, perf)
         self.log_and_print("\n")
@@ -384,14 +402,14 @@ class plotting:
         self.log_and_print("Perfect curve AUC: {:.3f}".format(aucPerf))
         self.log_and_print("\n")
 
-        #print(rand)
+        # print(rand)
         # Get square root of X values
         Xsq = np.sqrt(rand)
-        #print(Xsq)
+        # print(Xsq)
 
         # Calculate AUCs for random and perfect curves
-        #aucRandSq = np.trapz(rand) # / 100.
-        #aucPerfSq = np.trapz(perf) # / 100.
+        # aucRandSq = np.trapz(rand) # / 100.
+        # aucPerfSq = np.trapz(perf) # / 100.
         aucRandSq = auc(Xsq, rand)
         aucPerfSq = auc(Xsq, perf)
         # Calculate and print random NSQ_AUC
@@ -400,10 +418,14 @@ class plotting:
         self.log_and_print("\n")
 
         # Calculate NSQ_AUCs
-        nsq_auc_rand = (100 * (aucRandSq - aucRandSq) / (aucPerfSq - aucRandSq))
-        self.log_and_print("Random curve NSQ_AUC: {:.3f}".format(round(nsq_auc_rand, 3)))
-        nsq_auc_perf = (100 * (aucPerfSq - aucRandSq) / (aucPerfSq - aucRandSq))
-        self.log_and_print("Perfect curve NSQ_AUC: {:.3f}".format(round(nsq_auc_perf, 3)))
+        nsqauc_rand = (100 * (aucRandSq - aucRandSq) /
+                       (aucPerfSq - aucRandSq))
+        randStr = "Random curve NSQ_AUC: {:.3f}".format(round(nsqauc_rand, 3))
+        self.log_and_print(randStr)
+        nsqauc_perf = (100 * (aucPerfSq - aucRandSq) /
+                       (aucPerfSq - aucRandSq))
+        perfStr = "Perfect curve NSQ_AUC: {:.3f}".format(round(nsqauc_perf, 3))
+        self.log_and_print(perfStr)
         self.log_and_print("\n")
 
         self.log_and_print("Pocket,NSQ_AUC")
@@ -414,12 +436,12 @@ class plotting:
             legend = rocDatum[2]
 
             # Calculate AUC for the current curve
-            #print(Y, len(Y))
+            # print(Y, len(Y))
 
             current_auc = auc(X, Y) / 100
 
             Xsq = np.sqrt(X)
-            aucSq = auc(Xsq, Y) # / 100.
+            aucSq = auc(Xsq, Y)  # / 100.
 
             # Normalised square root AUC: 100 is perfect, 0 is random, negative
             # values are below random
@@ -437,9 +459,8 @@ class plotting:
                 pocket = leg[0]
                 lib = "2D-rac"
 
-            #print("AUC_sq:", aucSq)
+            # print("AUC_sq:", aucSq)
             self.log_and_print("{},{}".format(pocket, nsq_auc))
-
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
              xAxis, yAxis, gui, log, zoom, mode, showAUC, scatterData=False):
@@ -549,7 +570,6 @@ class plotting:
             # Save png version
             plt.savefig(fileName + ".png", bbox_inches="tight", dpi=dpiVal)
 
-
     def plotROC(self, title, plotData, vsColors, vsLines,
                 libraryCount, truePosCount, xLim, yLim, xAxis, yAxis,
                 gui, log, zoom, mode, showAUC):
@@ -582,13 +602,16 @@ class plotting:
             ligVerticStyleFollow = True
 
         # Drawing data on the figure
-        for i, (plotDatum, color, line) in enumerate(zip(plotData, vsColors, vsLines)):
+        for i, (plotDatum, color, line) in enumerate(zip(plotData,
+                                                         vsColors,
+                                                         vsLines)):
             if line == "cont":
                 lineStyle = "-"
             elif line == "hyph":
                 lineStyle = "--"
             elif line == "dots":
                 lineStyle = ":"
+
             X, Y = self.drawLine(ax, ax2, plotDatum, color, lineStyle, i,
                                  zoom, mode, lineWidth, alphaVal,
                                  ligVerticStyleFollow, showAUC)
@@ -607,7 +630,8 @@ class plotting:
             ax2.plot(X, perfect, color="grey")
             ax2.plot(X, random, ":", color="grey")
             ax2.tick_params(axis="both", which="major", labelsize=15)
-            #ax2.set_title("Zoom of the first " + str(zoom) + "%", fontsize=15)
+            # ax2.set_title("Zoom of the first " + str(zoom) + "%",
+            #               fontsize=15)
 
         # Here axis and ticks are improved
         ax.set_xlabel(xAxis, fontsize=30)
@@ -615,7 +639,7 @@ class plotting:
 
         ax.minorticks_on()
         ax.tick_params(axis="both", which="major", labelsize=30)
-        #ax.set_title(title, fontsize=35, y=1.08)
+        # ax.set_title(title, fontsize=35, y=1.08)
         ax.legend(loc="best", prop={'size': 30},
                   borderpad=0.1, labelspacing=0.3, handletextpad=0.4)
         ax.axis('tight')
@@ -650,7 +674,6 @@ class plotting:
             # Save png version
             plt.savefig(fileName + ".png", bbox_inches="tight", dpi=dpiVal)
 
-
     def drawLine(self, ax, ax2, plotDatum, color, lineStyle, i, zoom,
                  mode, lineWidth, alphaVal,
                  ligVerticStyleFollow, showAUC):
@@ -668,7 +691,7 @@ class plotting:
         nsq_auc = plotDatum[4]
         # If showAUC is True, then add the calculated NSQ_AUC value to the
         # legend. Otherwise, show the legend as is.
-        if nsq_auc != None and showAUC:
+        if nsq_auc is not None and showAUC:
             plotLegend = plotLegend + ": " + nsq_auc
 
         """
@@ -712,14 +735,21 @@ class plotting:
 
         # Plot a vertical line for each refinement ligand
         for ligName in refPlot.keys():
-            xPos, yPos = refPlot[ligName]
+            (xPos, yPos), rot_multipl = refPlot[ligName]
             ax.axvline(x=xPos, ymax=yPos/100., color=color, alpha=alphaVal,
                        linewidth=lineWidth, linestyle=lineStyle)
-            # print(ligName, xPos, yPos)
-            #ax.text(xPos, -4, ligName, rotation=-70, alpha=alphaVal,
-            #        fontsize=30, color=color, transform=ax.transData)
-        return X, Y
 
+            print("Reference lig:", ligName, color,
+                  xPos, 5, 70 + rot_multipl * 7)
+
+            # Print the ligand name at its X coordinate, along the X axis
+            # Ligands that share the same X coordinate are offset by a
+            # different angle
+            ax.text(xPos, 5, ligName, rotation=70 + rot_multipl * 7,
+                    alpha=alphaVal, fontsize=25, color=color,
+                    transform=ax.transData)
+
+        return X, Y
 
     def writeCommand(self, title):
         """
@@ -748,13 +778,11 @@ class plotting:
                     logFile.write("'" + arg + "' ")
         logFile.close()
 
-
     def formulaRandom(self, x):
         """
         Return the y value corresponding to random enrichment
         """
         return x
-
 
     def formulaPerfect(self, x, libraryCount, truePosCount):
         """
@@ -768,7 +796,6 @@ class plotting:
         slope = 100 / percentageXmax
 
         return np.multiply(x, slope)
-
 
     def getLigandListFromJson(self, jsonFilePath):
         """
@@ -811,7 +838,6 @@ class plotting:
 
         return lig_libraries_content
 
-
     def getColorMap(self, color_range, data):
         """
         Get a color map matching the data to be plotted
@@ -821,10 +847,10 @@ class plotting:
         cm = plt.get_cmap(color_range)
         cNorm = mpl.colors.Normalize(vmin=0, vmax=len(data))
         scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cm)
-        # ax.set_color_cycle([scalarMap.to_rgba(i) for i in range(len(plotData))])
+        # ax.set_color_cycle([scalarMap.to_rgba(i)
+        #                    for i in range(len(plotData))])
 
         return scalarMap
-
 
     def barPlot(self, title, enrichFactorData, pocketNames, ef_cutoffs,
                 vsColors, lig_types, gui, labelBars):
@@ -851,8 +877,9 @@ class plotting:
         # Default values
         groups = 3
         ind = np.arange(groups*2, step=2.4)
-        #print(ind)
-        #ind = np.array([0, 2.2, 4.4])
+        # print(ind)
+        # ind = np.array([0, 2.7, 5.4])
+        # ind = np.array([0, 2.4, 4.8])
         width = 0.07
         efNumber = len(enrichFactorData.keys())
         # Create a list of pockets and ligand library that matches the order
@@ -863,7 +890,7 @@ class plotting:
                 efPockets.append([pocket, lib])
 
         # Get the count of the largest library
-        #max_count = 0
+        # max_count = 0
         # Create the list of hatches for each ligand type
         # Hatches will be stored in this dictionary
         ligLibHatches = {}
@@ -873,21 +900,21 @@ class plotting:
         # print lig_types
         for i, lig_lib in enumerate(sorted(lig_types.keys())):
             # Create the name as "ligType (lig_count)"
-            #current_count = len(lig_types[lig_lib][0])
-            #lig_lib = lig_lib + " (" + str(current_count)+ ")"
+            # current_count = len(lig_types[lig_lib][0])
+            # lig_lib = lig_lib + " (" + str(current_count)+ ")"
             # Add a dictionary value, associate it to a new pattern
             if i <= len(patterns) - 1:
                 ligLibHatches[lig_lib] = patterns[i]
             else:
                 ligLibHatches[lig_lib] = ""
             # Update max_count to know the size of the largest library
-            #if current_count > max_count:
+            # if current_count > max_count:
             #    max_count = current_count
 
         # Go through a sorted list of the pocket-ligType combinations
         allBars = []
         # Store largest EF value
-        #max_ef_val = 0
+        # max_ef_val = 0
         # Loop over binding pocket/ligand library combinations in the order
         # defined by the user in arguments
         for i, efName in enumerate(efPockets):
@@ -901,8 +928,8 @@ class plotting:
                     libTotalCount = enrichFactorData[efKey][3]
                     # Choose the bar color: match the pocket
                     curr_pocket_name = enrichFactorData[efKey][4][0]
-                    # Loop over pocket names to get the pocket index (use 0 if pocket
-                    # was not found)
+                    # Loop over pocket names to get the pocket index
+                    # (use 0 if pocket was not found)
                     num = 0
                     for j, pocketName in enumerate(pocketNames):
                         if curr_pocket_name == pocketName:
@@ -925,39 +952,45 @@ class plotting:
                         hatch = ""
 
                     # Plotting totals in white bars
-                    #barTots = ax_bar.bar(ind + i*(width), efTotals, width,
-                    #                     alpha=alphaVal, color="white", align="center",
-                    #                     linewidth=0)
+                    # barTots = ax_bar.bar(ind + i*(width), efTotals, width,
+                    #                      alpha=alphaVal, color="white",
+                    #                      align="center", linewidth=0)
 
                     # Plotting bar (with matching color and hatch)
                     bars = ax_bar.bar(ind + i*(width), efData, width,
-                                      alpha=alphaVal, color=color, align="center",
-                                      hatch=hatch)
+                                      alpha=alphaVal, color=color,
+                                      align="center", hatch=hatch)
 
                     # Keep the largest value to update figure size
-                    #for ef_val in efData:
+                    # for ef_val in efData:
                     #    if max_ef_val < ef_val:
                     #        max_ef_val = ef_val
 
-                    # Display values above bars, only if there was at least one bar
-                    # above 0
-                    #if max_ef_val != 0:
-                    for j, (value, ligCount, bar) in enumerate(zip(efData, ligCountData, bars)):
-                        # If no ligand of that type was found, avoid division by 0
-                        # ind + i*width + j*width +
+                    # Display values above bars, only if there was at least
+                    # one bar above 0
+                    # if max_ef_val != 0:
+                    for j, (value,
+                            ligCount,
+                            bar) in enumerate(zip(efData,
+                                                  ligCountData,
+                                                  bars)):
+                        # If no ligand of that type was found, avoid division
+                        # by 0 ind + i*width + j*width +
                         x_position = bar.get_x()
                         if labelBars:
                             # Write information on ligands found over total
                             # above bar
                             ax_bar.text(x=x_position + 0.073,
                                         y=value + 0.5,
-                                        s="{}/{}".format(ligCount, libTotalCount),
+                                        s="{}/{}".format(ligCount,
+                                                         libTotalCount),
                                         fontsize=17, color="black",
                                         verticalalignment="bottom",
                                         horizontalalignment="right",
                                         rotation=90)
                         # Write information about ligand library below bar
-                        # Blended transform: x in data untis, y in axes fraction
+                        # Blended transform: x in data untis, y in axes
+                        # fraction
                         transf = ax_bar.get_xaxis_transform()
                         ax_bar.annotate(s=efName[1].split()[0],
                                         horizontalalignment="right",
@@ -969,7 +1002,7 @@ class plotting:
                     allBars.append(bars)
 
         # Setting ticks and limits
-        #ax_bar.set_title(title, fontsize=35, y=1.08)
+        # ax_bar.set_title(title, fontsize=35, y=1.08)
         # Defining the text and positions for enrichment factor (EF) labels
         ticksLabels = ('EF' + str(EF_a), 'EF' + str(EF_b), 'EF' + str(EF_c))
         ticksXpos = ind + (efNumber * width)/2
@@ -983,15 +1016,15 @@ class plotting:
         ax_bar.spines['top'].set_visible(False)
         ax_bar.set_ylabel(r"EF$_x$ (%)", fontsize=30)
         # Set the upperlimit at 20% more than the maximum value of the graph
-        #if max_ef_val != 0:
+        # if max_ef_val != 0:
         #    ax_bar.set_ylim(0, max_ef_val * 1.20)
-        #else:
+        # else:
         #    ax_bar.set_ylim(bottom=0)
         # Set margins left and right of the bar groups
         ax_bar.margins(x=.1)
 
         # Setting legend
-        #fig_leg = plt.figure(dpi=dpiVal)
+        # fig_leg = plt.figure(dpi=dpiVal)
 
         # Generate the two lists that store the custom legend information
         # This could have been done in the for loop above, but is abstracted
@@ -1007,13 +1040,13 @@ class plotting:
         # Ligand-types legend
         for hatchKey in sorted(ligLibHatches.keys()):
             legRects.append(plt.Rectangle((0, 0), 10, 10,
-                                      hatch=ligLibHatches[hatchKey],
-                                      facecolor="white"))
+                            hatch=ligLibHatches[hatchKey],
+                            facecolor="white"))
             legNames.append(hatchKey)
         # Create the custom figure legend
-        #plt.figlegend(legRects, legNames, prop={'size': 30},
+        # plt.figlegend(legRects, legNames, prop={'size': 30},
         #              loc="center")
-        ax_bar.legend(legRects, legNames,# ncol=2,"
+        ax_bar.legend(legRects, legNames,  # ncol=2,"
                       loc="best", prop={"size": 30}, frameon=False)
 
         # Display or save barchart and legend
@@ -1021,17 +1054,17 @@ class plotting:
             plt.show()
         else:
             barFile = title.replace(" ", "_")
-            #legFile = title.replace(" ", "_") + "_barLeg"
+            # legFile = title.replace(" ", "_") + "_barLeg"
             # Save pdf version
-            #fig_bar.savefig(barFile + ".pdf", bbox_inches="tight", dpi=dpiVal)
-            #fig_leg.savefig(legFile + ".png", bbox_inches="tight",
-            #                format="png", dpi=dpiVal)
+            # fig_bar.savefig(barFile + ".pdf", bbox_inches="tight",
+            #                 dpi=dpiVal)
+            # fig_leg.savefig(legFile + ".png", bbox_inches="tight",
+            #                 format="png", dpi=dpiVal)
             # Save PNG version. Neither SVG nor PDF backends produce the right
             # figure.
             fig_bar.savefig(barFile + ".png", bbox_inches="tight", dpi=dpiVal)
-            #fig_leg.savefig(legFile + ".pdf", bbox_inches="tight",
-            #                format="pdf", dpi=dpiVal)
-
+            # fig_leg.savefig(legFile + ".pdf", bbox_inches="tight",
+            #                 format="pdf", dpi=dpiVal)
 
     def extractLigTypeData(self, percentPaths, vsLegends,
                            lig_types, libraryCount, ef_cutoffs):
@@ -1073,8 +1106,8 @@ class plotting:
                     # Read each ligand type ligand ID data
                     for i, lib_name in enumerate(sorted(lig_types.keys())):
 
-                        # Collect the list of ligand IDs that correspond to that
-                        # type
+                        # Collect the list of ligand IDs that correspond to
+                        # that type
                         lib_IDs = lig_types[lib_name][0]
                         # Count number of ligands in that library
                         ligCount = len(lib_IDs)
@@ -1084,10 +1117,11 @@ class plotting:
                         # Initialise enrichFactorData, dictionary with keys
                         # combining bindingPocket name and ligLibrary name.
                         # It stores in position 0 and 1 two lists of three
-                        # elements. Each of these elements correspond to cutoffs
-                        # EF_a, EF_b and EF_c, respectively. The commonly used
-                        # cutoffs are 2, 5 and 10 (defined in vs_plot_ef.py).
-                        # These cutoffs are refered below as X %.
+                        # elements. Each of these elements correspond to
+                        # cutoffs EF_a, EF_b and EF_c, respectively. The
+                        # commonly used cutoffs are 2, 5 and 10 (defined in
+                        # vs_plot_ef.py). These cutoffs are refered below as
+                        # X %.
                         # Description of what is in the dictionary:
                         # [0] is initiated to False, and will contain the EF
                         # (enrichment factor) values which are calculated after
@@ -1102,12 +1136,12 @@ class plotting:
                         # strings for legend plotting, binding pocket name
                         # and ligand library name.
 
-                        #libNameNum = lib_name + " (" + str(ligCount) + ")"
+                        # libNameNum = lib_name + " (" + str(ligCount) + ")"
                         efName = vsLegend + " - " + lib_name
                         if efName not in enrichFactorData.keys():
                             enrichFactorData[efName] = [False,
-                                                        [0,0,0],
-                                                        [0,0,0],
+                                                        [0, 0, 0],
+                                                        [0, 0, 0],
                                                         ligCount,
                                                         [vsLegend, lib_name]]
 
@@ -1121,7 +1155,8 @@ class plotting:
                             if ligID in lib_IDs:
                                 enrichFactorData[efName][1][0] += 1
                             # update found flag
-                            if int(xPercent) == EF_a and i + 1 == libTypesCount:
+                            if int(xPercent) == EF_a and \
+                                    i + 1 == libTypesCount:
                                 EF_a_notReached = False
 
                         if xPercent - EF_b <= 0 and EF_b_notReached:
@@ -1131,7 +1166,8 @@ class plotting:
                             if ligID in lib_IDs:
                                 enrichFactorData[efName][1][1] += 1
                             # update found flag
-                            if int(xPercent) == EF_b and i + 1 == libTypesCount:
+                            if int(xPercent) == EF_b and \
+                                    i + 1 == libTypesCount:
                                 EF_b_notReached = False
 
                         if xPercent - EF_c <= 0 and EF_c_notReached:
@@ -1141,7 +1177,8 @@ class plotting:
                             if ligID in lib_IDs:
                                 enrichFactorData[efName][1][2] += 1
                             # update found flag
-                            if int(xPercent) == EF_c and i + 1 == libTypesCount:
+                            if int(xPercent) == EF_c and \
+                                    i + 1 == libTypesCount:
                                 EF_c_notReached = False
 
         # Calculate EF values now that ligand type counts at 0.1, 1 and 10
@@ -1174,7 +1211,6 @@ class plotting:
             enrichFactorData[efName][0] = efValues
 
         return enrichFactorData
-
 
     def log_and_print(self, string):
         """

@@ -45,7 +45,7 @@ def getPath():
     icmHome = os.environ.get('ICMHOME')
 
     # Return path to executable if the environment variable was found
-    if icmHome == None:
+    if icmHome is None:
         "The ICMHOME environment variable must be set for your system. Exiting."
         sys.exit()
     else:
