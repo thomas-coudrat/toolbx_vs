@@ -470,7 +470,7 @@ class plotting:
 
         print(col.head + "\n\t*PLOTTING DATA*" + col.end)
 
-        dpiVal = 200
+        dpiVal = 800
         lineWidth = 4
         alphaVal = 0.8
 
@@ -579,7 +579,7 @@ class plotting:
 
         print(col.head + "\n\t*PLOTTING DATA*" + col.end)
 
-        dpiVal = 200
+        dpiVal = 800
         lineWidth = 6
         alphaVal = 1
 
@@ -862,7 +862,7 @@ class plotting:
         print(col.head + "\n\t*PLOTTING BAR GRAPH DATA*" + col.end)
 
         # Default graphic values
-        dpiVal = 200
+        dpiVal = 800
         alphaVal = 1
 
         # Values of EF_a, EF_b and EF_c
