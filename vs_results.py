@@ -69,8 +69,8 @@ def parseArguments():
     descr_vsDir = "Directory of the VS to be analysed"
     descr_minRep = "Minimum number of repeats required to be included in" \
         " the results. Default is max number of repeats"
-    descr_allRep = "Print out all results from each repeat in a different text" \
-        " file"
+    descr_allRep = "Print out all results from each repeat in a different" \
+        " text file"
 
     # Defining the arguments
     parser = argparse.ArgumentParser(description=descr)
@@ -89,8 +89,8 @@ def parseArguments():
     if minRep:
         minRep = int(minRep)
     else:
-        # This could be improved, but it does work well this way (never will the
-        # repeat number be that high)
+        # This could be improved, but it does work well this way (never will
+        # the repeat number be that high)
         minRep = 999999999999999999999
 
     return vsDir, minRep, allRep
@@ -207,7 +207,7 @@ def removeFailed(ligDict, totalRepeatNum, minRepeatNum):
 
     print("\nINCOMPLETE DOCKINGS:\n")
 
-    #keys = ligDict.keys()
+    # keys = ligDict.keys()
     for key in ligIDs:
         currRepeatNum = len(ligDict[key])
 
@@ -293,6 +293,7 @@ def writeResultFiles(ligDict, projName, vsDir):
         writeResultLine(ligInfo, fileResult)
 
     fileResult.close()
+
 
 def writeRepeatFile(repFile, repeat, ligDict):
     """

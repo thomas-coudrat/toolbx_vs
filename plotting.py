@@ -384,14 +384,15 @@ class plotting:
         maxValY = len(rocData[0][1])
         maxValX = len(rocData[0][0])
         X = np.array(rocData[0][0])
-        # print(len(X))
+        # print("len X", len(X))
         # Calculate random and perfect curve values
         perf = np.array([100.] * len(X))
-        # print(len(perf))
+        # print("len perf", len(perf))
         # print(perf)
         # rand = X
-        rand = np.arange(0., 100., 100./len(X))
-        # print(len(rand))
+        rand = np.arange(0., 99.9999, 100.00/len(X))
+        # print("len rand", len(rand))
+        # print(rand)
         # Calculate AUCs for perfect and random curves
         # aucRand = np.trapz(rand)
         # aucPerf = np.trapz(perf)
@@ -451,16 +452,10 @@ class plotting:
             # is initialised with to None
             rocDatum[4] = "{:.1f}".format(round(nsq_auc, 3))
 
-            leg = legend.split()
-            if len(leg) > 1:
-                pocket = leg[0]
-                lib = leg[1]
-            else:
-                pocket = leg[0]
-                lib = "2D-rac"
-
             # print("AUC_sq:", aucSq)
-            self.log_and_print("{},{},{}".format(pocket, nsq_auc, current_auc))
+            self.log_and_print("{},{},{}".format(legend.replace(" ", "_"),
+                                                 nsq_auc,
+                                                 current_auc))
 
     def plot(self, title, plotData, libraryCount, truePosCount, xLim, yLim,
              xAxis, yAxis, gui, log, zoom, mode, showAUC, scatterData=False):
