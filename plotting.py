@@ -972,7 +972,7 @@ class plotting:
                         # If no ligand of that type was found, avoid division
                         # by 0 ind + i*width + j*width +
                         x_position = bar.get_x()
-                        if labelBars:
+                        if labelBars and ligCount > 0:
                             # Write information on ligands found over total
                             # above bar
                             ax_bar.text(x=x_position + 0.073,

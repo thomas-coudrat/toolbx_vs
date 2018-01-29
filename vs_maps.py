@@ -115,7 +115,7 @@ def parseArgs():
     if mapMode == "residues":
         with open(resPath) as f:
             lines = f.readlines()
-            residues = "".join(lines)
+            residues = "".join(lines).strip()
     # otherwise initialise residues to empty string
     else:
         residues = ""
