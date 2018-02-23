@@ -161,14 +161,14 @@ def cleanRepeatDir(repeatDir):
         print("\n")
 
         # Prompting for removal
-        answer = raw_input('Three options:\n' +
-                           '(abort) operation,\n' +
-                           '(delete) all existing files and continue,\n' +
-                           '(keep) existing files and continue (note that ' +
-                           'you risk overwriting some files)\n' +
-                           '(backup) existing file in a timestamped folder ' +
-                           'per repeat dir\n\n'
-                           'abort/delete/keep/backup? (default=abort) ')
+        answer = input('Three options:\n' +
+                       '(abort) operation,\n' +
+                       '(delete) all existing files and continue,\n' +
+                       '(keep) existing files and continue (note that ' +
+                       'you risk overwriting some files)\n' +
+                       '(backup) existing file in a timestamped folder ' +
+                       'per repeat dir\n\n'
+                       'abort/delete/keep/backup? (default=abort) ')
         if answer == "delete":
             print("DELETING PREVIOUS FILES...")
             for filePath in filePaths:
@@ -342,7 +342,7 @@ def slurmSrun(projName, libStart, libEnd,  walltime, repeatDir, repeat, sliceCou
 
     with open(repeatDir + "srun_" + libRange  + ".slurm", "w") as f:
         f.write("\n".join(lines))
-        
+
 
 def slurmSrunSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
                    libStart, libEnd, repeatDir, reportLines, icmHome):
