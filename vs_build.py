@@ -382,8 +382,7 @@ def slurmSlice(walltime, sliceName, projName, thor, lowerLimit, upperLimit,
 
     lines = []
     lines.append("#!/bin/bash")
-    lines.append("#SBATCH -p main")
-    lines.append("#SBATCH --mem-per-cpu=1024")
+    lines.append("#SBATCH --mem=1024")
     lines.append("#SBATCH --time=" + walltime)
     lines.append("#SBATCH --job-name=" + sliceName)
     lines.append("")
