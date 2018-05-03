@@ -31,7 +31,8 @@ def main():
     # Fix paths
     cwd = os.getcwd()
     vsPath = os.path.dirname(cwd + "/" + resultsPath)
-    projName = os.path.basename(os.path.dirname(cwd + "/" + resultsPath))
+    #projName = os.path.basename(os.path.dirname(cwd + "/" + resultsPath))
+    projName = os.path.basename(glob.glob(cwd + "/*.log")[0]).replace(".log", "")
 
     # Parse the VS results
     resDataAll = parseResultsCsv(resultsPath)
@@ -330,16 +331,18 @@ def readAndWrite(obFileList, pdbFileList, projName, vsPath, icm):
     icmScript.write('openFile "' + recObPath + '"\n')
 
     # Load each OB file containing the ligands
-    icmScript.write("\n# OPENING FILES\n")
+    icmScript.write("\n# OPEN FILES\n")
     for obFile in obFileList:
         print("loading:" + obFile)
         icmScript.write('openFile "' + obFile + '"\n')
 
     # Create the receptor-ligand complexes, save complexes
-    icmScript.write("\n# WRITING FILES\n")
+    icmScript.write("\n# MODIFY/WRITE FILES\n")
     for pdbFile in pdbFileList:
         # Renumber ligand 'residue' number to avoid overlap with rec res nums
         icmScript.write('align number ' + pdbFile[1] + 'm 9999\n')
+        # Rename receptor to 'a'
+        icmScript.write('rename a_' + recObName + '.* Name(Name("a" simple),unique)\n')
         # Create a temporary copy of the receptor
         icmScript.write('copy Obj( a_' + recObName + '.a ) Name( "temp_rec" object ) delete display\n')
         # Move the receptor this ligand ICM object
