@@ -1005,7 +1005,7 @@ class plotting:
         ax_bar.set_xticks(ticksXpos)
         ax_bar.set_xticklabels(labels=ticksLabels, y=-0.04)
         ax_bar.tick_params(axis="both", which="both",
-                           top="off", right="off",
+                           top=False, right=False,
                            labelsize=30)
         ax_bar.spines['right'].set_visible(False)
         ax_bar.spines['top'].set_visible(False)
