@@ -48,6 +48,7 @@ def main():
     # Load those poses and save them in the /poses directory
     loadAnswersWritePoses(repeatsRes, vsPath, projName, icm)
 
+    """
     # Now load and write the receptor (binding pocket)
     recObName = projName + "_rec"
     recObPath = vsPath + "/vs_setup/" + recObName + ".ob"
@@ -57,6 +58,7 @@ def main():
                  [[recObName, icmRecObName, recPdbPath]],
                  icm,
                  " write pdb ")
+    """
     print("\n")
 
 
@@ -259,7 +261,7 @@ def loadAnswersWritePoses(repeatsRes, vsPath, projName, icm):
 
             pdbFileList.append([selectionName, icmName, pdbFilePath])
 
-        readAndWrite(obFileList, pdbFileList, icm, " write mol2 ")
+        readAndWrite(obFileList, pdbFileList, projName, vsPath, icm)
 
 
 def getAnswersList(repPath, ligsInfo):
@@ -303,7 +305,7 @@ def getAnswersList(repPath, ligsInfo):
     return list(set([lig[1] for lig in ligsInfo]))
 
 
-def readAndWrite(obFileList, pdbFileList, icm, writeFormat):
+def readAndWrite(obFileList, pdbFileList, projName, vsPath, icm):
     """
     Get the information of which *.ob files to read, and which *.pdb files from
     the loaded molecules to write.
@@ -313,20 +315,46 @@ def readAndWrite(obFileList, pdbFileList, icm, writeFormat):
     poses from each of those repeats
     """
 
+
+    """
+    recObName = projName + "_rec"
+    recObPath = vsPath + "/vs_setup/" + recObName + ".ob"
+    recPdbPath = vsPath + "/poses/" + recObName + ".pdb"
+    icmRecObName = "a_" + recObName + "."
+    readAndWrite([recObPath],
+                 [[recObName, icmRecObName, recPdbPath]],
+                 icm)
+    """
+
+
+
     # Create temp script
     icmScript = open("./temp.icm", "w")
     icmScript.write('call "_startup"\n')
-    # Add the ob file loading part
+
+    # Load the receptor
+    recObName = projName + "_rec"
+    recObPath = vsPath + "/vs_setup/" + recObName + ".ob"
+    print("loading receptor: " + recObPath)
+    icmScript.write('openFile "' + recObPath + '"\n')
+
+    # Load each OB file containing the ligands
     icmScript.write("\n# OPENING FILES\n")
     for obFile in obFileList:
         print("loading:" + obFile)
         icmScript.write('openFile "' + obFile + '"\n')
-    # Add the pdb file saving part
+
+    # Create the receptor-ligand complexes, save complexes
     icmScript.write("\n# WRITING FILES\n")
     for pdbFile in pdbFileList:
-        icmScript.write('sel = ' + pdbFile[1] + "\n")
-        icmScript.write('if ( Name(sel) == "' + pdbFile[0] + '")' +
-                        writeFormat + pdbFile[1] + ' "' + pdbFile[2] + '"\n')
+        # Renumber ligand 'residue' number to avoid overlap with rec res nums
+        icmScript.write('align number ' + pdbFile[1] + '.m 99999999')
+        # Create a temporary copy of the receptor
+        icmScript.write('copy Obj ( ' + recObName + '.m/^Q1/vt1 ) "temp_rec" delete display')
+        # Move the receptor this ligand ICM object
+        icmScript.write('move "temp_rec.m" ' + pdbFile[1] + '.')
+        # Save this new receptor-ligand complex to a pdb file
+        icmScript.write('write pdb ' + pdbFile[1] + ' "' + pdbFile[2] + '"\n')
     icmScript.write("\nquit")
     icmScript.close()
 
