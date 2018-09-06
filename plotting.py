@@ -17,6 +17,8 @@ import random
 
 # Get matplotlib to save SVG text as text, not paths
 mpl.rcParams['svg.fonttype'] = 'none'
+mpl.rcParams['patch.force_edgecolor'] = True
+mpl.rcParams['patch.facecolor'] = 'b'
 
 
 class col:
@@ -1019,7 +1021,7 @@ class plotting:
         ax_bar.margins(x=.1)
 
         # Setting legend
-        # fig_leg = plt.figure(dpi=dpiVal)
+        fig_leg = plt.figure(dpi=dpiVal)
 
         # Generate the two lists that store the custom legend information
         # This could have been done in the for loop above, but is abstracted
@@ -1038,28 +1040,27 @@ class plotting:
                             hatch=ligLibHatches[hatchKey],
                             facecolor="white"))
             legNames.append(hatchKey)
-        # Create the custom figure legend
+        # Create the custom figure legend (drawn on the main figure)
         # plt.figlegend(legRects, legNames, prop={'size': 30},
-        #              loc="center")
-        ax_bar.legend(legRects, legNames,  # ncol=2,"
-                      loc="best", prop={"size": 30}, frameon=False)
+        #               loc="center")
+        # ax_bar.legend(legRects, legNames,  # ncol=2,"
+        #               loc='upper right', prop={"size": 30}, frameon=False)
+        # Create the custom figure legend (drawn in a separate figure)
+        fig_leg.legend(legRects, legNames,  # ncol=2,"
+                       loc='upper right', prop={"size": 30}, frameon=False)
 
         # Display or save barchart and legend
         if gui:
             plt.show()
         else:
             barFile = title.replace(" ", "_")
-            # legFile = title.replace(" ", "_") + "_barLeg"
-            # Save pdf version
-            # fig_bar.savefig(barFile + ".pdf", bbox_inches="tight",
-            #                 dpi=dpiVal)
-            # fig_leg.savefig(legFile + ".png", bbox_inches="tight",
-            #                 format="png", dpi=dpiVal)
-            # Save PNG version. Neither SVG nor PDF backends produce the right
-            # figure.
+            legFile = title.replace(" ", "_") + "_barLeg"
+            # Save SVG version
+            fig_bar.savefig(barFile + ".svg", bbox_inches="tight", dpi=dpiVal)
+            fig_leg.savefig(legFile + ".svg", bbox_inches="tight", dpi=dpiVal)
+            # Save PNG version
             fig_bar.savefig(barFile + ".png", bbox_inches="tight", dpi=dpiVal)
-            # fig_leg.savefig(legFile + ".pdf", bbox_inches="tight",
-            #                 format="pdf", dpi=dpiVal)
+            fig_leg.savefig(legFile + ".png", bbox_inches="tight", dpi=dpiVal)
 
     def extractLigTypeData(self, percentPaths, vsLegends,
                            lig_types, libraryCount, ef_cutoffs):
