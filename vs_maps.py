@@ -46,9 +46,11 @@ def main():
     if dbType == "3D":
         modifyDtb("s_dbType", "mol 3D", obPath)
         modifyDtb("l_sampleRacemic", "  no", obPath)
+        modifyDtb("r_thTautomer", " -1.", obPath)
     elif dbType == "2Drac":
         modifyDtb("s_dbType", "mol 2D", obPath)
         modifyDtb("l_sampleRacemic", "  yes", obPath)
+	modifyDtb("r_thTautomer", " 1.", obPath)
 
 
 def parseArgs():
