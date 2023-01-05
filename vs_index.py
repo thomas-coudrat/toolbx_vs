@@ -93,7 +93,7 @@ def generateScript(icm, sdfFile, suffix):
 call "_startup"
 
 # Create the .inx file, that indexes this database
-makeIndexChemDb "SDF_LIB" "INX_FILE" "mol" { "ID" }
+makeIndexChemDb "SDF_LIB" "INX_FILE" "mol" { "ICMID" }
 
 quit
 """

@@ -327,7 +327,6 @@ def slurmSrun(projName, libStart, libEnd,  walltime, repeatDir, repeat, sliceCou
 
     lines = []
     lines.append("#!/bin/bash")
-    lines.append("#SBATCH -p main")
     lines.append("#SBATCH --ntasks=" + str(sliceCount))
     lines.append("#SBATCH --mem-per-cpu=1024")
     lines.append("#SBATCH --time=" + walltime)
@@ -357,8 +356,10 @@ def slurmSrunSlice(sliceCount, projName, thor, lowerLimit, upperLimit,
     lines.append("ICMHOME=" + icmHome)
     lines.append("$ICMHOME/icm64 -vlscluster $ICMHOME/_dockScan " + projName +
                  " thorough=" + thor +
+                 " -a" +
                  " from=" + str(lowerLimit) +
                  " to=" + str(upperLimit) +
+                 " output=" + projName + "_" + str(sliceCount) + ".sdf" +
                  " >& " + projName + "_" + str(upperLimit) + ".ou")
 
     # WRITE SLURM LINES TO FILE
